@@ -3,24 +3,25 @@
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLazyQuery, useMutation, useQuery, gql } from '@apollo/client';
+import { useDispatch, useSelector } from 'react-redux';
+import Link from 'next/link';
 import { QrCodeIcon, AlertCircle, Loader2, MoreVertical, ShoppingCart, AlertTriangle, QrCode as QrCodeIconAlt, Printer } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { AppShell } from '../../components/layout/AppShell';
 import { QRScanner } from '../../components/QRScanner';
 import { GetUnitResponse, SearchUnitsResponse, UnitData } from '../../types/graphql';
+import { RootState } from '../../store';
+import { addToCart } from '../../store/cartSlice';
 import { UnitLabel } from '@/components/unit-label/UnitLabel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -121,57 +122,19 @@ const CHECK_OUT_UNIT = gql`
   }
 `;
 
-const CHECK_OUT_FEFO = gql`
-  mutation CheckOutMedicationFEFO($input: FEFOCheckOutInput!) {
-    checkOutMedicationFEFO(input: $input) {
-      totalQuantityDispensed
-      unitsUsed {
-        unitId
-        quantityTaken
-        expiryDate
-        medicationName
-      }
-      transactions {
-        transactionId
-        timestamp
-        quantity
-      }
-    }
-  }
-`;
-
-const BATCH_CHECK_OUT_UNITS = gql`
-  mutation BatchCheckOutUnits($inputs: [BatchCheckOutItemInput!]!, $notes: String) {
-    batchCheckOutUnits(inputs: $inputs, notes: $notes) {
-      transactions {
-        transactionId
-        timestamp
-        quantity
-      }
-      totalItems
-      totalQuantity
-    }
-  }
-`;
-
 function CheckOutContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const dispatch = useDispatch();
+  const cartItemCount = useSelector((state: RootState) => state.cart.items.length);
 
   const [unitId, setUnitId] = useState('');
   const [selectedUnit, setSelectedUnit] = useState<UnitData | null>(null);
   const [quantity, setQuantity] = useState<string>('');
-  const [notes, setNotes] = useState('');
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false);
-  const [pendingQty, setPendingQty] = useState<number | null>(null);
   const [viewedUnit, setViewedUnit] = useState<UnitData | null>(null);
   const [showUnitDetailsModal, setShowUnitDetailsModal] = useState(false);
   const printRef = useRef<HTMLDivElement | null>(null);
-
-  // Cart state for batch checkout
-  const [cart, setCart] = useState<Array<{ unit: UnitData; quantity: number }>>([]);
-  const [showCart, setShowCart] = useState(false);
 
   // Check if inventory is empty
   const clinicStr = typeof window !== 'undefined' ? localStorage.getItem('clinic') : null;
@@ -187,6 +150,7 @@ function CheckOutContent() {
 
   const [searchUnits, { data: searchData, loading: searchingUnits }] = useLazyQuery<SearchUnitsResponse>(SEARCH_UNITS);
 
+  // Keep CHECK_OUT_UNIT mutation for quarantine feature only
   const [checkOut, { loading: checkingOut }] = useMutation(CHECK_OUT_UNIT, {
     onCompleted: () => {
       toast({
@@ -204,96 +168,39 @@ function CheckOutContent() {
     },
   });
 
-  const [checkOutFEFO, { loading: checkingOutFEFO }] = useMutation(CHECK_OUT_FEFO, {
-    onCompleted: (data) => {
-      const result = data.checkOutMedicationFEFO;
-      toast({
-        title: 'Success',
-        description: `Checked out ${result.totalQuantityDispensed} units from ${result.unitsUsed.length} container(s) using FEFO logic`,
-      });
-      handleReset();
-    },
-    onError: (error) => {
+  const handleAddToCart = () => {
+    const qty = parseInt(quantity, 10);
+    if (!selectedUnit) {
       toast({
         title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const [batchCheckOut, { loading: batchCheckingOut }] = useMutation(BATCH_CHECK_OUT_UNITS, {
-    onCompleted: (data) => {
-      const result = data.batchCheckOutUnits;
-      toast({
-        title: 'Success',
-        description: `Checked out ${result.totalItems} item(s), ${result.totalQuantity} total units`,
-      });
-      setCart([]);
-      setShowCart(false);
-      handleReset();
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Cart management functions
-  const addToCart = (unit: UnitData, qty: number) => {
-    const existingIndex = cart.findIndex((item) => item.unit.unitId === unit.unitId);
-    if (existingIndex >= 0) {
-      // Update existing item
-      const newCart = [...cart];
-      newCart[existingIndex].quantity += qty;
-      setCart(newCart);
-    } else {
-      // Add new item
-      setCart([...cart, { unit, quantity: qty }]);
-    }
-    toast({
-      title: 'Added to Cart',
-      description: `${unit.drug.medicationName} x${qty}`,
-    });
-  };
-
-  const removeFromCart = (unitId: string) => {
-    setCart(cart.filter((item) => item.unit.unitId !== unitId));
-  };
-
-  const updateCartQuantity = (unitId: string, qty: number) => {
-    const newCart = cart.map((item) =>
-      item.unit.unitId === unitId ? { ...item, quantity: qty } : item
-    );
-    setCart(newCart);
-  };
-
-  const getTotalCartItems = () => cart.length;
-  const getTotalCartQuantity = () => cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const handleBatchCheckout = () => {
-    if (cart.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'Cart is empty',
+        description: 'Please scan or select a unit first',
         variant: 'destructive',
       });
       return;
     }
 
-    const inputs = cart.map((item) => ({
-      unitId: item.unit.unitId,
-      quantity: item.quantity,
-    }));
+    if (isNaN(qty) || qty <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter valid quantity',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    batchCheckOut({
-      variables: {
-        inputs,
-        notes: notes || undefined,
-      },
+    dispatch(addToCart({ unit: selectedUnit, quantity: qty }));
+    toast({
+      title: 'Added to Cart',
+      description: `${selectedUnit.drug.medicationName} x${qty}`,
+    });
+    handleReset();
+  };
+
+  const handleQuickAddToCart = (unit: UnitData, qty: number) => {
+    dispatch(addToCart({ unit, quantity: qty }));
+    toast({
+      title: 'Added to Cart',
+      description: `${unit.drug.medicationName} x${qty}`,
     });
   };
 
@@ -337,8 +244,6 @@ function CheckOutContent() {
 
     // Clear search results if textbox is empty
     if (trimmed.length === 0) {
-      // Clear search data by running search with empty query would return nothing
-      // Or we can just not do anything and let the UI handle empty search results
       return;
     }
 
@@ -360,82 +265,10 @@ function CheckOutContent() {
     getUnit({ variables: { unitId: unit.unitId } });
   };
 
-  const handleCheckOut = () => {
-    const qty = parseInt(quantity, 10);
-    if (!selectedUnit) {
-      toast({
-        title: 'Error',
-        description: 'Please scan or select a unit first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (isNaN(qty) || qty <= 0) {
-      toast({
-        title: 'Error',
-        description: 'Please enter valid quantity',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setPendingQty(qty);
-    setIsCheckoutConfirmOpen(true);
-  };
-
-  const submitSpecificUnitCheckout = () => {
-    if (!selectedUnit || pendingQty === null) return;
-
-    if (pendingQty > selectedUnit.availableQuantity) {
-      toast({
-        title: 'Insufficient quantity for this unit',
-        description: `Available in scanned unit: ${selectedUnit.availableQuantity}. Choose FEFO to pull across multiple units.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsCheckoutConfirmOpen(false);
-    checkOut({
-      variables: {
-        input: {
-          unitId: selectedUnit.unitId,
-          quantity: pendingQty,
-          notes: notes || undefined,
-        },
-      },
-    });
-  };
-
-  const submitFEFOCheckout = () => {
-    if (!selectedUnit || pendingQty === null) return;
-
-    const ndcFromSelectedUnit = selectedUnit.drug.ndcId?.trim();
-    const input: Record<string, unknown> = {
-      quantity: pendingQty,
-      notes: notes || undefined,
-    };
-
-    if (ndcFromSelectedUnit) {
-      input.ndcId = ndcFromSelectedUnit;
-    } else {
-      input.medicationName = selectedUnit.drug.medicationName;
-      input.strength = selectedUnit.drug.strength;
-      input.strengthUnit = selectedUnit.drug.strengthUnit;
-    }
-
-    setIsCheckoutConfirmOpen(false);
-    checkOutFEFO({ variables: { input } });
-  };
-
   const handleReset = () => {
     setUnitId('');
     setSelectedUnit(null);
     setQuantity('');
-    setNotes('');
-    setIsCheckoutConfirmOpen(false);
-    setPendingQty(null);
   };
 
   const handleQRScanned = (code: string) => {
@@ -495,21 +328,21 @@ function CheckOutContent() {
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Check Out</h1>
             <p className="text-base sm:text-lg text-muted-foreground">
-              Dispense medications to patients
+              Search medications and add them to your cart
             </p>
           </div>
-          {/* Cart Button */}
-          <Button
-            variant={cart.length > 0 ? 'default' : 'outline'}
-            onClick={() => setShowCart(true)}
-            className="relative"
-          >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Cart
-            {cart.length > 0 && (
-              <Badge className="ml-2 px-2 py-0.5">{getTotalCartItems()}</Badge>
-            )}
-          </Button>
+          <Link href="/cart">
+            <Button
+              variant={cartItemCount > 0 ? 'default' : 'outline'}
+              className="relative"
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              Cart
+              {cartItemCount > 0 && (
+                <Badge className="ml-2 px-2 py-0.5">{cartItemCount}</Badge>
+              )}
+            </Button>
+          </Link>
         </div>
 
         {!loadingStats && !hasInventory && (
@@ -584,7 +417,7 @@ function CheckOutContent() {
                       const isExpiringSoon = new Date(unit.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
                       return (
-                        <Card 
+                        <Card
                           key={unit.unitId}
                           className="cursor-pointer hover:shadow-md transition-all duration-200 active:scale-[0.98]"
                           onClick={() => handleViewUnitDetails(unit)}
@@ -595,8 +428,8 @@ function CheckOutContent() {
                                 <p className="font-semibold text-sm break-words leading-tight">{unit.drug.medicationName}</p>
                                 <p className="text-xs text-muted-foreground mt-1 break-words">{unit.drug.genericName}</p>
                               </div>
-                              <Badge 
-                                variant={unit.availableQuantity > 0 ? 'default' : 'secondary'} 
+                              <Badge
+                                variant={unit.availableQuantity > 0 ? 'default' : 'secondary'}
                                 className="px-2 py-1 text-xs whitespace-nowrap flex-shrink-0"
                               >
                                 {unit.availableQuantity}/{unit.totalQuantity}
@@ -631,13 +464,13 @@ function CheckOutContent() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleSelectUnit(unit);
+                                  handleQuickAddToCart(unit, 1);
                                 }}
                                 disabled={unit.availableQuantity === 0}
                                 className="h-8 text-xs"
                               >
                                 <ShoppingCart className="mr-1 h-3 w-3" />
-                                Select
+                                Add to Cart
                               </Button>
                             </div>
                           </CardContent>
@@ -728,22 +561,22 @@ function CheckOutContent() {
                                     <DropdownMenuItem
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleSelectUnit(unit);
-                                      }}
-                                      disabled={unit.availableQuantity === 0}
-                                    >
-                                      <ShoppingCart className="mr-2 h-4 w-4" />
-                                      Quick Checkout
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        addToCart(unit, 1);
+                                        handleQuickAddToCart(unit, 1);
                                       }}
                                       disabled={unit.availableQuantity === 0}
                                     >
                                       <ShoppingCart className="mr-2 h-4 w-4" />
                                       Add to Cart
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelectUnit(unit);
+                                      }}
+                                      disabled={unit.availableQuantity === 0}
+                                    >
+                                      <ShoppingCart className="mr-2 h-4 w-4" />
+                                      Select Unit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={(e) => {
@@ -781,7 +614,7 @@ function CheckOutContent() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  No units found matching "{unitId}". Try a different search term or scan a QR code.
+                  No units found matching &quot;{unitId}&quot;. Try a different search term or scan a QR code.
                 </AlertDescription>
               </Alert>
             )}
@@ -850,41 +683,31 @@ function CheckOutContent() {
                   )}
 
               <div className="pt-6 border-t">
-                <h4 className="text-xl sm:text-2xl font-bold mb-6">Dispense Medication</h4>
+                <h4 className="text-xl sm:text-2xl font-bold mb-6">Add to Cart</h4>
 
                 <div className="space-y-5">
                   <div className="space-y-3">
-                    <Label htmlFor="quantity" className="text-base font-semibold">Quantity to Dispense *</Label>
+                    <Label htmlFor="quantity" className="text-base font-semibold">Quantity *</Label>
                     <Input
                       id="quantity"
                       type="number"
                       placeholder="Enter quantity"
                       min={1}
+                      max={selectedUnit.availableQuantity}
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="checkout-notes" className="text-base font-semibold">Notes (Optional)</Label>
-                    <Textarea
-                      id="checkout-notes"
-                      placeholder="Any additional notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                    <Button 
-                      onClick={handleCheckOut} 
-                      disabled={checkingOut || checkingOutFEFO} 
-                      className="w-full sm:w-auto" 
+                    <Button
+                      onClick={handleAddToCart}
+                      disabled={checkingOut}
+                      className="w-full sm:w-auto"
                       size="lg"
                     >
-                      {(checkingOut || checkingOutFEFO) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Check Out
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Add to Cart
                     </Button>
                     <Button variant="outline" onClick={handleReset} className="w-full sm:w-auto" size="lg">
                       Cancel
@@ -895,57 +718,6 @@ function CheckOutContent() {
             </CardContent>
           </Card>
         )}
-
-        <Dialog open={isCheckoutConfirmOpen} onOpenChange={setIsCheckoutConfirmOpen}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[640px]">
-            <DialogHeader>
-              <DialogTitle>Choose checkout method</DialogTitle>
-              <DialogDescription>
-                {selectedUnit && pendingQty !== null
-                  ? `You're dispensing ${pendingQty} of ${selectedUnit.drug.medicationName} (${selectedUnit.drug.strength} ${selectedUnit.drug.strengthUnit}).`
-                  : 'Select how you want to dispense this medication.'}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-4">
-              {selectedUnit && pendingQty !== null && pendingQty > selectedUnit.availableQuantity && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Quantity exceeds scanned unit</AlertTitle>
-                  <AlertDescription>
-                    This unit only has {selectedUnit.availableQuantity} available. FEFO can pull the remaining quantity from other matching units (earliest expiry first).
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-
-            <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-2 sm:space-x-0">
-              <Button
-                variant="outline"
-                onClick={() => setIsCheckoutConfirmOpen(false)}
-                disabled={checkingOut || checkingOutFEFO}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={submitSpecificUnitCheckout}
-                disabled={checkingOut || checkingOutFEFO}
-                className="w-full sm:w-auto"
-              >
-                Use scanned unit only
-              </Button>
-              <Button
-                onClick={submitFEFOCheckout}
-                disabled={checkingOut || checkingOutFEFO}
-                className="w-full sm:w-auto"
-              >
-                Use FEFO (recommended)
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Unit Details Modal */}
         <Dialog open={showUnitDetailsModal} onOpenChange={setShowUnitDetailsModal}>
@@ -1081,6 +853,19 @@ function CheckOutContent() {
                       <Button
                         onClick={() => {
                           setShowUnitDetailsModal(false);
+                          handleQuickAddToCart(viewedUnit, 1);
+                        }}
+                        disabled={viewedUnit.availableQuantity === 0}
+                        size="lg"
+                        className="w-full sm:w-auto"
+                      >
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Add to Cart
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowUnitDetailsModal(false);
                           handleSelectUnit(viewedUnit);
                         }}
                         disabled={viewedUnit.availableQuantity === 0}
@@ -1088,7 +873,7 @@ function CheckOutContent() {
                         className="w-full sm:w-auto"
                       >
                         <ShoppingCart className="mr-2 h-5 w-5" />
-                        Select for Checkout
+                        Select Unit
                       </Button>
                       <Button
                         variant="outline"
@@ -1118,108 +903,6 @@ function CheckOutContent() {
           title="Scan DaanaRX QR Code"
           description="Scan the QR code on the medication unit to check it out"
         />
-
-        {/* Cart Dialog */}
-        <Dialog open={showCart} onOpenChange={setShowCart}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Checkout Cart ({getTotalCartItems()} items)
-              </DialogTitle>
-              <DialogDescription>
-                Review items and complete checkout
-              </DialogDescription>
-            </DialogHeader>
-
-            {cart.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Your cart is empty</p>
-                <p className="text-sm mt-2">Search for medications and add them to your cart</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Medication</TableHead>
-                      <TableHead className="w-[100px]">Qty</TableHead>
-                      <TableHead className="w-[60px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cart.map((item) => (
-                      <TableRow key={item.unit.unitId}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="font-semibold text-sm">{item.unit.drug.medicationName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.unit.drug.strength} {item.unit.drug.strengthUnit}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={item.unit.availableQuantity}
-                            value={item.quantity}
-                            onChange={(e) => updateCartQuantity(item.unit.unitId, parseInt(e.target.value) || 1)}
-                            className="h-8 w-16"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCart(item.unit.unitId)}
-                            className="h-8 w-8 p-0 text-destructive"
-                          >
-                            ×
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Items: {getTotalCartItems()}</p>
-                    <p className="text-sm text-muted-foreground">Total Quantity: {getTotalCartQuantity()}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="cart-notes">Notes (Optional)</Label>
-                  <Textarea
-                    id="cart-notes"
-                    placeholder="Any notes for this checkout"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                </div>
-              </div>
-            )}
-
-            <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button variant="outline" onClick={() => setShowCart(false)}>
-                Continue Shopping
-              </Button>
-              <Button
-                onClick={handleBatchCheckout}
-                disabled={cart.length === 0 || batchCheckingOut}
-              >
-                {batchCheckingOut && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Checkout All ({getTotalCartQuantity()} units)
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </AppShell>
   );

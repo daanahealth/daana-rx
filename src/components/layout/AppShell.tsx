@@ -26,6 +26,7 @@ import {
   Menu,
   Loader2,
   ClipboardList,
+  ShoppingCart,
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -111,6 +112,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
+  const cartItemCount = useSelector((state: RootState) => state.cart.items.length);
   const { isAuthenticated, hasHydrated } = useAuth();
 
   const handleLogout = useCallback(() => {
@@ -132,6 +134,7 @@ export function AppShell({ children }: AppShellProps) {
       { icon: Home, label: 'Home', href: '/' },
       { icon: PackageCheck, label: 'Check In', href: '/checkin' },
       { icon: PackageMinus, label: 'Check Out', href: '/checkout' },
+      { icon: ShoppingCart, label: 'Cart', href: '/cart', badge: cartItemCount > 0 ? String(cartItemCount) : undefined },
       { icon: QrCode, label: 'Scan/Lookup', href: '/scan' },
       { icon: Package, label: 'Inventory', href: '/inventory' },
       { icon: ClipboardList, label: 'Logs', href: '/logs' },
@@ -144,7 +147,7 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     return baseNav;
-  }, [user?.userRole]);
+  }, [user?.userRole, cartItemCount]);
 
   if (!hasHydrated) {
     return (
