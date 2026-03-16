@@ -1,9 +1,8 @@
 'use client';
 
-import { useQuery, gql } from '@apollo/client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { 
+import {
   Package,
   AlertTriangle,
   TrendingUp,
@@ -23,19 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { RootState } from '@/store';
-
-const GET_DASHBOARD_STATS = gql`
-  query GetDashboardStats($clinicId: ID) {
-    getDashboardStats(clinicId: $clinicId) {
-      totalUnits
-      unitsExpiringSoon
-      recentCheckIns
-      recentCheckOuts
-      lowStockAlerts
-    }
-  }
-`;
+import { inventory } from '@/lib/api';
 
 interface QuickActionCardProps {
   title: string;
@@ -125,22 +112,23 @@ function StatCard({
 }
 
 export default function HomePage() {
-  const clinicId = useSelector((state: RootState) => state.auth.clinic?.clinicId);
-  const { data, loading, error } = useQuery(GET_DASHBOARD_STATS, {
-    variables: { clinicId },
-    // Clinic is selected via header/variable; avoid cross-clinic cache reuse.
-    fetchPolicy: 'network-only',
-  });
   const router = useRouter();
+  const [stats, setStats] = useState<{ totalUnits: number; unitsExpiringSoon: number; recentCheckIns: number; recentCheckOuts: number; lowStockAlerts: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Only show loading skeleton if we have no data and are loading
-  // This prevents flash of loading state when navigating with cached data
-  const showLoading = loading && !data;
+  useEffect(() => {
+    inventory.getStats()
+      .then(setStats)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const showLoading = loading && !stats;
 
   return (
     <AppShell>
       <div className="space-y-8 sm:space-y-10">
-        {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-base sm:text-lg text-muted-foreground">
@@ -148,7 +136,6 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Stats Grid */}
         {showLoading ? (
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {[...Array(5)].map((_, i) => (
@@ -166,130 +153,54 @@ export default function HomePage() {
           <Alert variant="destructive" className="animate-slide-in">
             <AlertCircle className="h-5 w-5" />
             <AlertDescription className="text-base">
-              Error loading dashboard: {error.message}
+              Error loading dashboard: {error}
             </AlertDescription>
           </Alert>
-        ) : data ? (
+        ) : stats ? (
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            <StatCard
-              title="Units"
-              value={data.getDashboardStats.totalUnits}
-              icon={Package}
-              color="blue"
-            />
-            <StatCard
-              title="Expiring"
-              value={data.getDashboardStats.unitsExpiringSoon}
-              icon={AlertTriangle}
-              color="orange"
-              variant="warning"
-            />
-            <StatCard
-              title="Low Stock"
-              value={data.getDashboardStats.lowStockAlerts}
-              icon={AlertCircle}
-              color="red"
-              variant="danger"
-            />
-            <StatCard
-              title="Check-Ins"
-              value={data.getDashboardStats.recentCheckIns}
-              icon={TrendingUp}
-              color="green"
-            />
-            <StatCard
-              title="Check-Outs"
-              value={data.getDashboardStats.recentCheckOuts}
-              icon={TrendingDown}
-              color="teal"
-            />
+            <StatCard title="Units" value={stats.totalUnits} icon={Package} color="blue" />
+            <StatCard title="Expiring" value={stats.unitsExpiringSoon} icon={AlertTriangle} color="orange" variant="warning" />
+            <StatCard title="Low Stock" value={stats.lowStockAlerts} icon={AlertCircle} color="red" variant="danger" />
+            <StatCard title="Check-Ins" value={stats.recentCheckIns} icon={TrendingUp} color="green" />
+            <StatCard title="Check-Outs" value={stats.recentCheckOuts} icon={TrendingDown} color="teal" />
           </div>
         ) : null}
 
-        {/* Quick Actions */}
         <div className="space-y-5">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Quick Actions</h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
-              Common tasks and workflows
-            </p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">Common tasks and workflows</p>
           </div>
-
           <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickActionCard
-              title="Check In Medications"
-              description="Add new medications to inventory"
-              icon={PackageCheck}
-              color="blue"
-              href="/checkin"
-            />
-            <QuickActionCard
-              title="Check Out Medications"
-              description="Dispense medications to patients"
-              icon={PackageMinus}
-              color="green"
-              href="/checkout"
-            />
-            <QuickActionCard
-              title="Scan QR Code"
-              description="Quick lookup and actions"
-              icon={QrCode}
-              color="violet"
-              href="/scan"
-            />
-            <QuickActionCard
-              title="View Inventory"
-              description="Browse all medications"
-              icon={LayoutGrid}
-              color="teal"
-              href="/inventory"
-            />
-            <QuickActionCard
-              title="Reports & Analytics"
-              description="View detailed reports"
-              icon={FileText}
-              color="indigo"
-              href="/reports"
-            />
+            <QuickActionCard title="Check In Medications" description="Add new medications to inventory" icon={PackageCheck} color="blue" href="/checkin" />
+            <QuickActionCard title="Check Out Medications" description="Dispense medications to patients" icon={PackageMinus} color="green" href="/checkout" />
+            <QuickActionCard title="Scan QR Code" description="Quick lookup and actions" icon={QrCode} color="violet" href="/scan" />
+            <QuickActionCard title="View Inventory" description="Browse all medications" icon={LayoutGrid} color="teal" href="/inventory" />
+            <QuickActionCard title="Reports & Analytics" description="View detailed reports" icon={FileText} color="indigo" href="/reports" />
           </div>
         </div>
 
-        {/* Alerts Section */}
-        {data && (data.getDashboardStats.unitsExpiringSoon > 0 || data.getDashboardStats.lowStockAlerts > 0) && (
+        {stats && (stats.unitsExpiringSoon > 0 || stats.lowStockAlerts > 0) && (
           <div className="space-y-5">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Alerts</h2>
             <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2">
-              {data.getDashboardStats.unitsExpiringSoon > 0 && (
+              {stats.unitsExpiringSoon > 0 && (
                 <Alert className="border-warning/50 bg-warning/5 animate-fade-in">
                   <AlertTriangle className="h-5 w-5 text-warning" />
                   <AlertDescription>
-                    <div className="font-semibold text-base mb-3">
-                      {data.getDashboardStats.unitsExpiringSoon} unit(s) expiring soon
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push('/inventory')}
-                      className="w-full sm:w-auto"
-                    >
+                    <div className="font-semibold text-base mb-3">{stats.unitsExpiringSoon} unit(s) expiring soon</div>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/inventory')} className="w-full sm:w-auto">
                       View in Inventory
                     </Button>
                   </AlertDescription>
                 </Alert>
               )}
-              {data.getDashboardStats.lowStockAlerts > 0 && (
+              {stats.lowStockAlerts > 0 && (
                 <Alert variant="destructive" className="animate-fade-in">
                   <AlertCircle className="h-5 w-5" />
                   <AlertDescription>
-                    <div className="font-semibold text-base mb-3">
-                      {data.getDashboardStats.lowStockAlerts} drug(s) with low stock
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push('/inventory')}
-                      className="w-full sm:w-auto"
-                    >
+                    <div className="font-semibold text-base mb-3">{stats.lowStockAlerts} drug(s) with low stock</div>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/inventory')} className="w-full sm:w-auto">
                       View in Inventory
                     </Button>
                   </AlertDescription>

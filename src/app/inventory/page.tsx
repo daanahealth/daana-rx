@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useQuery, useLazyQuery, useMutation, gql } from '@apollo/client';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MoreVertical,
@@ -21,14 +20,10 @@ import {
 import { useReactToPrint } from 'react-to-print';
 import { AppShell } from '../../components/layout/AppShell';
 import {
-  TransactionData,
-  GetUnitsAdvancedResponse,
-  UnitDataWithLocation,
-} from '../../types/graphql';
-import {
   InventoryFiltersState,
   filtersStateToInput,
 } from '../../types/inventory';
+import { inventory as inventoryApi, transactions as txApi } from '@/lib/api';
 import { AdvancedInventoryFilters } from '@/components/inventory/AdvancedInventoryFilters';
 import { UnitLabel } from '@/components/unit-label/UnitLabel';
 import { useToast } from '@/hooks/use-toast';
@@ -72,99 +67,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
-const GET_UNITS_ADVANCED = gql`
-  query GetUnitsAdvanced($filters: InventoryFilters, $page: Int, $pageSize: Int) {
-    getUnitsAdvanced(filters: $filters, page: $page, pageSize: $pageSize) {
-      units {
-        unitId
-        totalQuantity
-        availableQuantity
-        expiryDate
-        optionalNotes
-        manufacturerLotNumber
-        dateCreated
-        drug {
-          drugId
-          medicationName
-          genericName
-          strength
-          strengthUnit
-          ndcId
-          form
-        }
-        lot {
-          lotId
-          source
-          note
-          dateCreated
-          locationId
-          clinicId
-          location {
-            locationId
-            name
-            temp
-          }
-        }
-        user {
-          userId
-          username
-          email
-        }
-      }
-      total
-      page
-      pageSize
-    }
-  }
-`;
-
-const GET_TRANSACTIONS = gql`
-  query GetTransactions($unitId: ID!, $clinicId: ID) {
-    getTransactions(unitId: $unitId, page: 1, pageSize: 20, clinicId: $clinicId) {
-      transactions {
-        transactionId
-        timestamp
-        type
-        quantity
-        notes
-        patientName
-        patientReferenceId
-        user {
-          username
-        }
-      }
-    }
-  }
-`;
-
-const CHECK_OUT_UNIT = gql`
-  mutation CheckOutUnit($input: CheckOutInput!) {
-    checkOutUnit(input: $input) {
-      transactionId
-      quantity
-    }
-  }
-`;
-
-const UPDATE_UNIT = gql`
-  mutation UpdateUnit($input: UpdateUnitInput!) {
-    updateUnit(input: $input) {
-      unitId
-      totalQuantity
-      availableQuantity
-      expiryDate
-      optionalNotes
-    }
-  }
-`;
-
-interface TransactionWithUser extends TransactionData {
-  user?: {
-    username: string;
-  };
-  patientName?: string | null;
-}
-
 type SortField = 'MEDICATION_NAME' | 'STRENGTH' | 'QUANTITY' | 'EXPIRY_DATE' | 'CREATED_DATE';
 type SortOrder = 'ASC' | 'DESC';
 
@@ -175,9 +77,9 @@ export default function InventoryPage() {
   const [filters, setFilters] = useState<InventoryFiltersState>({});
   const [sortField, setSortField] = useState<SortField | null>('CREATED_DATE');
   const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
-  const [selectedUnit, setSelectedUnit] = useState<UnitDataWithLocation | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<any | null>(null);
   const [modalOpened, setModalOpened] = useState<boolean>(false);
-  const [quickCheckoutUnit, setQuickCheckoutUnit] = useState<UnitDataWithLocation | null>(null);
+  const [quickCheckoutUnit, setQuickCheckoutUnit] = useState<any | null>(null);
   const [checkoutQuantity, setCheckoutQuantity] = useState<string>('1');
   const [checkoutModalOpened, setCheckoutModalOpened] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -187,88 +89,41 @@ export default function InventoryPage() {
     expiryDate: string;
     optionalNotes: string;
   } | null>(null);
+  const [data, setData] = useState<{ units: any[]; total: number; page: number; pageSize: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [unitTransactions, setUnitTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [updatingUnit, setUpdatingUnit] = useState(false);
   const printRef = useRef<HTMLDivElement | null>(null);
 
-  // Get current clinic from localStorage
-  const clinicStr = typeof window !== 'undefined' ? localStorage.getItem('clinic') : null;
-  const clinicId = clinicStr ? (() => { try { return JSON.parse(clinicStr).clinicId as string | undefined; } catch { return undefined; } })() : undefined;
-
-  // Convert filter state to GraphQL input
   const filterInput = {
     ...filtersStateToInput(filters),
     ...(sortField && { sortBy: sortField, sortOrder }),
   };
 
-  const { data, loading, refetch } = useQuery<GetUnitsAdvancedResponse>(GET_UNITS_ADVANCED, {
-    variables: { filters: filterInput, page, pageSize: 20 },
-    skip: !clinicId,
-  });
+  const fetchUnits = useCallback(() => {
+    setLoading(true);
+    inventoryApi.getUnitsAdvanced(filterInput, page, 20)
+      .then(setData)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filters, sortField, sortOrder]);
 
-  const [getTransactions, { data: transactionsData, loading: loadingTransactions }] =
-    useLazyQuery<{ getTransactions: { transactions: TransactionWithUser[] } }>(GET_TRANSACTIONS);
+  useEffect(() => { fetchUnits(); }, [fetchUnits]);
 
-  const [checkOutUnit, { loading: checkingOut }] = useMutation(CHECK_OUT_UNIT, {
-    onCompleted: () => {
-      toast({
-        title: 'Success',
-        description: 'Unit checked out successfully',
-      });
-      setCheckoutModalOpened(false);
-      setQuickCheckoutUnit(null);
-      setCheckoutQuantity('1');
-      refetch();
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const [updateUnit, { loading: updatingUnit }] = useMutation(UPDATE_UNIT, {
-    onCompleted: () => {
-      toast({
-        title: 'Success',
-        description: 'Unit updated successfully',
-      });
-      setIsEditMode(false);
-      setEditedUnit(null);
-      refetch();
-      // Update the selected unit with new data
-      if (selectedUnit && editedUnit) {
-        setSelectedUnit({
-          ...selectedUnit,
-          totalQuantity: editedUnit.totalQuantity,
-          availableQuantity: editedUnit.availableQuantity,
-          expiryDate: editedUnit.expiryDate,
-          optionalNotes: editedUnit.optionalNotes,
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const totalPages = data ? Math.ceil(data.getUnitsAdvanced.total / data.getUnitsAdvanced.pageSize) : 0;
-  const units = data?.getUnitsAdvanced.units || [];
+  const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
+  const units = data?.units || [];
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // Toggle sort order if same field
       setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
     } else {
-      // New field, default to ASC
       setSortField(field);
       setSortOrder('ASC');
     }
-    setPage(1); // Reset to first page when sorting changes
+    setPage(1);
   };
 
   const getSortIcon = (field: SortField) => {
@@ -282,12 +137,16 @@ export default function InventoryPage() {
     );
   };
 
-  const handleRowClick = (unit: UnitDataWithLocation) => {
+  const handleRowClick = (unit: any) => {
     setSelectedUnit(unit);
     setModalOpened(true);
     setIsEditMode(false);
     setEditedUnit(null);
-    getTransactions({ variables: { unitId: unit.unitId, clinicId } });
+    setLoadingTransactions(true);
+    txApi.getTransactions({ page: 1, pageSize: 20, unitId: unit.unitId })
+      .then((txData) => setUnitTransactions(txData.transactions))
+      .catch(() => {})
+      .finally(() => setLoadingTransactions(false));
   };
 
   const handleCloseModal = () => {
@@ -313,92 +172,75 @@ export default function InventoryPage() {
     setEditedUnit(null);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!selectedUnit || !editedUnit) return;
 
-    // Validation
     if (editedUnit.totalQuantity < 0 || editedUnit.availableQuantity < 0) {
-      toast({
-        title: 'Error',
-        description: 'Quantities must be non-negative',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Quantities must be non-negative', variant: 'destructive' });
       return;
     }
-
     if (editedUnit.availableQuantity > editedUnit.totalQuantity) {
-      toast({
-        title: 'Error',
-        description: 'Available quantity cannot exceed total quantity',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Available quantity cannot exceed total quantity', variant: 'destructive' });
       return;
     }
 
-    updateUnit({
-      variables: {
-        input: {
-          unitId: selectedUnit.unitId,
-          totalQuantity: editedUnit.totalQuantity,
-          availableQuantity: editedUnit.availableQuantity,
-          expiryDate: editedUnit.expiryDate,
-          optionalNotes: editedUnit.optionalNotes,
-        },
-      },
-    });
+    setUpdatingUnit(true);
+    try {
+      await inventoryApi.updateUnit(selectedUnit.unitId, editedUnit);
+      toast({ title: 'Success', description: 'Unit updated successfully' });
+      setIsEditMode(false);
+      setEditedUnit(null);
+      setSelectedUnit({ ...selectedUnit, ...editedUnit });
+      fetchUnits();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setUpdatingUnit(false);
+    }
   };
 
-  const handleQuickCheckout = (unit: UnitDataWithLocation, e: React.MouseEvent) => {
+  const handleQuickCheckout = (unit: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setQuickCheckoutUnit(unit);
     setCheckoutModalOpened(true);
   };
 
-  const handleQuickCheckoutSubmit = () => {
+  const handleQuickCheckoutSubmit = async () => {
     if (!quickCheckoutUnit) return;
-    
     const qty = parseInt(checkoutQuantity, 10);
     if (isNaN(qty) || qty <= 0) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid quantity',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Please enter a valid quantity', variant: 'destructive' });
       return;
     }
-
     if (qty > quickCheckoutUnit.availableQuantity) {
-      toast({
-        title: 'Error',
-        description: 'Quantity exceeds available stock',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Quantity exceeds available stock', variant: 'destructive' });
       return;
     }
 
-    checkOutUnit({
-      variables: {
-        input: {
-          unitId: quickCheckoutUnit.unitId,
-          quantity: qty,
-          notes: 'Quick checkout from inventory',
-        },
-      },
-    });
+    setCheckingOut(true);
+    try {
+      await txApi.checkout(quickCheckoutUnit.unitId, qty, 'Quick checkout from inventory');
+      toast({ title: 'Success', description: 'Unit checked out successfully' });
+      setCheckoutModalOpened(false);
+      setQuickCheckoutUnit(null);
+      setCheckoutQuantity('1');
+      fetchUnits();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
-  const handleQuarantine = (unit: UnitDataWithLocation, e: React.MouseEvent) => {
+  const handleQuarantine = async (unit: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Quarantine is essentially checking out all available quantity with a note
-    checkOutUnit({
-      variables: {
-        input: {
-          unitId: unit.unitId,
-          quantity: unit.availableQuantity,
-          notes: 'QUARANTINED - Removed from available inventory',
-        },
-      },
-    });
+    try {
+      await txApi.checkout(unit.unitId, unit.availableQuantity, 'QUARANTINED - Removed from available inventory');
+      toast({ title: 'Success', description: 'Unit quarantined' });
+      fetchUnits();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
   };
 
   const handlePrint = useReactToPrint({
@@ -442,10 +284,9 @@ export default function InventoryPage() {
               filters={filters}
               onFiltersChange={(newFilters: InventoryFiltersState) => {
                 setFilters(newFilters);
-                setPage(1); // Reset to first page when filters change
+                setPage(1);
               }}
               onExport={() => {
-                // TODO: Implement CSV export
                 toast({
                   title: 'Coming Soon',
                   description: 'Export functionality will be available soon',
@@ -467,7 +308,7 @@ export default function InventoryPage() {
                   const isExpiringSoon = new Date(unit.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
                   return (
-                    <Card 
+                    <Card
                       key={unit.unitId}
                       className="cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => handleRowClick(unit)}
@@ -482,7 +323,7 @@ export default function InventoryPage() {
                             {Math.floor(unit.availableQuantity)} / {Math.floor(unit.totalQuantity)}
                           </Badge>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline" className="px-2 py-1 text-xs">
                             {unit.drug.strength} {unit.drug.strengthUnit}
@@ -548,7 +389,7 @@ export default function InventoryPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead 
+                      <TableHead
                         className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
                         onClick={() => handleSort('MEDICATION_NAME')}
                       >
@@ -557,7 +398,7 @@ export default function InventoryPage() {
                           {getSortIcon('MEDICATION_NAME')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
                         onClick={() => handleSort('STRENGTH')}
                       >
@@ -566,7 +407,7 @@ export default function InventoryPage() {
                           {getSortIcon('STRENGTH')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
                         onClick={() => handleSort('QUANTITY')}
                       >
@@ -575,7 +416,7 @@ export default function InventoryPage() {
                           {getSortIcon('QUANTITY')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
                         onClick={() => handleSort('EXPIRY_DATE')}
                       >
@@ -693,7 +534,7 @@ export default function InventoryPage() {
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious 
+                        <PaginationPrevious
                           onClick={() => setPage(Math.max(1, page - 1))}
                           className={cn(page === 1 && 'pointer-events-none opacity-50')}
                         />
@@ -712,7 +553,7 @@ export default function InventoryPage() {
                         );
                       })}
                       <PaginationItem>
-                        <PaginationNext 
+                        <PaginationNext
                           onClick={() => setPage(Math.min(totalPages, page + 1))}
                           className={cn(page === totalPages && 'pointer-events-none opacity-50')}
                         />
@@ -762,7 +603,7 @@ export default function InventoryPage() {
                         strengthUnit={selectedUnit.drug.strengthUnit}
                         form={selectedUnit.drug.form}
                         ndcId={selectedUnit.drug.ndcId}
-                        manufacturerLotNumber={(selectedUnit as any).manufacturerLotNumber}
+                        manufacturerLotNumber={selectedUnit.manufacturerLotNumber}
                         availableQuantity={selectedUnit.availableQuantity}
                         totalQuantity={selectedUnit.totalQuantity}
                         expiryDate={selectedUnit.expiryDate}
@@ -977,8 +818,7 @@ export default function InventoryPage() {
                       <div className="flex justify-center items-center h-[100px]">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
-                    ) : transactionsData?.getTransactions.transactions &&
-                      transactionsData.getTransactions.transactions.length > 0 ? (
+                    ) : unitTransactions.length > 0 ? (
                       <div className="overflow-x-auto -mx-6 sm:-mx-6">
                         <div className="inline-block min-w-full align-middle">
                           <Table className="min-w-full">
@@ -992,7 +832,7 @@ export default function InventoryPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {transactionsData.getTransactions.transactions.map((tx) => (
+                              {unitTransactions.map((tx) => (
                                 <TableRow key={tx.transactionId}>
                                   <TableCell className="text-xs sm:text-sm whitespace-nowrap">{new Date(tx.timestamp).toLocaleString()}</TableCell>
                                   <TableCell>

@@ -2,12 +2,11 @@
 
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useMutation, gql } from '@apollo/client';
 import { Building2, ChevronDown, Loader2 } from 'lucide-react';
 import { RootState } from '../store';
 import { setAuth } from '../store/authSlice';
 import { Clinic } from '../types';
-import { apolloClient } from '../lib/apollo';
+import { auth as authApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,35 +20,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-const SWITCH_CLINIC = gql`
-  mutation SwitchClinic($clinicId: ID!) {
-    switchClinic(clinicId: $clinicId) {
-      token
-      user {
-        userId
-        username
-        email
-        clinicId
-        userRole
-      }
-      clinic {
-        clinicId
-        name
-        primaryColor
-        secondaryColor
-        logoUrl
-      }
-    }
-  }
-`;
-
 export function ClinicSwitcher() {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const { clinic, clinics } = useSelector((state: RootState) => state.auth);
   const [isSwitching, setIsSwitching] = useState(false);
-
-  const [switchClinicMutation] = useMutation(SWITCH_CLINIC);
 
   // If user only has one clinic, just show the clinic name without dropdown
   if (!clinics || clinics.length <= 1) {
@@ -69,36 +44,16 @@ export function ClinicSwitcher() {
     setIsSwitching(true);
 
     try {
-      const { data } = await switchClinicMutation({
-        variables: { clinicId: selectedClinic.clinicId },
-      });
-
-      if (data?.switchClinic) {
-        // Update Redux store with new auth data
-        dispatch(
-          setAuth({
-            user: data.switchClinic.user,
-            clinic: data.switchClinic.clinic,
-            token: data.switchClinic.token,
-            clinics: clinics, // Keep the existing clinics list
-          })
-        );
-
-        // Clear Apollo cache to ensure fresh data for the new clinic
-        if (apolloClient) {
-          await apolloClient.clearStore();
-        }
-
-        toast({
-          title: 'Success',
-          description: `Switched to "${data.switchClinic.clinic.name}"`,
-        });
-
-        // Refresh the page to reload data for the new clinic
-        window.location.reload();
-      }
+      const data = await authApi.switchClinic(selectedClinic.clinicId);
+      dispatch(setAuth({
+        user: data.user,
+        clinic: data.clinic,
+        token: data.token,
+        clinics: clinics,
+      }));
+      toast({ title: 'Success', description: `Switched to "${data.clinic.name}"` });
+      window.location.reload();
     } catch (error: any) {
-      console.error('Failed to switch clinic:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to switch clinic',

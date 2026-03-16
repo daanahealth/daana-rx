@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { gql, useMutation } from '@apollo/client';
 import {
   Dialog,
   DialogContent,
@@ -21,23 +20,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import type { CreateFeedbackResponse } from '../types/graphql';
+import { notifications } from '@/lib/api';
 
 interface FeedbackModalProps {
   opened: boolean;
   onClose: () => void;
 }
-
-const CREATE_FEEDBACK = gql`
-  mutation CreateFeedback($input: CreateFeedbackInput!) {
-    createFeedback(input: $input) {
-      feedbackId
-      feedbackType
-      feedbackMessage
-      createdAt
-    }
-  }
-`;
 
 const FEEDBACK_TYPES: { value: string; label: string }[] = [
   { value: 'Feature_Request', label: 'Feature Request' },
@@ -49,32 +37,9 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
   const { toast } = useToast();
   const [feedbackType, setFeedbackType] = useState<string>('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [createFeedback, { loading: isSubmitting }] = useMutation<CreateFeedbackResponse>(
-    CREATE_FEEDBACK,
-    {
-      onCompleted: () => {
-        toast({
-          title: 'Success',
-          description: 'Thank you for your feedback! We appreciate your input.',
-        });
-        // Reset form
-        setFeedbackType('');
-        setFeedbackMessage('');
-        onClose();
-      },
-      onError: (error) => {
-        console.error('Error submitting feedback:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to submit feedback. Please try again.',
-          variant: 'destructive',
-        });
-      },
-    }
-  );
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!feedbackType || !feedbackMessage.trim()) {
       toast({
         title: 'Validation Error',
@@ -84,14 +49,22 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
       return;
     }
 
-    createFeedback({
-      variables: {
-        input: {
-          feedbackType,
-          feedbackMessage: feedbackMessage.trim(),
-        },
-      },
-    });
+    setIsSubmitting(true);
+    try {
+      await notifications.submitFeedback(feedbackType, feedbackMessage.trim());
+      toast({ title: 'Success', description: 'Thank you for your feedback! We appreciate your input.' });
+      setFeedbackType('');
+      setFeedbackMessage('');
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit feedback. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { inventory as inventoryApi } from '@/lib/api';
 import { Calendar as CalendarIcon, X, Filter, Download, Search, Sparkles, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,6 @@ import {
   EXPIRATION_WINDOWS,
   SORT_FIELDS,
 } from '@/types/inventory';
-import { GetLocationsResponse } from '@/types/graphql';
 import { parseSmartSearch, getExampleQueries } from '@/utils/smartSearch';
 import {
   Tooltip,
@@ -46,16 +45,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { RelatedMedications } from './RelatedMedications';
-
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    getLocations {
-      locationId
-      name
-      temp
-    }
-  }
-`;
 
 interface AdvancedInventoryFiltersProps {
   filters: InventoryFiltersState;
@@ -72,8 +61,11 @@ export function AdvancedInventoryFilters({
   const [strengthRange, setStrengthRange] = useState<[number, number]>([0, 1000]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showExamples, setShowExamples] = useState<boolean>(false);
+  const [locations, setLocations] = useState<any[]>([]);
 
-  const { data: locationsData } = useQuery<GetLocationsResponse>(GET_LOCATIONS);
+  useEffect(() => {
+    inventoryApi.getLocations().then(setLocations).catch(() => {});
+  }, []);
 
   // Handle smart search with debounce
   const handleSmartSearch = useCallback((query: string) => {
@@ -85,11 +77,11 @@ export function AdvancedInventoryFilters({
     const { filters: parsedFilters } = parseSmartSearch(query);
     
     // If we have location keywords, match them against actual locations
-    if (locationsData?.getLocations && parsedFilters.medicationName) {
+    if (locations.length > 0 && parsedFilters.medicationName) {
       const locationKeywordMatch = query.toLowerCase().match(/location[:\s]+(fridge|room temp)/i);
       if (locationKeywordMatch) {
         const keyword = locationKeywordMatch[1].toLowerCase();
-        const matchedLocation = locationsData.getLocations.find(
+        const matchedLocation = locations.find(
           (loc) => loc.temp.toLowerCase().includes(keyword) || loc.name.toLowerCase().includes(keyword)
         );
         if (matchedLocation) {
@@ -100,7 +92,7 @@ export function AdvancedInventoryFilters({
     
     // Merge with existing filters (don't overwrite everything)
     onFiltersChange({ ...filters, ...parsedFilters });
-  }, [locationsData, filters, onFiltersChange]);
+  }, [locations, filters, onFiltersChange]);
 
   // Debounce the search
   useEffect(() => {
@@ -411,7 +403,7 @@ export function AdvancedInventoryFilters({
               </div>
 
               {/* Location Filter */}
-              {locationsData?.getLocations && locationsData.getLocations.length > 0 && (
+              {locations.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm">Location</Label>
                   <Select
@@ -425,7 +417,7 @@ export function AdvancedInventoryFilters({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Locations</SelectItem>
-                      {locationsData.getLocations.map((location) => (
+                      {locations.map((location) => (
                         <SelectItem key={location.locationId} value={location.locationId}>
                           {location.name} ({location.temp})
                         </SelectItem>

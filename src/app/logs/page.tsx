@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Filter, RefreshCw } from 'lucide-react';
 import { AppShell } from '../../components/layout/AppShell';
+import { transactions as txApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,78 +39,6 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
-const GET_ALL_TRANSACTIONS = gql`
-  query GetAllTransactions(
-    $page: Int
-    $pageSize: Int
-    $type: String
-    $startDate: Date
-    $endDate: Date
-    $medicationName: String
-  ) {
-    getAllTransactions(
-      page: $page
-      pageSize: $pageSize
-      type: $type
-      startDate: $startDate
-      endDate: $endDate
-      medicationName: $medicationName
-    ) {
-      transactions {
-        transactionId
-        timestamp
-        type
-        quantity
-        notes
-        user {
-          username
-        }
-        unit {
-          unitId
-          drug {
-            medicationName
-            genericName
-            strength
-            strengthUnit
-          }
-        }
-      }
-      total
-      page
-      pageSize
-    }
-  }
-`;
-
-interface Transaction {
-  transactionId: string;
-  timestamp: string;
-  type: 'check_in' | 'check_out' | 'adjust';
-  quantity: number;
-  notes?: string | null;
-  user?: {
-    username: string;
-  };
-  unit?: {
-    unitId: string;
-    drug?: {
-      medicationName: string;
-      genericName?: string;
-      strength: number;
-      strengthUnit: string;
-    };
-  };
-}
-
-interface GetAllTransactionsResponse {
-  getAllTransactions: {
-    transactions: Transaction[];
-    total: number;
-    page: number;
-    pageSize: number;
-  };
-}
-
 export default function LogsPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -119,21 +47,28 @@ export default function LogsPage() {
   const [endDate, setEndDate] = useState<string>('');
   const [medicationFilter, setMedicationFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [data, setData] = useState<{ transactions: any[]; total: number; page: number; pageSize: number } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { data, loading, refetch } = useQuery<GetAllTransactionsResponse>(GET_ALL_TRANSACTIONS, {
-    variables: {
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    txApi.getAllTransactions({
       page,
       pageSize,
       type: typeFilter || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       medicationName: medicationFilter || undefined,
-    },
-    fetchPolicy: 'network-only',
-  });
+    })
+      .then(setData)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [page, pageSize, typeFilter, startDate, endDate, medicationFilter]);
 
-  const transactions = data?.getAllTransactions.transactions || [];
-  const total = data?.getAllTransactions.total || 0;
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const transactions = data?.transactions || [];
+  const total = data?.total || 0;
   const totalPages = Math.ceil(total / pageSize);
 
   const handleClearFilters = () => {
@@ -181,7 +116,7 @@ export default function LogsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => refetch()}>
+            <Button variant="outline" onClick={fetchData}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>

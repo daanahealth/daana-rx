@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useLazyQuery, gql } from '@apollo/client';
+import { useState } from 'react';
 import { QrCodeIcon, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '../../components/layout/AppShell';
 import { QRScanner } from '../../components/QRScanner';
-import { GetUnitResponse, GetTransactionsResponse, SearchUnitsResponse, UnitData, TransactionData } from '../../types/graphql';
+import { inventory, transactions as txApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,127 +21,54 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 
-const GET_UNIT = gql`
-  query GetUnit($unitId: ID!) {
-    getUnit(unitId: $unitId) {
-      unitId
-      totalQuantity
-      availableQuantity
-      expiryDate
-      optionalNotes
-      drug {
-        medicationName
-        genericName
-        strength
-        strengthUnit
-        form
-      }
-      lot {
-        source
-      }
-    }
-  }
-`;
-
-const GET_TRANSACTIONS = gql`
-  query GetTransactions($unitId: ID!) {
-    getTransactions(unitId: $unitId, page: 1, pageSize: 10) {
-      transactions {
-        transactionId
-        timestamp
-        type
-        quantity
-        notes
-      }
-    }
-  }
-`;
-
-const SEARCH_UNITS = gql`
-  query SearchUnits($query: String!) {
-    searchUnitsByQuery(query: $query) {
-      unitId
-      availableQuantity
-      expiryDate
-      drug {
-        medicationName
-        genericName
-      }
-    }
-  }
-`;
-
 export default function ScanPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [unitId, setUnitId] = useState('');
-  const [unit, setUnit] = useState<UnitData | null>(null);
-  const [transactions, setTransactions] = useState<TransactionData[]>([]);
+  const [unit, setUnit] = useState<any | null>(null);
+  const [unitTransactions, setUnitTransactions] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showQRScanner, setShowQRScanner] = useState(false);
 
-  const [getUnit, { data: unitData, error: unitError }] = useLazyQuery<GetUnitResponse>(GET_UNIT);
-
-  const [getTransactions, { data: transactionsData }] = useLazyQuery<GetTransactionsResponse>(GET_TRANSACTIONS);
-
-  // Handle unit data changes
-  useEffect(() => {
-    if (unitData?.getUnit) {
-      setUnit(unitData.getUnit);
-      getTransactions({ variables: { unitId: unitData.getUnit.unitId } });
-      toast({
-        title: 'Unit Found',
-        description: `${unitData.getUnit.drug.medicationName}`,
-      });
+  const fetchUnit = async (id: string) => {
+    try {
+      const u = await inventory.getUnit(id);
+      setUnit(u);
+      setSearchResults([]);
+      toast({ title: 'Unit Found', description: u.drug.medicationName });
+      const txData = await txApi.getTransactions({ page: 1, pageSize: 10, unitId: id });
+      setUnitTransactions(txData.transactions);
+    } catch {
+      toast({ title: 'Error', description: 'Unit not found', variant: 'destructive' });
     }
-  }, [unitData, getTransactions, toast]);
-
-  // Handle unit errors
-  useEffect(() => {
-    if (unitError) {
-      toast({
-        title: 'Error',
-        description: 'Unit not found',
-        variant: 'destructive',
-      });
-    }
-  }, [unitError, toast]);
-
-  // Handle transactions data changes
-  useEffect(() => {
-    if (transactionsData?.getTransactions) {
-      setTransactions(transactionsData.getTransactions.transactions);
-    }
-  }, [transactionsData]);
-
-  const [searchUnits, { data: searchData }] = useLazyQuery<SearchUnitsResponse>(SEARCH_UNITS);
+  };
 
   const handleSearch = () => {
     if (unitId.length >= 3) {
       if (unitId.length === 36) {
-        // Full UUID
-        getUnit({ variables: { unitId } });
+        fetchUnit(unitId);
       } else {
-        // Partial search
-        searchUnits({ variables: { query: unitId } });
+        inventory.searchUnits(unitId).then(setSearchResults).catch(() => {});
       }
     }
   };
 
-  const handleSelectUnit = (selectedUnit: UnitData) => {
+  const handleSelectUnit = (selectedUnit: any) => {
     setUnitId(selectedUnit.unitId);
-    getUnit({ variables: { unitId: selectedUnit.unitId } });
+    fetchUnit(selectedUnit.unitId);
   };
 
   const handleClear = () => {
     setUnitId('');
     setUnit(null);
-    setTransactions([]);
+    setUnitTransactions([]);
+    setSearchResults([]);
   };
 
   const handleQRScanned = (code: string) => {
     setShowQRScanner(false);
     setUnitId(code);
-    getUnit({ variables: { unitId: code } });
+    fetchUnit(code);
   };
 
   return (
@@ -195,7 +121,7 @@ export default function ScanPage() {
               </div>
             </div>
 
-            {searchData?.searchUnitsByQuery && searchData.searchUnitsByQuery.length > 0 && !unit && (
+            {searchResults.length > 0 && !unit && (
               <Card className="animate-slide-in">
                 <CardHeader>
                   <CardTitle className="text-xl">Search Results</CardTitle>
@@ -203,7 +129,7 @@ export default function ScanPage() {
                 <CardContent>
                   {/* Mobile Card View */}
                   <div className="block md:hidden space-y-3">
-                    {searchData.searchUnitsByQuery.map((searchUnit: UnitData) => {
+                    {searchResults.map((searchUnit: any) => {
                       const isExpired = new Date(searchUnit.expiryDate) < new Date();
                       const isExpiringSoon = new Date(searchUnit.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -219,8 +145,8 @@ export default function ScanPage() {
                                 <p className="font-semibold text-sm break-words leading-tight">{searchUnit.drug.medicationName}</p>
                                 <p className="text-xs text-muted-foreground mt-1 break-words">{searchUnit.drug.genericName}</p>
                               </div>
-                              <Badge 
-                                variant={searchUnit.availableQuantity > 0 ? 'default' : 'destructive'} 
+                              <Badge
+                                variant={searchUnit.availableQuantity > 0 ? 'default' : 'destructive'}
                                 className="px-2 py-1 text-xs whitespace-nowrap flex-shrink-0"
                               >
                                 {searchUnit.availableQuantity}
@@ -254,7 +180,7 @@ export default function ScanPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {searchData.searchUnitsByQuery.map((searchUnit: UnitData) => (
+                        {searchResults.map((searchUnit: any) => (
                           <TableRow key={searchUnit.unitId} className="hover:bg-accent/50">
                             <TableCell>
                               <div className="space-y-1">
@@ -351,7 +277,7 @@ export default function ScanPage() {
                 <CardTitle className="text-2xl">Transaction History</CardTitle>
               </CardHeader>
               <CardContent>
-                {transactions.length > 0 ? (
+                {unitTransactions.length > 0 ? (
                   <div className="overflow-x-auto -mx-1">
                     <Table>
                       <TableHeader>
@@ -363,7 +289,7 @@ export default function ScanPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((tx: TransactionData) => (
+                        {unitTransactions.map((tx: any) => (
                           <TableRow key={tx.transactionId} className="hover:bg-accent/50">
                             <TableCell className="text-sm">{new Date(tx.timestamp).toLocaleString()}</TableCell>
                             <TableCell>
