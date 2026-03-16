@@ -173,8 +173,8 @@ export function AdvancedInventoryFilters({
               <TooltipContent side="right" className="max-w-sm">
                 <p className="font-medium mb-2">Try natural language queries:</p>
                 <ul className="text-xs space-y-1">
-                  {getExampleQueries().slice(0, 5).map((example, i) => (
-                    <li key={i}>• {example}</li>
+                  {getExampleQueries().slice(0, 5).map((example) => (
+                    <li key={example}>• {example}</li>
                   ))}
                 </ul>
               </TooltipContent>
@@ -210,9 +210,9 @@ export function AdvancedInventoryFilters({
           <Card className="p-3 bg-muted/50">
             <p className="text-xs font-medium mb-2 text-muted-foreground">Example queries:</p>
             <div className="flex flex-wrap gap-2">
-              {getExampleQueries().map((example, i) => (
+              {getExampleQueries().map((example) => (
                 <Button
-                  key={i}
+                  key={example}
                   variant="outline"
                   size="sm"
                   className="text-xs h-7"

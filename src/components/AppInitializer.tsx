@@ -42,7 +42,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
         setLoadingProgress(100);
         setLoadingMessage('Ready!');
         if (user && clinic) {
-          dispatch(setAuth({ user, clinic, token: localStorage.getItem('token') || '', clinics }));
+          dispatch(setAuth({ user, clinic, token: localStorage.getItem('authToken') || '', clinics }));
         }
         setTimeout(() => setIsInitialized(true), 300);
       } catch {

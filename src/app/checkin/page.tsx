@@ -297,8 +297,8 @@ export default function CheckInPage() {
                     {showDropdown && searchResults.length > 0 && (
                       <Card className="absolute z-50 w-full mt-1 max-h-[300px] overflow-auto">
                         <CardContent className="p-2 space-y-1">
-                          {searchResults.map((med, index) => (
-                            <div key={index} className={cn('p-3 rounded-md cursor-pointer hover:bg-accent transition-colors', med.inInventory && 'bg-blue-50 dark:bg-blue-950/20')} onClick={() => handleSelectMedication(med)}>
+                          {searchResults.map((med) => (
+                            <div key={med.medicationName} role="button" tabIndex={0} className={cn('p-3 rounded-md cursor-pointer hover:bg-accent transition-colors', med.inInventory && 'bg-blue-50 dark:bg-blue-950/20')} onClick={() => handleSelectMedication(med)} onKeyDown={(e) => e.key === 'Enter' && handleSelectMedication(med)}>
                               <div className="flex justify-between items-start gap-2">
                                 <div className="flex-1"><p className="font-semibold text-sm">{med.medicationName}</p><p className="text-xs text-muted-foreground">{med.strength}{med.strengthUnit} - {med.form}</p></div>
                                 {med.inInventory && <Badge variant="secondary" className="text-xs">In Stock</Badge>}

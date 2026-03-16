@@ -4,7 +4,7 @@ function getHeaders(): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof window !== 'undefined') {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const clinic = localStorage.getItem('clinic');
       if (clinic) {
