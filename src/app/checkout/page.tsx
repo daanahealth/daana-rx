@@ -44,6 +44,7 @@ function CheckOutContent() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [totalUnits, setTotalUnits] = useState<number | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [quickAddQty, setQuickAddQty] = useState<string>('1');
   const printRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -141,7 +142,7 @@ function CheckOutContent() {
     }
   };
 
-  const handleViewUnitDetails = (unit: UnitData) => { setViewedUnit(unit); setShowUnitDetailsModal(true); };
+  const handleViewUnitDetails = (unit: UnitData) => { setViewedUnit(unit); setShowUnitDetailsModal(true); setQuickAddQty('1'); };
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -217,7 +218,7 @@ function CheckOutContent() {
                             </div>
                             <div className="flex items-center justify-between pt-2 border-t">
                               <span className="text-xs text-muted-foreground">{unit.lot?.source || 'No source'}</span>
-                              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleQuickAddToCart(unit, 1); }} disabled={unit.availableQuantity === 0} className="h-8 text-xs">
+                              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleViewUnitDetails(unit); }} disabled={unit.availableQuantity === 0} className="h-8 text-xs">
                                 <ShoppingCart className="mr-1 h-3 w-3" />Add to Cart
                               </Button>
                             </div>
@@ -254,8 +255,7 @@ function CheckOutContent() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleQuickAddToCart(unit, 1); }} disabled={unit.availableQuantity === 0}><ShoppingCart className="mr-2 h-4 w-4" />Add to Cart</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSelectUnit(unit); }} disabled={unit.availableQuantity === 0}><ShoppingCart className="mr-2 h-4 w-4" />Select Unit</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewUnitDetails(unit); }} disabled={unit.availableQuantity === 0}><ShoppingCart className="mr-2 h-4 w-4" />Add to Cart</DropdownMenuItem>
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewUnitDetails(unit); }}><QrCodeIconAlt className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={(e) => handleQuarantine(unit, e as any)} disabled={unit.availableQuantity === 0} className="text-orange-600"><AlertTriangle className="mr-2 h-4 w-4" />Quarantine</DropdownMenuItem>
@@ -360,12 +360,15 @@ function CheckOutContent() {
                 </Card>
                 <Card>
                   <CardHeader><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button onClick={() => { setShowUnitDetailsModal(false); handleQuickAddToCart(viewedUnit, 1); }} disabled={viewedUnit.availableQuantity === 0} size="lg" className="w-full sm:w-auto"><ShoppingCart className="mr-2 h-5 w-5" />Add to Cart</Button>
-                      <Button variant="outline" onClick={() => { setShowUnitDetailsModal(false); handleSelectUnit(viewedUnit); }} disabled={viewedUnit.availableQuantity === 0} size="lg" className="w-full sm:w-auto"><ShoppingCart className="mr-2 h-5 w-5" />Select Unit</Button>
-                      <Button variant="outline" onClick={() => { setShowUnitDetailsModal(false); handleQuarantine(viewedUnit, { stopPropagation: () => {} } as React.MouseEvent); }} disabled={viewedUnit.availableQuantity === 0} size="lg" className="w-full sm:w-auto border-warning text-warning hover:bg-warning/10"><AlertTriangle className="mr-2 h-5 w-5" />Quarantine All</Button>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-end gap-3">
+                      <div className="space-y-2 w-28">
+                        <Label htmlFor="quick-qty" className="text-sm font-semibold">Quantity</Label>
+                        <Input id="quick-qty" type="number" min={1} max={viewedUnit.availableQuantity} value={quickAddQty} onChange={(e) => setQuickAddQty(e.target.value)} className="h-10" />
+                      </div>
+                      <Button onClick={() => { const qty = parseInt(quickAddQty, 10); if (!isNaN(qty) && qty > 0) { setShowUnitDetailsModal(false); handleQuickAddToCart(viewedUnit, qty); } }} disabled={viewedUnit.availableQuantity === 0} size="lg" className="flex-1"><ShoppingCart className="mr-2 h-5 w-5" />Add to Cart</Button>
                     </div>
+                    <Button variant="outline" onClick={() => { setShowUnitDetailsModal(false); handleQuarantine(viewedUnit, { stopPropagation: () => {} } as React.MouseEvent); }} disabled={viewedUnit.availableQuantity === 0} size="lg" className="w-full border-warning text-warning hover:bg-warning/10"><AlertTriangle className="mr-2 h-5 w-5" />Quarantine All</Button>
                   </CardContent>
                 </Card>
               </div>
