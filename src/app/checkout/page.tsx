@@ -105,11 +105,6 @@ function CheckOutContent() {
     }
   };
 
-  const handleSelectUnit = (unit: UnitData) => {
-    setUnitId(unit.unitId);
-    fetchUnit(unit.unitId);
-  };
-
   const handleReset = () => { setUnitId(''); setSelectedUnit(null); setQuantity(''); setSearchResults([]); };
 
   const handleQRScanned = (code: string) => { setShowQRScanner(false); setUnitId(code); fetchUnit(code); };
