@@ -3,7 +3,7 @@
  * Strongly typed interfaces with no type casting
  */
 
-import { DrugData, LocationData } from './graphql';
+import { DrugData, LocationData } from './api';
 
 // Enum types matching GraphQL schema exactly
 export type ExpirationWindow =

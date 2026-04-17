@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Settings } from 'lucide-react';
 import { AppShell } from '../../components/layout/AppShell';
-import { LocationData } from '../../types/graphql';
+import { LocationData } from '../../types/api';
 import { auth, inventory } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

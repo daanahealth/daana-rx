@@ -8,7 +8,7 @@ import { QrCodeIcon, AlertCircle, Loader2, MoreVertical, ShoppingCart, AlertTria
 import { useReactToPrint } from 'react-to-print';
 import { AppShell } from '../../components/layout/AppShell';
 import { QRScanner } from '../../components/QRScanner';
-import { UnitData } from '../../types/graphql';
+import { UnitData } from '../../types/api';
 import { RootState } from '../../store';
 import { addToCart } from '../../store/cartSlice';
 import { inventory, transactions } from '@/lib/api';

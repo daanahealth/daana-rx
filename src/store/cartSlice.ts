@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { UnitData } from '../types/graphql';
+import { UnitData } from '../types/api';
 
 export interface CartItem {
   unit: UnitData;

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReactToPrint } from 'react-to-print';
 import { Printer, AlertCircle, Loader2, Plus, Check } from 'lucide-react';
 import { AppShell } from '../../components/layout/AppShell';
-import { LotData, LocationData, BatchCreatedUnit } from '../../types/graphql';
+import { LotData, LocationData, BatchCreatedUnit } from '../../types/api';
 import { RootState } from '../../store';
 import { auth, inventory } from '@/lib/api';
 import { Button } from '@/components/ui/button';
