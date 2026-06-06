@@ -16,9 +16,9 @@
     "test:drug-api": "node scripts/test-drug-api.js"
   },
   "dependencies": {
+    "@daana-health/domain-mass": "file:./vendor/domain-mass",
     "@daana-health/inventory-core": "file:./vendor/inventory-core",
     "@daana-health/inventory-react": "file:./vendor/inventory-react",
-    "@daana-health/domain-mass": "file:./vendor/domain-mass",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",
@@ -63,6 +63,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^25.0.3",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",

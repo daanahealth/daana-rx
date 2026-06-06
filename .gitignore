@@ -47,3 +47,5 @@ jest-cache
 !vendor/
 !vendor/**/dist/
 !vendor/**/dist/**
+test-results/
+playwright-report/
