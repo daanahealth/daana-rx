@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: [
+    '@daana-health/inventory-core',
+    '@daana-health/inventory-react',
+    '@daana-health/domain-mass',
+  ],
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
