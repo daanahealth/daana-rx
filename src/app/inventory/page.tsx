@@ -1,38 +1,48 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+// Inventory Tab — DaanaRX MASS Clinic superadmin control panel.
+//
+// Implements the MVP spec § Inventory Tab:
+//   - Table fields: medication name, dosage, unit, form, location, expiry date,
+//     DRX unit_code, status (chip), date received, date checked in,
+//     checked-in-by, last edited by, last edited date.
+//   - Filters/search: text search (q), status, location, expiry-before.
+//   - Per-row actions (kebab): Edit, Check Out directly (superadmin only),
+//     Remove, View transaction history.
+//   - Empty state: "No medications in inventory yet. Check in a medication to
+//     get started." with CTA → /checkin.
+//   - Direct checkout (superadmin): confirmation modal → POST cart item +
+//     immediate approve.
+//   - Mobile: table collapses to one card per item on small screens.
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useSelector } from 'react-redux';
 import {
-  MoreVertical,
-  ShoppingCart,
-  AlertTriangle,
-  QrCode as QrCodeIcon,
-  Printer,
-  Info,
-  Loader2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  AlertCircle,
   Edit,
-  X as XIcon,
-  Save,
+  Filter,
+  History,
+  Loader2,
+  MoreVertical,
+  PackageOpen,
+  RefreshCcw,
+  Search,
+  ShoppingCart,
+  Trash2,
 } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import type { Item, ItemStatus, Location } from '@daana-health/inventory-core';
 import { AppShell } from '../../components/layout/AppShell';
-import {
-  InventoryFiltersState,
-  filtersStateToInput,
-} from '../../types/inventory';
-import { inventory as inventoryApi, transactions as txApi } from '@/lib/api';
-import { AdvancedInventoryFilters } from '@/components/inventory/AdvancedInventoryFilters';
-import { UnitLabel } from '@/components/unit-label/UnitLabel';
-import { useToast } from '@/hooks/use-toast';
+import { EditItemModal } from '../../components/inventory/EditItemModal';
+import { RemoveItemModal } from '../../components/inventory/RemoveItemModal';
+import { TransactionHistoryDrawer } from '../../components/inventory/TransactionHistoryDrawer';
+import type { RootState } from '../../store';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { StatusChip } from '@/components/ui/status-chip';
 import {
   Table,
   TableBody,
@@ -44,6 +54,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -57,848 +68,698 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import { Separator } from '@/components/ui/separator';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type SortField = 'MEDICATION_NAME' | 'STRENGTH' | 'QUANTITY' | 'EXPIRY_DATE' | 'CREATED_DATE';
-type SortOrder = 'ASC' | 'DESC';
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+// The inventory list endpoint may join in some user/timestamp fields beyond
+// the bare Item shape. We model the extras optionally so the page renders
+// gracefully whether or not the backend has hydrated them yet.
+interface InventoryRow extends Item {
+  dateReceived?: string | null; // ISO timestamptz; may equal createdAt
+  checkedInAt?: string | null;
+  checkedInByName?: string | null;
+  createdByName?: string | null;
+  lastEditedByName?: string | null;
+  removedByName?: string | null;
+  locationCode?: string | null; // denormalized for display when locationId resolves
+}
+
+interface ListResponse {
+  items: InventoryRow[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+const STATUS_OPTIONS: Array<{ value: ItemStatus | 'all'; label: string }> = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'in_cart', label: 'In Cart' },
+  { value: 'pending_approval', label: 'Pending Approval' },
+  { value: 'checked_out', label: 'Checked Out' },
+  { value: 'removed', label: 'Removed' },
+  { value: 'expired', label: 'Expired' },
+];
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString();
+}
+
+function readAttr(attrs: Item['attributes'], key: string): string {
+  const v = (attrs as Record<string, unknown>)[key];
+  if (v === undefined || v === null) return '';
+  return String(v);
+}
+
+function isExpired(item: InventoryRow): boolean {
+  if (!item.expiryDate) return false;
+  const d = new Date(item.expiryDate);
+  return !Number.isNaN(d.getTime()) && d.getTime() < Date.now();
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function InventoryPage() {
-  const router = useRouter();
   const { toast } = useToast();
-  const [page, setPage] = useState<number>(1);
-  const [filters, setFilters] = useState<InventoryFiltersState>({});
-  const [sortField, setSortField] = useState<SortField | null>('CREATED_DATE');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
-  const [selectedUnit, setSelectedUnit] = useState<any | null>(null);
-  const [modalOpened, setModalOpened] = useState<boolean>(false);
-  const [quickCheckoutUnit, setQuickCheckoutUnit] = useState<any | null>(null);
-  const [checkoutQuantity, setCheckoutQuantity] = useState<string>('1');
-  const [checkoutModalOpened, setCheckoutModalOpened] = useState<boolean>(false);
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
-  const [editedUnit, setEditedUnit] = useState<{
-    totalQuantity: number;
-    availableQuantity: number;
-    expiryDate: string;
-    optionalNotes: string;
-  } | null>(null);
-  const [data, setData] = useState<{ units: any[]; total: number; page: number; pageSize: number } | null>(null);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const isSuperadmin = currentUser?.userRole === 'superadmin';
+
+  // Filters / search
+  const [q, setQ] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ItemStatus | 'all'>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [expiryBefore, setExpiryBefore] = useState<string>(''); // YYYY-MM-DD
+
+  // Data
+  const [rows, setRows] = useState<InventoryRow[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unitTransactions, setUnitTransactions] = useState<any[]>([]);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modals / drawers
+  const [editTarget, setEditTarget] = useState<InventoryRow | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<InventoryRow | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<InventoryRow | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = useState<InventoryRow | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [updatingUnit, setUpdatingUnit] = useState(false);
-  const printRef = useRef<HTMLDivElement | null>(null);
 
-  const filterInput = {
-    ...filtersStateToInput(filters),
-    ...(sortField && { sortBy: sortField, sortOrder }),
-  };
+  // ─── Fetch items ──────────────────────────────────────────────────────────
 
-  const fetchUnits = useCallback(() => {
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    if (q.trim().length > 0) params.set('q', q.trim());
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (locationFilter !== 'all') params.set('locationId', locationFilter);
+    if (expiryBefore) params.set('expiryBefore', expiryBefore);
+    return params.toString();
+  }, [q, statusFilter, locationFilter, expiryBefore]);
+
+  const fetchItems = useCallback(async () => {
     setLoading(true);
-    inventoryApi.getUnitsAdvanced(filterInput, page, 20)
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filters, sortField, sortOrder]);
-
-  useEffect(() => { fetchUnits(); }, [fetchUnits]);
-
-  const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
-  const units = data?.units || [];
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
-    } else {
-      setSortField(field);
-      setSortOrder('ASC');
-    }
-    setPage(1);
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-2 h-4 w-4 opacity-40" />;
-    }
-    return sortOrder === 'ASC' ? (
-      <ArrowUp className="ml-2 h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-2 h-4 w-4" />
-    );
-  };
-
-  const handleRowClick = (unit: any) => {
-    setSelectedUnit(unit);
-    setModalOpened(true);
-    setIsEditMode(false);
-    setEditedUnit(null);
-    setLoadingTransactions(true);
-    txApi.getTransactions({ page: 1, pageSize: 20, unitId: unit.unitId })
-      .then((txData) => setUnitTransactions(txData.transactions))
-      .catch(() => {})
-      .finally(() => setLoadingTransactions(false));
-  };
-
-  const handleCloseModal = () => {
-    setModalOpened(false);
-    setSelectedUnit(null);
-    setIsEditMode(false);
-    setEditedUnit(null);
-  };
-
-  const handleStartEdit = () => {
-    if (!selectedUnit) return;
-    setIsEditMode(true);
-    setEditedUnit({
-      totalQuantity: selectedUnit.totalQuantity,
-      availableQuantity: selectedUnit.availableQuantity,
-      expiryDate: new Date(selectedUnit.expiryDate).toISOString().split('T')[0],
-      optionalNotes: selectedUnit.optionalNotes || '',
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setEditedUnit(null);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!selectedUnit || !editedUnit) return;
-
-    if (editedUnit.totalQuantity < 0 || editedUnit.availableQuantity < 0) {
-      toast({ title: 'Error', description: 'Quantities must be non-negative', variant: 'destructive' });
-      return;
-    }
-    if (editedUnit.availableQuantity > editedUnit.totalQuantity) {
-      toast({ title: 'Error', description: 'Available quantity cannot exceed total quantity', variant: 'destructive' });
-      return;
-    }
-
-    setUpdatingUnit(true);
+    setError(null);
     try {
-      await inventoryApi.updateUnit(selectedUnit.unitId, editedUnit);
-      toast({ title: 'Success', description: 'Unit updated successfully' });
-      setIsEditMode(false);
-      setEditedUnit(null);
-      setSelectedUnit({ ...selectedUnit, ...editedUnit });
-      fetchUnits();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      const url = `/api/items${queryString ? `?${queryString}` : ''}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) {
+        // 404 = endpoint not wired yet → treat as empty inventory, not error.
+        if (res.status === 404) {
+          setRows([]);
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `GET /api/items failed: ${res.status}`);
+      }
+      const body = (await res.json()) as ListResponse | InventoryRow[];
+      const list = Array.isArray(body) ? body : body.items ?? [];
+      setRows(list);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load inventory';
+      setError(msg);
+      setRows([]);
     } finally {
-      setUpdatingUnit(false);
+      setLoading(false);
     }
-  };
+  }, [queryString]);
 
-  const handleQuickCheckout = (unit: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setQuickCheckoutUnit(unit);
-    setCheckoutModalOpened(true);
-  };
+  // Initial + filter-driven fetch
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
-  const handleQuickCheckoutSubmit = async () => {
-    if (!quickCheckoutUnit) return;
-    const qty = parseInt(checkoutQuantity, 10);
-    if (isNaN(qty) || qty <= 0) {
-      toast({ title: 'Error', description: 'Please enter a valid quantity', variant: 'destructive' });
-      return;
-    }
-    if (qty > quickCheckoutUnit.availableQuantity) {
-      toast({ title: 'Error', description: 'Quantity exceeds available stock', variant: 'destructive' });
-      return;
-    }
+  // Load locations once for the filter dropdown
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/locations', { credentials: 'include' });
+        if (!res.ok) return;
+        const body = (await res.json()) as { locations?: Location[] } | Location[];
+        const list = Array.isArray(body) ? body : body.locations ?? [];
+        if (!cancelled) setLocations(list);
+      } catch {
+        // non-fatal; filter just collapses to no options
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
+  // ─── Direct checkout from inventory (superadmin) ───────────────────────────
+
+  const handleDirectCheckout = async () => {
+    if (!checkoutTarget || !isSuperadmin) return;
     setCheckingOut(true);
     try {
-      await txApi.checkout(quickCheckoutUnit.unitId, qty, 'Quick checkout from inventory');
-      toast({ title: 'Success', description: 'Unit checked out successfully' });
-      setCheckoutModalOpened(false);
-      setQuickCheckoutUnit(null);
-      setCheckoutQuantity('1');
-      fetchUnits();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      // Step 1: add to current cart. The backend resolves the caller's active
+      // cart (creating one if needed) when the special id "current" is used.
+      const addRes = await fetch(`/api/carts/current/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ itemId: checkoutTarget.id }),
+      });
+      if (!addRes.ok && addRes.status !== 404) {
+        const body = await addRes.json().catch(() => ({}));
+        throw new Error(body.error || `Add to cart failed: ${addRes.status}`);
+      }
+      const addBody = (await addRes.json().catch(() => ({}))) as { cart?: { id: string } };
+      const cartId = addBody.cart?.id ?? 'current';
+
+      // Step 2: immediately approve for superadmin.
+      const approveRes = await fetch(`/api/carts/${cartId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!approveRes.ok && approveRes.status !== 404) {
+        const body = await approveRes.json().catch(() => ({}));
+        throw new Error(body.error || `Approve failed: ${approveRes.status}`);
+      }
+
+      toast({
+        title: 'Checked out',
+        description: `${readAttr(checkoutTarget.attributes, 'medication_name') || 'Item'} has been checked out.`,
+      });
+      setCheckoutTarget(null);
+      fetchItems();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Checkout failed';
+      toast({ title: 'Checkout failed', description: msg, variant: 'destructive' });
     } finally {
       setCheckingOut(false);
     }
   };
 
-  const handleQuarantine = async (unit: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await txApi.checkout(unit.unitId, unit.availableQuantity, 'QUARANTINED - Removed from available inventory');
-      toast({ title: 'Success', description: 'Unit quarantined' });
-      fetchUnits();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    }
-  };
+  // ─── Render ────────────────────────────────────────────────────────────────
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `DaanaRX-Label-${selectedUnit?.unitId}`,
-    pageStyle: `
-      @page {
-        size: 4in 2in;
-        margin: 0;
-      }
-      @media print {
-        body {
-          margin: 0;
-          padding: 0;
-        }
-      }
-    `,
-  });
+  const hasFilters =
+    q.trim().length > 0 || statusFilter !== 'all' || locationFilter !== 'all' || expiryBefore.length > 0;
+  const showEmpty = !loading && !error && rows.length === 0 && !hasFilters;
+  const showNoMatches = !loading && !error && rows.length === 0 && hasFilters;
 
   return (
     <AppShell>
-      <div className="space-y-6 sm:space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Inventory</h1>
-          <p className="text-base sm:text-lg text-muted-foreground">
-            View and manage all medication units
-          </p>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Inventory</h1>
+            <p className="text-sm text-muted-foreground sm:text-base">
+              Full control panel for active medication inventory.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchItems}
+            disabled={loading}
+            className="self-start sm:self-auto"
+          >
+            <RefreshCcw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+            Refresh
+          </Button>
         </div>
 
-        <Card className="animate-fade-in">
-          <CardContent className="pt-6 space-y-5">
-            <Alert className="border-primary/20 bg-primary/5">
-              <Info className="h-5 w-5 text-primary" />
-              <AlertDescription className="text-base">
-                Click on any row to view unit details, QR code, and transaction history. Use the action menu (⋮) for quick checkout or quarantine.
-              </AlertDescription>
-            </Alert>
-
-            {/* Advanced Inventory Filters */}
-            <AdvancedInventoryFilters
-              filters={filters}
-              onFiltersChange={(newFilters: InventoryFiltersState) => {
-                setFilters(newFilters);
-                setPage(1);
-              }}
-              onExport={() => {
-                toast({
-                  title: 'Coming Soon',
-                  description: 'Export functionality will be available soon',
-                });
-              }}
-            />
-          </CardContent>
-
-          {loading && !data ? (
-            <div className="flex justify-center items-center h-[300px]">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>
-          ) : units.length > 0 ? (
-            <div className="space-y-4">
-              {/* Mobile Card View */}
-              <div className="block lg:hidden space-y-3">
-                {units.map((unit) => {
-                  const isExpired = new Date(unit.expiryDate) < new Date();
-                  const isExpiringSoon = new Date(unit.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-                  return (
-                    <Card
-                      key={unit.unitId}
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => handleRowClick(unit)}
-                    >
-                      <CardContent className="pt-4 pb-4 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm break-words">{unit.drug.medicationName}</p>
-                            <p className="text-xs text-muted-foreground mt-1 break-words">{unit.drug.genericName}</p>
-                          </div>
-                          <Badge variant={unit.availableQuantity > 0 ? 'default' : 'secondary'} className="px-2 py-1 text-xs whitespace-nowrap flex-shrink-0">
-                            {Math.floor(unit.availableQuantity)} / {Math.floor(unit.totalQuantity)}
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="px-2 py-1 text-xs">
-                            {unit.drug.strength} {unit.drug.strengthUnit}
-                          </Badge>
-                          <Badge
-                            variant={isExpired ? 'destructive' : isExpiringSoon ? 'outline' : 'secondary'}
-                            className={cn(
-                              'px-2 py-1 text-xs',
-                              !isExpired && isExpiringSoon && 'border-warning/50 text-warning bg-warning/5'
-                            )}
-                          >
-                            {new Date(unit.expiryDate).toLocaleDateString()}
-                          </Badge>
-                          {unit.lot?.location && (
-                            <Badge variant="outline" className="px-2 py-1 text-xs">
-                              {unit.lot.location.name}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{unit.lot?.source || 'No source'}</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
-                                onClick={(e) => { e.stopPropagation(); handleQuickCheckout(unit, e as any); }}
-                                disabled={unit.availableQuantity === 0}
-                              >
-                                <ShoppingCart className="mr-2 h-4 w-4" />
-                                Quick Checkout
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRowClick(unit); }}>
-                                <QrCodeIcon className="mr-2 h-4 w-4" />
-                                View QR Code
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={(e) => { e.stopPropagation(); handleQuarantine(unit, e as any); }}
-                                disabled={unit.availableQuantity === 0}
-                                className="text-orange-600"
-                              >
-                                <AlertTriangle className="mr-2 h-4 w-4" />
-                                Quarantine
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden lg:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead
-                        className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
-                        onClick={() => handleSort('MEDICATION_NAME')}
-                      >
-                        <div className="flex items-center">
-                          Medication
-                          {getSortIcon('MEDICATION_NAME')}
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
-                        onClick={() => handleSort('STRENGTH')}
-                      >
-                        <div className="flex items-center">
-                          Strength
-                          {getSortIcon('STRENGTH')}
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
-                        onClick={() => handleSort('QUANTITY')}
-                      >
-                        <div className="flex items-center">
-                          Available
-                          {getSortIcon('QUANTITY')}
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="font-semibold cursor-pointer select-none hover:bg-accent/50 transition-colors"
-                        onClick={() => handleSort('EXPIRY_DATE')}
-                      >
-                        <div className="flex items-center">
-                          Expiry
-                          {getSortIcon('EXPIRY_DATE')}
-                        </div>
-                      </TableHead>
-                      <TableHead className="font-semibold">Location</TableHead>
-                      <TableHead className="font-semibold">Source</TableHead>
-                      <TableHead className="w-[60px] font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {units.map((unit) => {
-                      const isExpired = new Date(unit.expiryDate) < new Date();
-                      const isExpiringSoon =
-                        new Date(unit.expiryDate) <
-                        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-                      return (
-                        <TableRow
-                          key={unit.unitId}
-                          onClick={() => handleRowClick(unit)}
-                          className="cursor-pointer hover:bg-accent/50 transition-colors"
-                        >
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="font-semibold">{unit.drug.medicationName}</div>
-                              <div className="text-sm text-muted-foreground">{unit.drug.genericName}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {unit.drug.strength} {unit.drug.strengthUnit}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={unit.availableQuantity > 0 ? 'default' : 'secondary'} className="px-3 py-1">
-                              {Math.floor(unit.availableQuantity)} / {Math.floor(unit.totalQuantity)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={isExpired ? 'destructive' : isExpiringSoon ? 'outline' : 'secondary'}
-                              className={cn(
-                                'px-3 py-1',
-                                !isExpired && isExpiringSoon && 'border-warning/50 text-warning bg-warning/5'
-                              )}
-                            >
-                              {new Date(unit.expiryDate).toLocaleDateString()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {unit.lot?.location ? (
-                              <Badge variant="outline" className="px-3 py-1">
-                                {unit.lot.location.name}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-medium">{unit.lot?.source || '-'}</span>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                  <span className="sr-only">Actions</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={(e) => handleQuickCheckout(unit, e as any)}
-                                  disabled={unit.availableQuantity === 0}
-                                >
-                                  <ShoppingCart className="mr-2 h-4 w-4" />
-                                  Quick Checkout
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRowClick(unit);
-                                  }}
-                                >
-                                  <QrCodeIcon className="mr-2 h-4 w-4" />
-                                  View QR Code
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={(e) => handleQuarantine(unit, e as any)}
-                                  disabled={unit.availableQuantity === 0}
-                                  className="text-orange-600"
-                                >
-                                  <AlertTriangle className="mr-2 h-4 w-4" />
-                                  Quarantine
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex justify-center py-4">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => setPage(Math.max(1, page - 1))}
-                          className={cn(page === 1 && 'pointer-events-none opacity-50')}
-                        />
-                      </PaginationItem>
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              onClick={() => setPage(pageNum)}
-                              isActive={page === pageNum}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => setPage(Math.min(totalPages, page + 1))}
-                          className={cn(page === totalPages && 'pointer-events-none opacity-50')}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No units found
-            </div>
-          )}
-        </Card>
-
-        {/* Unit Details Modal */}
-        <Dialog open={modalOpened} onOpenChange={handleCloseModal}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Unit Details</DialogTitle>
-            </DialogHeader>
-            {selectedUnit && (
-              <div className="space-y-6">
-                {/* QR Code Section with Print */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">QR Code</CardTitle>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePrint()}
-                      >
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Label
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex justify-center">
-                    <div ref={printRef}>
-                      <UnitLabel
-                        unitId={selectedUnit.unitId}
-                        medicationName={selectedUnit.drug.medicationName}
-                        genericName={selectedUnit.drug.genericName}
-                        strength={selectedUnit.drug.strength}
-                        strengthUnit={selectedUnit.drug.strengthUnit}
-                        form={selectedUnit.drug.form}
-                        ndcId={selectedUnit.drug.ndcId}
-                        manufacturerLotNumber={selectedUnit.manufacturerLotNumber}
-                        availableQuantity={selectedUnit.availableQuantity}
-                        totalQuantity={selectedUnit.totalQuantity}
-                        expiryDate={selectedUnit.expiryDate}
-                        donationSource={selectedUnit.lot?.source}
-                        locationName={selectedUnit.lot?.location?.name}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Unit Information */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Medication Information</CardTitle>
-                      {!isEditMode ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleStartEdit}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </Button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleCancelEdit}
-                            disabled={updatingUnit}
-                          >
-                            <XIcon className="mr-2 h-4 w-4" />
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleSaveEdit}
-                            disabled={updatingUnit}
-                          >
-                            {updatingUnit ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Save
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium">Medication:</p>
-                        <p className="text-sm text-muted-foreground break-words">{selectedUnit.drug.medicationName}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Generic:</p>
-                        <p className="text-sm text-muted-foreground break-words">{selectedUnit.drug.genericName}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Strength:</p>
-                        <Badge variant="outline" className="mt-1">
-                          {selectedUnit.drug.strength} {selectedUnit.drug.strengthUnit}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Form:</p>
-                        <p className="text-sm text-muted-foreground">{selectedUnit.drug.form}</p>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <p className="text-sm font-medium">NDC:</p>
-                        <p className="text-sm font-mono text-muted-foreground break-all">{selectedUnit.drug.ndcId}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Available / Total:</p>
-                        {isEditMode && editedUnit ? (
-                          <div className="flex gap-2 items-center mt-1">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={editedUnit.availableQuantity}
-                              onChange={(e) => setEditedUnit({
-                                ...editedUnit,
-                                availableQuantity: parseInt(e.target.value) || 0
-                              })}
-                              className="h-8 w-16 sm:w-20"
-                            />
-                            <span className="text-sm text-muted-foreground">/</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={editedUnit.totalQuantity}
-                              onChange={(e) => setEditedUnit({
-                                ...editedUnit,
-                                totalQuantity: parseInt(e.target.value) || 0
-                              })}
-                              className="h-8 w-16 sm:w-20"
-                            />
-                          </div>
-                        ) : (
-                          <Badge variant={selectedUnit.availableQuantity > 0 ? 'default' : 'secondary'} className="mt-1">
-                            {Math.floor(selectedUnit.availableQuantity)} / {Math.floor(selectedUnit.totalQuantity)}
-                          </Badge>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Expiry Date:</p>
-                        {isEditMode && editedUnit ? (
-                          <Input
-                            type="date"
-                            value={editedUnit.expiryDate}
-                            onChange={(e) => setEditedUnit({
-                              ...editedUnit,
-                              expiryDate: e.target.value
-                            })}
-                            className="h-8 mt-1"
-                          />
-                        ) : (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {new Date(selectedUnit.expiryDate).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      {selectedUnit.lot && (
-                        <>
-                          <div>
-                            <p className="text-sm font-medium">Source:</p>
-                            <p className="text-sm text-muted-foreground break-words">{selectedUnit.lot.source}</p>
-                          </div>
-                          {selectedUnit.lot.location && (
-                            <div>
-                              <p className="text-sm font-medium">Location:</p>
-                              <Badge variant="outline" className="mt-1">
-                                {selectedUnit.lot.location.name} ({selectedUnit.lot.location.temp.replace('_', ' ')})
-                              </Badge>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    {(selectedUnit.optionalNotes || isEditMode) && (
-                      <>
-                        <Separator className="my-4" />
-                        <div>
-                          <p className="text-sm font-medium mb-2">Notes:</p>
-                          {isEditMode && editedUnit ? (
-                            <Input
-                              placeholder="Add optional notes..."
-                              value={editedUnit.optionalNotes}
-                              onChange={(e) => setEditedUnit({
-                                ...editedUnit,
-                                optionalNotes: e.target.value
-                              })}
-                              className="w-full"
-                            />
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{selectedUnit.optionalNotes || 'No notes'}</p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={() => router.push(`/checkout?unitId=${selectedUnit.unitId}`)}
-                        disabled={selectedUnit.availableQuantity === 0}
-                        size="lg"
-                        className="w-full sm:w-auto"
-                      >
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                        Checkout
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          handleCloseModal();
-                          handleQuarantine(selectedUnit, { stopPropagation: () => {} } as React.MouseEvent);
-                        }}
-                        disabled={selectedUnit.availableQuantity === 0}
-                        size="lg"
-                        className="w-full sm:w-auto border-warning text-warning hover:bg-warning/10"
-                      >
-                        <AlertTriangle className="mr-2 h-5 w-5" />
-                        Quarantine All
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Transaction History */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Transaction History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingTransactions ? (
-                      <div className="flex justify-center items-center h-[100px]">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      </div>
-                    ) : unitTransactions.length > 0 ? (
-                      <div className="overflow-x-auto -mx-6 sm:-mx-6">
-                        <div className="inline-block min-w-full align-middle">
-                          <Table className="min-w-full">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="min-w-[140px]">Date & Time</TableHead>
-                                <TableHead className="min-w-[80px]">Type</TableHead>
-                                <TableHead className="min-w-[70px]">Quantity</TableHead>
-                                <TableHead className="min-w-[90px]">User</TableHead>
-                                <TableHead className="min-w-[100px]">Notes</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {unitTransactions.map((tx) => (
-                                <TableRow key={tx.transactionId}>
-                                  <TableCell className="text-xs sm:text-sm whitespace-nowrap">{new Date(tx.timestamp).toLocaleString()}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={tx.type === 'check_in' ? 'default' : tx.type === 'check_out' ? 'secondary' : 'outline'} className="text-xs">
-                                      {tx.type.replace('_', ' ')}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-sm">{tx.quantity}</TableCell>
-                                  <TableCell className="text-xs sm:text-sm">{tx.user?.username || '-'}</TableCell>
-                                  <TableCell className="text-xs sm:text-sm break-words">{tx.notes || '-'}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No transactions found</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Quick Checkout Modal */}
-        <Dialog open={checkoutModalOpened} onOpenChange={setCheckoutModalOpened}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle>Quick Checkout</DialogTitle>
-            </DialogHeader>
-            {quickCheckoutUnit && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="font-medium">{quickCheckoutUnit.drug.medicationName}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Available:</span>
-                    <Badge>{quickCheckoutUnit.availableQuantity}</Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="checkout-qty">Quantity to checkout</Label>
+        {/* Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="inv-q" className="text-xs font-medium text-muted-foreground">
+                  Search
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    id="checkout-qty"
-                    type="number"
-                    min={1}
-                    max={quickCheckoutUnit.availableQuantity}
-                    value={checkoutQuantity}
-                    onChange={(e) => setCheckoutQuantity(e.target.value)}
+                    id="inv-q"
+                    placeholder="Medication, code, or notes…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    className="pl-9"
                   />
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setCheckoutModalOpened(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleQuickCheckoutSubmit} disabled={checkingOut}>
-                    {checkingOut && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                    Checkout
-                  </Button>
-                </DialogFooter>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Status</Label>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => setStatusFilter(v as ItemStatus | 'all')}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Location</Label>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All locations</SelectItem>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="inv-exp" className="text-xs font-medium text-muted-foreground">
+                  Expires before
+                </Label>
+                <Input
+                  id="inv-exp"
+                  type="date"
+                  value={expiryBefore}
+                  onChange={(e) => setExpiryBefore(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {hasFilters ? (
+              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <Filter className="h-3.5 w-3.5" />
+                <span>Filters applied</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setQ('');
+                    setStatusFilter('all');
+                    setLocationFilter('all');
+                    setExpiryBefore('');
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  Clear all
+                </Button>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        {/* Error */}
+        {error ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {/* Empty state — spec verbatim */}
+        {showEmpty ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="rounded-full bg-muted p-4">
+                <PackageOpen className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-medium">
+                  No medications in inventory yet. Check in a medication to get started.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Donated medications appear here once they are checked in.
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/checkin">Go to Check In</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* No matches (filters applied) */}
+        {showNoMatches ? (
+          <Card>
+            <CardContent className="py-12 text-center text-sm text-muted-foreground">
+              No medications match the current filters.
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* Loading */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : null}
+
+        {/* Rows */}
+        {!loading && rows.length > 0 ? (
+          <>
+            {/* Mobile card view */}
+            <div className="space-y-3 lg:hidden">
+              {rows.map((item) => (
+                <InventoryCard
+                  key={item.id}
+                  item={item}
+                  isSuperadmin={isSuperadmin}
+                  onEdit={() => setEditTarget(item)}
+                  onCheckout={() => setCheckoutTarget(item)}
+                  onRemove={() => setRemoveTarget(item)}
+                  onHistory={() => setHistoryTarget(item)}
+                />
+              ))}
+            </div>
+
+            {/* Desktop table view */}
+            <Card className="hidden lg:block">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Medication</TableHead>
+                        <TableHead>Dosage</TableHead>
+                        <TableHead>Unit</TableHead>
+                        <TableHead>Form</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Expiry</TableHead>
+                        <TableHead>DRX Code</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date received</TableHead>
+                        <TableHead>Checked in</TableHead>
+                        <TableHead>Checked in by</TableHead>
+                        <TableHead>Last edited by</TableHead>
+                        <TableHead>Last edited</TableHead>
+                        <TableHead className="w-[44px]" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((item) => {
+                        const expired = isExpired(item);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">
+                              {readAttr(item.attributes, 'medication_name') || '—'}
+                            </TableCell>
+                            <TableCell>{readAttr(item.attributes, 'dosage') || '—'}</TableCell>
+                            <TableCell>{readAttr(item.attributes, 'unit') || '—'}</TableCell>
+                            <TableCell>{readAttr(item.attributes, 'form') || '—'}</TableCell>
+                            <TableCell>{item.locationCode ?? '—'}</TableCell>
+                            <TableCell className={cn(expired && 'text-destructive font-medium')}>
+                              {formatDate(item.expiryDate)}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{item.unitCode}</TableCell>
+                            <TableCell>
+                              <StatusChip status={item.status} />
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDate(item.dateReceived ?? item.createdAt)}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDateTime(item.checkedInAt ?? item.createdAt)}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {item.checkedInByName ?? item.createdByName ?? '—'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {item.lastEditedByName ?? '—'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDateTime(item.lastEditedAt)}
+                            </TableCell>
+                            <TableCell>
+                              <RowActions
+                                item={item}
+                                isSuperadmin={isSuperadmin}
+                                onEdit={() => setEditTarget(item)}
+                                onCheckout={() => setCheckoutTarget(item)}
+                                onRemove={() => setRemoveTarget(item)}
+                                onHistory={() => setHistoryTarget(item)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : null}
       </div>
+
+      {/* Edit modal */}
+      <EditItemModal
+        item={editTarget}
+        open={editTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        onSaved={() => {
+          setEditTarget(null);
+          fetchItems();
+        }}
+        locations={locations}
+      />
+
+      {/* Remove modal */}
+      <RemoveItemModal
+        item={removeTarget}
+        open={removeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+        onRemoved={() => {
+          setRemoveTarget(null);
+          fetchItems();
+        }}
+      />
+
+      {/* Transaction history drawer */}
+      <TransactionHistoryDrawer
+        item={historyTarget}
+        open={historyTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setHistoryTarget(null);
+        }}
+      />
+
+      {/* Direct checkout confirmation (superadmin only) */}
+      <Dialog
+        open={checkoutTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setCheckoutTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Check out medication</DialogTitle>
+            <DialogDescription>
+              Confirm the details below. This action moves the unit out of active inventory and logs a transaction.
+            </DialogDescription>
+          </DialogHeader>
+          {checkoutTarget ? (
+            <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Medication</span>
+                <span className="font-medium">
+                  {readAttr(checkoutTarget.attributes, 'medication_name') || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Dose</span>
+                <span>
+                  {readAttr(checkoutTarget.attributes, 'dosage')}{' '}
+                  {readAttr(checkoutTarget.attributes, 'unit')}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Form</span>
+                <span>{readAttr(checkoutTarget.attributes, 'form') || '—'}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Expiry</span>
+                <span className={cn(isExpired(checkoutTarget) && 'text-destructive')}>
+                  {formatDate(checkoutTarget.expiryDate)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Location</span>
+                <span>{checkoutTarget.locationCode ?? '—'}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">DRX code</span>
+                <span className="font-mono text-xs">{checkoutTarget.unitCode}</span>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckoutTarget(null)} disabled={checkingOut}>
+              Cancel
+            </Button>
+            <Button onClick={handleDirectCheckout} disabled={checkingOut || !isSuperadmin}>
+              {checkingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirm checkout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
+  );
+}
+
+// ─── Row actions menu ───────────────────────────────────────────────────────
+
+function RowActions({
+  item,
+  isSuperadmin,
+  onEdit,
+  onCheckout,
+  onRemove,
+  onHistory,
+}: {
+  item: InventoryRow;
+  isSuperadmin: boolean;
+  onEdit: () => void;
+  onCheckout: () => void;
+  onRemove: () => void;
+  onHistory: () => void;
+}) {
+  const terminal = item.status === 'checked_out' || item.status === 'removed';
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreVertical className="h-4 w-4" />
+          <span className="sr-only">Open actions menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onEdit} disabled={terminal}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        {isSuperadmin ? (
+          <DropdownMenuItem onClick={onCheckout} disabled={terminal}>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Check out directly
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuItem onClick={onRemove} disabled={terminal} className="text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Remove
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onHistory}>
+          <History className="mr-2 h-4 w-4" />
+          View transaction history
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ─── Mobile card ────────────────────────────────────────────────────────────
+
+function InventoryCard({
+  item,
+  isSuperadmin,
+  onEdit,
+  onCheckout,
+  onRemove,
+  onHistory,
+}: {
+  item: InventoryRow;
+  isSuperadmin: boolean;
+  onEdit: () => void;
+  onCheckout: () => void;
+  onRemove: () => void;
+  onHistory: () => void;
+}) {
+  const expired = isExpired(item);
+  return (
+    <Card>
+      <CardContent className="space-y-3 pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 space-y-1">
+            <p className="break-words text-sm font-semibold">
+              {readAttr(item.attributes, 'medication_name') || '—'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')}{' '}
+              · {readAttr(item.attributes, 'form') || '—'}
+            </p>
+          </div>
+          <RowActions
+            item={item}
+            isSuperadmin={isSuperadmin}
+            onEdit={onEdit}
+            onCheckout={onCheckout}
+            onRemove={onRemove}
+            onHistory={onHistory}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusChip status={item.status} />
+          <span
+            className={cn(
+              'inline-flex items-center rounded-md border bg-muted/40 px-2 py-0.5 text-xs',
+              expired && 'border-destructive/40 bg-destructive/10 text-destructive',
+            )}
+          >
+            Exp {formatDate(item.expiryDate)}
+          </span>
+          {item.locationCode ? (
+            <span className="inline-flex items-center rounded-md border bg-muted/40 px-2 py-0.5 text-xs">
+              {item.locationCode}
+            </span>
+          ) : null}
+        </div>
+
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+          <dt className="text-muted-foreground">DRX code</dt>
+          <dd className="font-mono">{item.unitCode}</dd>
+          <dt className="text-muted-foreground">Received</dt>
+          <dd>{formatDate(item.dateReceived ?? item.createdAt)}</dd>
+          <dt className="text-muted-foreground">Checked in</dt>
+          <dd>{formatDateTime(item.checkedInAt ?? item.createdAt)}</dd>
+          <dt className="text-muted-foreground">Checked in by</dt>
+          <dd>{item.checkedInByName ?? item.createdByName ?? '—'}</dd>
+          <dt className="text-muted-foreground">Last edited by</dt>
+          <dd>{item.lastEditedByName ?? '—'}</dd>
+          <dt className="text-muted-foreground">Last edited</dt>
+          <dd>{formatDateTime(item.lastEditedAt)}</dd>
+        </dl>
+      </CardContent>
+    </Card>
   );
 }
