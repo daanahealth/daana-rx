@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../../../store/authSlice';
@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Info, Loader2, Package, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Info, Loader2, Package, CheckCircle2, Circle } from 'lucide-react';
 import Link from 'next/link';
+import { evaluatePassword, validatePassword } from '@/lib/passwordRules';
 
 function SignUpContent() {
   const searchParams = useSearchParams();
@@ -37,8 +38,15 @@ function AcceptInvitationForm({ invitationToken }: { invitationToken: string }) 
       .finally(() => setInvitationLoading(false));
   });
 
+  const ruleState = evaluatePassword(password);
+  const passwordOk = validatePassword(password).ok;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordOk) {
+      toast({ title: 'Password requirements not met', description: 'Please meet all the password requirements below.', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
     try {
       const data = await auth.acceptInvitation(invitationToken, password);
@@ -130,10 +138,17 @@ function AcceptInvitationForm({ invitationToken }: { invitationToken: string }) 
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Create Password</Label>
-                <Input id="password" type="password" placeholder="Choose a secure password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
-                <p className="text-xs text-muted-foreground">Choose a strong password to secure your account</p>
+                <Input id="password" type="password" autoComplete="new-password" placeholder="Choose a secure password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
+                <ul className="mt-2 space-y-1" aria-label="Password requirements">
+                  {ruleState.map((r) => (
+                    <li key={r.id} className={`flex items-center gap-2 text-xs ${r.passed ? 'text-teal-700 dark:text-teal-300' : 'text-muted-foreground'}`}>
+                      {r.passed ? <CheckCircle2 className="h-3.5 w-3.5 flex-none" /> : <Circle className="h-3.5 w-3.5 flex-none opacity-60" />}
+                      <span>{r.label}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
+              <Button type="submit" className="w-full h-11 text-base" disabled={loading || !passwordOk}>
                 {loading ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</>
                 ) : (
@@ -170,9 +185,16 @@ function RegularSignUpForm() {
     } catch {}
   };
 
+  const ruleState = useMemo(() => evaluatePassword(password), [password]);
+  const passwordOk = useMemo(() => validatePassword(password).ok, [password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (emailExists) { router.push('/auth/signin'); return; }
+    if (!passwordOk) {
+      toast({ title: 'Password requirements not met', description: 'Please meet all the password requirements below.', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
     try {
       const data = await auth.signUp(email, password, clinicName);
@@ -212,9 +234,17 @@ function RegularSignUpForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
+                <Input id="password" type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
+                <ul className="mt-2 space-y-1" aria-label="Password requirements">
+                  {ruleState.map((r) => (
+                    <li key={r.id} className={`flex items-center gap-2 text-xs ${r.passed ? 'text-teal-700 dark:text-teal-300' : 'text-muted-foreground'}`}>
+                      {r.passed ? <CheckCircle2 className="h-3.5 w-3.5 flex-none" /> : <Circle className="h-3.5 w-3.5 flex-none opacity-60" />}
+                      <span>{r.label}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
+              <Button type="submit" className="w-full h-11 text-base" disabled={loading || !passwordOk}>
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</> : 'Create Account'}
               </Button>
             </form>
