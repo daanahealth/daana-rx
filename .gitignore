@@ -42,3 +42,8 @@ next-env.d.ts
 
 # jest
 jest-cache
+
+# Vendor folder — keep dist/ even though dist/ is otherwise ignored
+!vendor/
+!vendor/**/dist/
+!vendor/**/dist/**
