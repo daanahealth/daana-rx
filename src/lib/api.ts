@@ -152,6 +152,118 @@ export const transactions = {
     ),
 };
 
+// ─── Reports ─────────────────────────────────────────────────────────────────
+// All endpoints are provided by be-reports-api (services/transaction/src/routes/reports).
+// FE consumes them through the gateway-prefixed paths used elsewhere in this client.
+
+export interface ExpiringItem {
+  unitId: string;
+  medicationName: string;
+  dosage: string;
+  form?: string;
+  expiryDate: string;
+  daysUntilExpiry: number;
+  location?: { locationId: string; name: string };
+  drxCode: string;
+}
+
+export interface CapacityBin {
+  locationId: string;
+  name: string;
+  current: number;
+  capacity: number;
+  percent: number;
+}
+
+export interface HighUseRow {
+  drugId: string;
+  medicationName: string;
+  dosage: string;
+  strengthUnit?: string;
+  form?: string;
+  checkoutCount: number;
+}
+
+export interface RecentlyRemovedRow {
+  unitId: string;
+  medicationName: string;
+  dosage: string;
+  location?: string;
+  drxCode: string;
+  removedAt: string;
+  removedBy?: string;
+  reason: string;
+  notes?: string;
+}
+
+export interface InventoryEditRow {
+  transactionId: string;
+  timestamp: string;
+  medicationName: string;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  actor?: string;
+}
+
+export interface TransactionLogRow {
+  transactionId: string;
+  timestamp: string;
+  actionType: string;
+  medicationName?: string;
+  dosage?: string;
+  form?: string;
+  location?: string;
+  drxCode?: string;
+  user?: string;
+  reason?: string;
+  notes?: string;
+}
+
+export interface CursorPage<T> {
+  rows: T[];
+  nextCursor: string | null;
+}
+
+export interface TransactionFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  actionTypes?: string[];
+  actor?: string;
+  q?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export const reports = {
+  expiring: (window: 30 | 60 | 90 = 30) =>
+    apiGet<{ window: number; rows: ExpiringItem[] }>(`/reports/expiring?window=${window}`),
+
+  capacity: () => apiGet<{ rows: CapacityBin[] }>('/reports/capacity'),
+
+  highUse: () => apiGet<{ rows: HighUseRow[] }>('/reports/high-use'),
+
+  recentlyRemoved: () => apiGet<{ rows: RecentlyRemovedRow[] }>('/reports/recently-removed'),
+
+  inventoryEdits: () => apiGet<{ rows: InventoryEditRow[] }>('/reports/inventory-edits'),
+
+  recentlyCheckedOut: () =>
+    apiGet<{ rows: TransactionLogRow[] }>('/reports/recently-checked-out'),
+
+  transactionLog: (filters: TransactionFilters = {}) => {
+    const p = new URLSearchParams();
+    if (filters.dateFrom) p.set('date_from', filters.dateFrom);
+    if (filters.dateTo) p.set('date_to', filters.dateTo);
+    if (filters.actionTypes && filters.actionTypes.length > 0)
+      p.set('action_type', filters.actionTypes.join(','));
+    if (filters.actor) p.set('actor', filters.actor);
+    if (filters.q) p.set('q', filters.q);
+    if (filters.cursor) p.set('cursor', filters.cursor);
+    p.set('limit', String(filters.limit ?? 50));
+    return apiGet<CursorPage<TransactionLogRow>>(`/transactions?${p.toString()}`);
+  },
+};
+
 // ─── Notifications ───────────────────────────────────────────────────────────
 
 export const notifications = {
