@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import HomeClient from './home-client';
+import { HomeClient } from '@/components/home/HomeClient';
 
 export const metadata: Metadata = {
-  title: 'Dashboard - DaanaRX',
-  description: 'Overview of your clinic\'s medication inventory.',
+  title: 'DaanaRX',
+  description:
+    "FEFO-powered medication search across your clinic's active inventory.",
 };
 
 export default function Page() {
