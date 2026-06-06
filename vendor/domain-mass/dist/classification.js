@@ -1,3 +1,4 @@
+"use strict";
 // Medication Classification Guide.
 //
 // Verbatim from the MASS MVP spec § "Medication Classification Guide" table.
@@ -16,7 +17,11 @@
 //   3. Match where the query is contained in any common_examples entry
 //   4. Match where the query is contained in class_name
 //   5. Fallback to the "Hold" row (supervisor_review required)
-export const MASS_CLASSIFICATION_GUIDE = [
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MASS_CLASSIFICATION_GUIDE = void 0;
+exports.suggestLocationForClass = suggestLocationForClass;
+exports.findClassification = findClassification;
+exports.MASS_CLASSIFICATION_GUIDE = [
     {
         class_name: "CARDIO",
         common_examples: ["Lisinopril", "Metoprolol", "Amlodipine", "Furosemide"],
@@ -123,9 +128,9 @@ export const MASS_CLASSIFICATION_GUIDE = [
     },
 ];
 /** Quick lookup map by class_name (uppercased) for O(1) exact-match. */
-const BY_CLASS_NAME = new Map(MASS_CLASSIFICATION_GUIDE.map((e) => [e.class_name.toUpperCase(), e]));
+const BY_CLASS_NAME = new Map(exports.MASS_CLASSIFICATION_GUIDE.map((e) => [e.class_name.toUpperCase(), e]));
 /** Quick lookup map by location_code (uppercased). */
-const BY_LOCATION_CODE = new Map(MASS_CLASSIFICATION_GUIDE.map((e) => [e.location_code.toUpperCase(), e]));
+const BY_LOCATION_CODE = new Map(exports.MASS_CLASSIFICATION_GUIDE.map((e) => [e.location_code.toUpperCase(), e]));
 /**
  * Suggest a location bin code for a free-text class or medication name.
  *
@@ -133,7 +138,7 @@ const BY_LOCATION_CODE = new Map(MASS_CLASSIFICATION_GUIDE.map((e) => [e.locatio
  * matching). When no candidate is found, falls back to the "Hold" bin which
  * requires supervisor review per the classification guide.
  */
-export function suggestLocationForClass(query) {
+function suggestLocationForClass(query) {
     const holdEntry = BY_CLASS_NAME.get("HOLD");
     const trimmed = query?.trim() ?? "";
     if (trimmed.length === 0) {
@@ -166,7 +171,7 @@ export function suggestLocationForClass(query) {
         };
     }
     // 3. Query is contained in one of the common_examples (medication name match).
-    for (const entry of MASS_CLASSIFICATION_GUIDE) {
+    for (const entry of exports.MASS_CLASSIFICATION_GUIDE) {
         for (const example of entry.common_examples) {
             if (example.toUpperCase().includes(q) || q.includes(example.toUpperCase())) {
                 return {
@@ -179,7 +184,7 @@ export function suggestLocationForClass(query) {
         }
     }
     // 4. Query is contained in class_name (substring).
-    for (const entry of MASS_CLASSIFICATION_GUIDE) {
+    for (const entry of exports.MASS_CLASSIFICATION_GUIDE) {
         if (entry.class_name.toUpperCase().includes(q) ||
             q.includes(entry.class_name.toUpperCase())) {
             return {
@@ -199,7 +204,7 @@ export function suggestLocationForClass(query) {
     };
 }
 /** Return the classification entry for a given class_name (case-insensitive), or undefined. */
-export function findClassification(className) {
+function findClassification(className) {
     return BY_CLASS_NAME.get(className.trim().toUpperCase());
 }
 //# sourceMappingURL=classification.js.map

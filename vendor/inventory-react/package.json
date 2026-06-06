@@ -2,13 +2,12 @@
   "name": "@daana-health/inventory-react",
   "version": "0.1.0",
   "description": "Generic React components: schema-driven forms, tables, cart, search.",
-  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "default": "./dist/index.js"
     }
   },
   "files": [

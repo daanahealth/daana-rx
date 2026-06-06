@@ -1,3 +1,4 @@
+"use strict";
 // MASS_ITEM_TYPE — the single ItemTypeConfig that a backend or frontend
 // imports to register the MASS medication domain with the core platform.
 //
@@ -12,17 +13,19 @@
 // MASS consumers get a single source of truth. Generic platform code that
 // only needs the core fields can still consume it as `ItemTypeConfig` via
 // structural typing.
-import { medicationAttributeSchema } from "./attribute-schema.js";
-import { DRX_CODE_TEMPLATE } from "./code-template.js";
-import { MedicationLabel } from "./labels.js";
-import { massMedicationValidators } from "./validators.js";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MASS_ITEM_TYPE = exports.MASS_ITEM_TYPE_NAME = void 0;
+const attribute_schema_js_1 = require("./attribute-schema.js");
+const code_template_js_1 = require("./code-template.js");
+const labels_js_1 = require("./labels.js");
+const validators_js_1 = require("./validators.js");
 /** Stable item-type name. Must match the `item_types.name` row in the DB. */
-export const MASS_ITEM_TYPE_NAME = "medication";
-export const MASS_ITEM_TYPE = {
-    name: MASS_ITEM_TYPE_NAME,
-    codeFormatTemplate: DRX_CODE_TEMPLATE,
-    attributeSchema: medicationAttributeSchema,
-    validators: massMedicationValidators,
-    labelComponent: MedicationLabel,
+exports.MASS_ITEM_TYPE_NAME = "medication";
+exports.MASS_ITEM_TYPE = {
+    name: exports.MASS_ITEM_TYPE_NAME,
+    codeFormatTemplate: code_template_js_1.DRX_CODE_TEMPLATE,
+    attributeSchema: attribute_schema_js_1.medicationAttributeSchema,
+    validators: validators_js_1.massMedicationValidators,
+    labelComponent: labels_js_1.MedicationLabel,
 };
 //# sourceMappingURL=config.js.map

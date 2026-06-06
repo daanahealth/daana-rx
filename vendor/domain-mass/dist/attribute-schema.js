@@ -1,3 +1,4 @@
+"use strict";
 // Medication attribute schema for the MASS domain.
 //
 // Mirrors the "Required Fields" + "Editable Fields" sections of the MASS MVP spec.
@@ -12,8 +13,10 @@
 // that medications must have an expiry date is enforced by a domain validator
 // (see validators.ts → requireExpiryForMedications) which also encodes the spec's
 // fallback rule: "10 years before today's date".
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.medicationAttributeSchema = exports.MEDICATION_FORMS = void 0;
 /** Allowed values for `attributes.form`. Source: MASS MVP spec § Label Fields. */
-export const MEDICATION_FORMS = [
+exports.MEDICATION_FORMS = [
     "Bottle",
     "Card",
     "Cream",
@@ -22,7 +25,7 @@ export const MEDICATION_FORMS = [
     "Injection",
     "Other",
 ];
-export const medicationAttributeSchema = {
+exports.medicationAttributeSchema = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     type: "object",
     properties: {
@@ -40,7 +43,7 @@ export const medicationAttributeSchema = {
         },
         form: {
             type: "string",
-            enum: MEDICATION_FORMS,
+            enum: exports.MEDICATION_FORMS,
             description: "Physical form of the medication unit.",
         },
         specialty_class: {

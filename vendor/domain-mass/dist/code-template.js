@@ -1,3 +1,4 @@
+"use strict";
 // DRX code template + generator for the MASS medication item type.
 //
 // ─── Why Option 1? ──────────────────────────────────────────────────────────
@@ -50,7 +51,10 @@
 //   - Option 3 additionally requires a smaller counter ceiling — the platform
 //     should monitor `code_counters.next_value` for any location nearing 999
 //     and prompt a bin overflow before the format breaks.
-import { createTemplateCodeGenerator, } from "@daana-health/inventory-core";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DRX_CODE_TEMPLATE = void 0;
+exports.createDrxCodeGenerator = createDrxCodeGenerator;
+const inventory_core_1 = require("@daana-health/inventory-core");
 /**
  * Selected DRX code template for the MASS medication item type.
  *
@@ -59,14 +63,14 @@ import { createTemplateCodeGenerator, } from "@daana-health/inventory-core";
  *
  * The counter is per-location (see ADR §5 and `code_counters` SQL table).
  */
-export const DRX_CODE_TEMPLATE = "DRX-MASS-{LOCATION}-{counter:05d}";
+exports.DRX_CODE_TEMPLATE = "DRX-MASS-{LOCATION}-{counter:05d}";
 /**
  * Build a CodeGenerator for the MASS medication item type. The returned
  * generator is a thin closure over the shared template renderer; it does NOT
  * allocate counter values — that is the platform's responsibility (atomic
  * RPC against `code_counters`).
  */
-export function createDrxCodeGenerator() {
-    return createTemplateCodeGenerator(DRX_CODE_TEMPLATE);
+function createDrxCodeGenerator() {
+    return (0, inventory_core_1.createTemplateCodeGenerator)(exports.DRX_CODE_TEMPLATE);
 }
 //# sourceMappingURL=code-template.js.map
