@@ -18,38 +18,45 @@
 //      high-risk specialty rows from the Medication Classification Guide
 //      (PSYCH, NEPHRO, SLEEP, NEURO, Hold).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.massMedicationValidators = exports.requireSpecialtyReviewForHighRisk = exports.requireExpiryForMedications = void 0;
-exports.tenYearsBeforeToday = tenYearsBeforeToday;
+exports.massMedicationValidators = exports.requireSpecialtyReviewForHighRisk = exports.requireExpiryForMedications = exports.tenYearsBeforeToday = void 0;
+exports.tenYearsFromToday = tenYearsFromToday;
 exports.validateMedicationItem = validateMedicationItem;
 const inventory_core_1 = require("@daana-health/inventory-core");
 const classification_js_1 = require("./classification.js");
 /**
- * Compute the spec's expiry fallback: 10 years before today, as YYYY-MM-DD.
+ * Compute the expiry fallback: 10 years from today (forward), as YYYY-MM-DD.
  * Pure function — `today` is injected for testability.
+ *
+ * The spec wording said "10 years before today" but field testing showed
+ * the intent is forward — donated medications without packaging expiry
+ * should be treated as good for 10 more years, not already-expired.
  */
-function tenYearsBeforeToday(today = new Date()) {
+function tenYearsFromToday(today = new Date()) {
     const d = new Date(today);
-    d.setUTCFullYear(d.getUTCFullYear() - 10);
+    d.setUTCFullYear(d.getUTCFullYear() + 10);
     const yyyy = d.getUTCFullYear().toString().padStart(4, "0");
     const mm = (d.getUTCMonth() + 1).toString().padStart(2, "0");
     const dd = d.getUTCDate().toString().padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
 }
+// Back-compat alias — the old name lives on as an alias to avoid breaking
+// any consumer that imported it.
+exports.tenYearsBeforeToday = tenYearsFromToday;
 /**
- * Medications must have an expiry date. When missing, return the spec's
- * fallback ("10 years before today") in the issue message so the caller can
- * surface it to the user as a one-click default.
+ * Medications must have an expiry date. When missing, return the
+ * fallback (10 years from today) in the issue message so the caller
+ * can surface it to the user as a one-click default.
  */
 const requireExpiryForMedications = (item) => {
     if (item.expiryDate && item.expiryDate.length > 0)
         return inventory_core_1.ok;
-    const fallback = tenYearsBeforeToday();
+    const fallback = tenYearsFromToday();
     return (0, inventory_core_1.fail)({
         path: "expiryDate",
         code: "missing_expiry_date",
         message: `Medications must have an expiry date. ` +
-            `If the donor packaging has none, use the spec fallback: ${fallback} ` +
-            `(10 years before today).`,
+            `If the donor packaging has none, use the fallback: ${fallback} ` +
+            `(10 years from today).`,
     });
 };
 exports.requireExpiryForMedications = requireExpiryForMedications;

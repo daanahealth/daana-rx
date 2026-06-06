@@ -104,10 +104,9 @@ export default function CheckInPage() {
       setCounterLoading(true);
       setCounterError(null);
       try {
-        const res = await fetch(
-          `/api/items/next-code?location=${encodeURIComponent(loc)}`,
-          { cache: 'no-store' },
-        );
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+        const url = `${apiBase}/items/next-code?location=${encodeURIComponent(loc)}`;
+        const res = await fetch(url, { cache: 'no-store', credentials: 'include' });
         if (!res.ok) {
           throw new Error(`Counter API returned ${res.status}`);
         }
@@ -376,7 +375,7 @@ export default function CheckInPage() {
                       size="sm"
                       onClick={applyExpiryFallback}
                     >
-                      Use {expiryFallback} (10 years ago)
+                      Use {expiryFallback} (10 years from today)
                     </Button>
                   </AlertDescription>
                 </Alert>

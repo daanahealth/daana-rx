@@ -5,13 +5,23 @@
 // codes. Renders a "uncertain class" banner when the classification falls
 // back to "Hold".
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MASS_CLASSIFICATION_GUIDE,
   suggestLocationForClass,
   findClassification,
   type LocationSuggestion as DomainLocationSuggestion,
 } from '@daana-health/domain-mass';
+
+// Backend location row (from GET /api/locations/v2)
+interface BackendLocation {
+  id: string;
+  code: string;
+  specialty: string | null;
+  capacity: number;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 import {
   Select,
   SelectContent,
@@ -59,6 +69,41 @@ export function LocationSuggestion({
   // The selected entry — either the user's override or the suggestion.
   const selectedEntry = value ? findClassification(value) : suggestion?.entry;
 
+  // Live locations from the backend (configured in Settings). Falls back to
+  // the spec's example codes if the API is unreachable so the form is still
+  // usable during local dev.
+  const [backendLocations, setBackendLocations] = useState<BackendLocation[]>([]);
+  const [locationsError, setLocationsError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!API_URL) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/locations/v2`, { credentials: 'include' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const body = await r.json();
+        if (cancelled) return;
+        setBackendLocations(Array.isArray(body) ? body : body.locations ?? []);
+      } catch (e) {
+        if (cancelled) return;
+        setLocationsError(
+          'Configured locations could not be loaded — falling back to spec examples. Visit Settings → Locations.',
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const dropdownOptions: Array<{ code: string; hint: string }> =
+    backendLocations.length > 0
+      ? backendLocations.map((l) => ({ code: l.code, hint: l.specialty ?? '' }))
+      : MASS_CLASSIFICATION_GUIDE.map((e) => ({
+          code: e.location_code,
+          hint: e.common_examples.slice(0, 2).join(', '),
+        }));
+
   return (
     <div className="space-y-3">
       <Label htmlFor="location_code" className="text-sm font-semibold flex items-center gap-2">
@@ -86,17 +131,18 @@ export function LocationSuggestion({
           <SelectValue placeholder="Pick a location bin" />
         </SelectTrigger>
         <SelectContent>
-          {MASS_CLASSIFICATION_GUIDE.map((entry) => (
-            <SelectItem key={entry.location_code} value={entry.location_code}>
-              <span className="font-mono mr-2">{entry.location_code}</span>
-              <span className="text-muted-foreground text-xs">
-                {entry.common_examples.slice(0, 2).join(', ')}
-                {entry.common_examples.length > 2 ? '…' : ''}
-              </span>
+          {dropdownOptions.map((opt) => (
+            <SelectItem key={opt.code} value={opt.code}>
+              <span className="font-mono mr-2">{opt.code}</span>
+              {opt.hint && <span className="text-muted-foreground text-xs">{opt.hint}</span>}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+
+      {locationsError && (
+        <p className="text-xs text-amber-700">{locationsError}</p>
+      )}
 
       {isHoldFallback && (
         <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/30">

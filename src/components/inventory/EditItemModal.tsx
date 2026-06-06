@@ -7,7 +7,7 @@
 //   - unit
 //   - form
 //   - location
-//   - expiry date (if applicable; fallback: 10 years before today)
+//   - expiry date (if applicable; fallback: 10 years from today)
 //   - quantity (if applicable)
 //   - status
 //   - notes
@@ -297,7 +297,7 @@ export function EditItemModal({ item, open, onOpenChange, onSaved, locations }: 
             </div>
             {usingFallback ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                Using spec fallback (10 years before today): {expiryFallback}
+                Using fallback (10 years from today): {expiryFallback}
               </p>
             ) : null}
           </Field>

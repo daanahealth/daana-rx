@@ -217,7 +217,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
           id="expiry_date"
           label="Expiry date"
           error={errors.expiry_date?.message}
-          hint="If donor packaging has none, leave blank — system will offer the 10-year fallback."
+          hint="If donor packaging has none, leave blank — system will offer the 10-year-forward fallback."
         >
           <Input
             id="expiry_date"

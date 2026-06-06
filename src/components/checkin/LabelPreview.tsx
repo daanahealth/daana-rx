@@ -28,8 +28,20 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-3 daana-label-preview">
+      {/* Print-only stylesheet: hide everything else on the page so the printer
+          only emits the label inside .daana-label-preview. Tailwind's `print:`
+          utilities only affect classed elements; this rule isolates the whole
+          page. */}
+      <style jsx global>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .daana-label-preview, .daana-label-preview * { visibility: visible !important; }
+          .daana-label-preview { position: absolute; left: 0; top: 0; width: 100%; padding: 24px; }
+          .daana-label-preview .no-print { display: none !important; }
+        }
+      `}</style>
+      <div className="flex items-center justify-between gap-3 flex-wrap no-print">
         <div className="text-sm font-semibold">Label preview</div>
         <Button variant="outline" size="sm" onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-1" /> Print preview
@@ -40,7 +52,7 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
         <MedicationLabel item={item} />
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground no-print">
         Write this label onto a pre-printed blank, then place the medication in the bin.
       </p>
     </div>

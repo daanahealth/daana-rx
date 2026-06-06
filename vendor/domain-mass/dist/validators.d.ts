@@ -1,13 +1,18 @@
 import { type Item, type ValidationResult, type Validator } from "@daana-health/inventory-core";
 /**
- * Compute the spec's expiry fallback: 10 years before today, as YYYY-MM-DD.
+ * Compute the expiry fallback: 10 years from today (forward), as YYYY-MM-DD.
  * Pure function — `today` is injected for testability.
+ *
+ * The spec wording said "10 years before today" but field testing showed
+ * the intent is forward — donated medications without packaging expiry
+ * should be treated as good for 10 more years, not already-expired.
  */
-export declare function tenYearsBeforeToday(today?: Date): string;
+export declare function tenYearsFromToday(today?: Date): string;
+export declare const tenYearsBeforeToday: typeof tenYearsFromToday;
 /**
- * Medications must have an expiry date. When missing, return the spec's
- * fallback ("10 years before today") in the issue message so the caller can
- * surface it to the user as a one-click default.
+ * Medications must have an expiry date. When missing, return the
+ * fallback (10 years from today) in the issue message so the caller
+ * can surface it to the user as a one-click default.
  */
 export declare const requireExpiryForMedications: Validator<Item>;
 /**
