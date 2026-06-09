@@ -32,8 +32,8 @@ jobs:
       - name: Playwright smoke + user-flow crawl
         run: npx playwright test --config e2e/playwright.config.ts e2e/smoke.spec.ts e2e/user-flow.spec.ts --reporter=list
 
-      - name: Browser check-in (self-provisioned account)
-        run: npx playwright test --config e2e/playwright.config.ts e2e/checkin-flow.spec.ts --reporter=list
+      - name: Browser flows (check-in+QR label, search, checkout, reports, settings)
+        run: npx playwright test --config e2e/playwright.config.ts e2e/all-flows.spec.ts e2e/checkin-flow.spec.ts --reporter=list
 
       - name: Upload screenshots
         if: always()
