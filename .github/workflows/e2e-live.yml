@@ -1,13 +1,12 @@
 name: E2E (live)
 
 # Runs the end-to-end + browser specs against the LIVE deployment.
-# Manual-only: it hits production (daanahealth-gateway / daanahealth-rx),
-# requires credential secrets, and creates test data (a throwaway clinic via
-# functional-api, and a demo check-in item via checkin-flow) that should be
-# cleaned up periodically. Not run on push to avoid unattended prod writes.
-#
-# Required repo secrets:
-#   E2E_EMAIL, E2E_PASSWORD  — a real account for the browser check-in spec.
+# Manual-only: it hits production (daanahealth-gateway / daanahealth-rx) and
+# creates test data — each spec self-provisions its own throwaway clinic
+# (e2e_*@daana-test.local), so NO credential secrets are required. Those
+# throwaway clinics + their items accumulate and should be purged periodically
+# (e.g. delete from public.clinics where name like 'E2E%' and cascade). Not run
+# on push, to avoid unattended prod writes.
 
 on:
   workflow_dispatch:
@@ -33,11 +32,8 @@ jobs:
       - name: Playwright smoke + user-flow crawl
         run: npx playwright test --config e2e/playwright.config.ts e2e/smoke.spec.ts e2e/user-flow.spec.ts --reporter=list
 
-      - name: Browser check-in (real account)
+      - name: Browser check-in (self-provisioned account)
         run: npx playwright test --config e2e/playwright.config.ts e2e/checkin-flow.spec.ts --reporter=list
-        env:
-          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Upload screenshots
         if: always()
