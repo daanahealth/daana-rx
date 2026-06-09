@@ -13,6 +13,7 @@
 // Esc; emits no side effects.
 
 import { useEffect, useState } from 'react';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import type { Item, Transaction, TransactionAction } from '@daana-health/inventory-core';
 import {
@@ -113,8 +114,8 @@ export function TransactionHistoryDrawer({ item, open, onOpenChange }: Transacti
     setTransactions([]);
     (async () => {
       try {
-        const res = await fetch(`/api/items/${item.id}/transactions`, {
-          credentials: 'include',
+        const res = await fetch(`${API_BASE}/inventory/items/${item.id}/transactions`, {
+          headers: authHeaders(),
         });
         if (!res.ok) {
           if (res.status === 404) {

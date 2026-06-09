@@ -15,6 +15,11 @@ import type { ItemStatus, CartStatus } from '@daana-health/inventory-core';
 import type { CartItemView, ServerCart } from '@/components/cart/CartContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Gateway service prefixes. Carts/reports live in the transaction service;
+// items/locations live in the inventory service. The gateway strips the
+// prefix before forwarding (e.g. /transactions/carts -> transaction svc /carts).
+const TX_URL = `${API_URL}/transactions`;
+const INV_URL = `${API_URL}/inventory`;
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -104,7 +109,7 @@ export async function searchItems(params: SearchItemsParams): Promise<PlatformIt
   search.set('status', params.status ?? 'active');
   search.set('sort', 'fefo');
   if (params.limit !== undefined) search.set('limit', String(params.limit));
-  const res = await fetch(`${API_URL}/items?${search.toString()}`, {
+  const res = await fetch(`${INV_URL}/items?${search.toString()}`, {
     headers: authHeaders(),
   });
   if (!res.ok) {
@@ -179,7 +184,7 @@ function toServerCart(dto: CartDTO): ServerCart {
 }
 
 export async function createCart(): Promise<ServerCart> {
-  const res = await fetch(`${API_URL}/carts`, {
+  const res = await fetch(`${TX_URL}/carts`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -191,7 +196,7 @@ export async function createCart(): Promise<ServerCart> {
 }
 
 export async function getCart(cartId: string): Promise<ServerCart> {
-  const res = await fetch(`${API_URL}/carts/${cartId}`, { headers: authHeaders() });
+  const res = await fetch(`${TX_URL}/carts/${cartId}`, { headers: authHeaders() });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error || `Get cart failed: ${res.status}`);
@@ -215,7 +220,7 @@ export async function addItemToCart(
     qs.set('override', 'true');
     if (opts.note) qs.set('note', opts.note);
   }
-  const url = `${API_URL}/carts/${cartId}/items${qs.toString() ? `?${qs}` : ''}`;
+  const url = `${TX_URL}/carts/${cartId}/items${qs.toString() ? `?${qs}` : ''}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: authHeaders(),
@@ -244,7 +249,7 @@ export async function addItemToCart(
 }
 
 export async function removeItemFromCart(cartId: string, itemId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/carts/${cartId}/items/${itemId}`, {
+  const res = await fetch(`${TX_URL}/carts/${cartId}/items/${itemId}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -255,7 +260,7 @@ export async function removeItemFromCart(cartId: string, itemId: string): Promis
 }
 
 export async function submitCart(cartId: string): Promise<ServerCart> {
-  const res = await fetch(`${API_URL}/carts/${cartId}/submit`, {
+  const res = await fetch(`${TX_URL}/carts/${cartId}/submit`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -267,7 +272,7 @@ export async function submitCart(cartId: string): Promise<ServerCart> {
 }
 
 export async function approveCart(cartId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/carts/${cartId}/approve`, {
+  const res = await fetch(`${TX_URL}/carts/${cartId}/approve`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -278,7 +283,7 @@ export async function approveCart(cartId: string): Promise<void> {
 }
 
 export async function rejectCart(cartId: string, reason: string): Promise<void> {
-  const res = await fetch(`${API_URL}/carts/${cartId}/reject`, {
+  const res = await fetch(`${TX_URL}/carts/${cartId}/reject`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ reason }),
@@ -291,7 +296,7 @@ export async function rejectCart(cartId: string, reason: string): Promise<void> 
 
 export async function listPendingCarts(): Promise<ServerCart[]> {
   // Endpoint convention: GET /carts?status=pending_approval. Returns an array.
-  const res = await fetch(`${API_URL}/carts?status=pending_approval`, {
+  const res = await fetch(`${TX_URL}/carts?status=pending_approval`, {
     headers: authHeaders(),
   });
   if (!res.ok) {

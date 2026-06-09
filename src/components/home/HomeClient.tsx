@@ -10,6 +10,7 @@ import { useDebouncedSearch } from './useDebouncedSearch';
 import type { RootState } from '@/store';
 import type { Item } from '@daana-health/inventory-core';
 import { cn } from '@/lib/utils';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 
 /**
  * MVP Home page — feels like Claude.ai but in Daana teal with the liquid glass
@@ -45,9 +46,9 @@ export function HomeClient() {
     const controller = new AbortController();
     setResults({ kind: 'loading' });
 
-    const url = `/api/items?q=${encodeURIComponent(debouncedQuery)}&status=active`;
+    const url = `${API_BASE}/inventory/items?q=${encodeURIComponent(debouncedQuery)}&status=active`;
 
-    fetch(url, { signal: controller.signal, cache: 'no-store' })
+    fetch(url, { signal: controller.signal, cache: 'no-store', headers: authHeaders() })
       .then(async (res) => {
         if (res.status === 404) {
           setResults({ kind: 'api-missing' });

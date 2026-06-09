@@ -237,18 +237,18 @@ export interface TransactionFilters {
 
 export const reports = {
   expiring: (window: 30 | 60 | 90 = 30) =>
-    apiGet<{ window: number; rows: ExpiringItem[] }>(`/reports/expiring?window=${window}`),
+    apiGet<{ window: number; rows: ExpiringItem[] }>(`/transactions/reports/expiring?window=${window}`),
 
-  capacity: () => apiGet<{ rows: CapacityBin[] }>('/reports/capacity'),
+  capacity: () => apiGet<{ rows: CapacityBin[] }>('/transactions/reports/capacity'),
 
-  highUse: () => apiGet<{ rows: HighUseRow[] }>('/reports/high-use'),
+  highUse: () => apiGet<{ rows: HighUseRow[] }>('/transactions/reports/high-use'),
 
-  recentlyRemoved: () => apiGet<{ rows: RecentlyRemovedRow[] }>('/reports/recently-removed'),
+  recentlyRemoved: () => apiGet<{ rows: RecentlyRemovedRow[] }>('/transactions/reports/recently-removed'),
 
-  inventoryEdits: () => apiGet<{ rows: InventoryEditRow[] }>('/reports/inventory-edits'),
+  inventoryEdits: () => apiGet<{ rows: InventoryEditRow[] }>('/transactions/reports/inventory-edits'),
 
   recentlyCheckedOut: () =>
-    apiGet<{ rows: TransactionLogRow[] }>('/reports/recently-checked-out'),
+    apiGet<{ rows: TransactionLogRow[] }>('/transactions/reports/recently-checked-out'),
 
   transactionLog: (filters: TransactionFilters = {}) => {
     const p = new URLSearchParams();

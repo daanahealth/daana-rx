@@ -108,7 +108,7 @@ export function LocationsManager() {
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/locations`, { headers: authHeaders() });
+      const res = await fetch(`${API_URL}/inventory/locations`, { headers: authHeaders() });
       if (res.status === 404) {
         setEndpointPending(true);
         setLocations([]);
@@ -170,9 +170,10 @@ export function LocationsManager() {
         item_type: itemType,
       };
       const url = editing
-        ? `${API_URL}/api/locations/${editing.locationId}`
-        : `${API_URL}/api/locations`;
-      const method = editing ? 'PATCH' : 'POST';
+        ? `${API_URL}/inventory/locations/${editing.locationId}`
+        : `${API_URL}/inventory/locations`;
+      // Backend exposes PUT for update, POST for create (no PATCH route).
+      const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
         headers: authHeaders(),
@@ -201,10 +202,10 @@ export function LocationsManager() {
   async function handleDeactivate(row: LocationRow) {
     if (!confirm(`Deactivate ${row.code}? It will be hidden from intake suggestions.`)) return;
     try {
-      const res = await fetch(`${API_URL}/api/locations/${row.locationId}`, {
-        method: 'PATCH',
+      // Backend soft-deactivates via DELETE /locations/:id (sets deactivated_at server-side).
+      const res = await fetch(`${API_URL}/inventory/locations/${row.locationId}`, {
+        method: 'DELETE',
         headers: authHeaders(),
-        body: JSON.stringify({ deactivated_at: new Date().toISOString() }),
       });
       if (res.status === 404) {
         toast({ title: 'Endpoint pending', description: 'Deactivation API not yet available.' });

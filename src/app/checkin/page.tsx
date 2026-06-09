@@ -30,6 +30,7 @@ import {
   type MedicationAttributes,
 } from '@daana-health/domain-mass';
 import type { Item } from '@daana-health/inventory-core';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 import { AppShell } from '../../components/layout/AppShell';
 import {
   MedicationForm,
@@ -104,9 +105,8 @@ export default function CheckInPage() {
       setCounterLoading(true);
       setCounterError(null);
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
-        const url = `${apiBase}/items/next-code?location=${encodeURIComponent(loc)}`;
-        const res = await fetch(url, { cache: 'no-store', credentials: 'include' });
+        const url = `${API_BASE}/inventory/items/next-code?location=${encodeURIComponent(loc)}`;
+        const res = await fetch(url, { cache: 'no-store', headers: authHeaders() });
         if (!res.ok) {
           throw new Error(`Counter API returned ${res.status}`);
         }
@@ -246,18 +246,18 @@ export default function CheckInPage() {
         dateReceived: values.date_received,
         attributes: previewItem.item.attributes,
       };
-      const res = await fetch('/api/items', {
+      const res = await fetch(`${API_BASE}/inventory/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload),
       });
-      // Backend may not exist yet; treat non-2xx as a soft success during the
-      // FE-only build so the UX flow can be demoed. The error path is still
-      // surfaced via the toast.
+      // Surface a real failure (the write goes to the inventory service via the
+      // gateway). Kept as a soft toast so a transient error still lets the UX
+      // flow complete, but the message reflects the actual endpoint.
       if (!res.ok) {
         toast({
-          title: 'Backend not yet wired',
-          description: `POST /api/items returned ${res.status}. Recording locally for demo.`,
+          title: 'Check-in not saved',
+          description: `POST /inventory/items returned ${res.status}.`,
         });
       }
       setCreatedUnit({

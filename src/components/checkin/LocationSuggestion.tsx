@@ -12,6 +12,7 @@ import {
   findClassification,
   type LocationSuggestion as DomainLocationSuggestion,
 } from '@daana-health/domain-mass';
+import { authHeaders } from '@/lib/apiClient';
 
 // Backend location row (from GET /api/locations/v2)
 interface BackendLocation {
@@ -79,7 +80,7 @@ export function LocationSuggestion({
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`${API_URL}/locations/v2`, { credentials: 'include' });
+        const r = await fetch(`${API_URL}/inventory/locations/v2`, { headers: authHeaders() });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const body = await r.json();
         if (cancelled) return;

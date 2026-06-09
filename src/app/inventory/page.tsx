@@ -38,6 +38,7 @@ import { RemoveItemModal } from '../../components/inventory/RemoveItemModal';
 import { TransactionHistoryDrawer } from '../../components/inventory/TransactionHistoryDrawer';
 import type { RootState } from '../../store';
 import { Button } from '@/components/ui/button';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -178,8 +179,8 @@ export default function InventoryPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = `/api/items${queryString ? `?${queryString}` : ''}`;
-      const res = await fetch(url, { credentials: 'include' });
+      const url = `${API_BASE}/inventory/items${queryString ? `?${queryString}` : ''}`;
+      const res = await fetch(url, { headers: authHeaders() });
       if (!res.ok) {
         // 404 = endpoint not wired yet → treat as empty inventory, not error.
         if (res.status === 404) {
@@ -187,7 +188,7 @@ export default function InventoryPage() {
           return;
         }
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `GET /api/items failed: ${res.status}`);
+        throw new Error(body.error || `GET /inventory/items failed: ${res.status}`);
       }
       const body = (await res.json()) as ListResponse | InventoryRow[];
       const list = Array.isArray(body) ? body : body.items ?? [];
@@ -211,7 +212,7 @@ export default function InventoryPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/locations', { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/inventory/locations`, { headers: authHeaders() });
         if (!res.ok) return;
         const body = (await res.json()) as { locations?: Location[] } | Location[];
         const list = Array.isArray(body) ? body : body.locations ?? [];
@@ -233,11 +234,10 @@ export default function InventoryPage() {
     try {
       // Step 1: add to current cart. The backend resolves the caller's active
       // cart (creating one if needed) when the special id "current" is used.
-      const addRes = await fetch(`/api/carts/current/items`, {
+      const addRes = await fetch(`${API_BASE}/transactions/carts/current/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: checkoutTarget.id }),
+        headers: authHeaders(),
+        body: JSON.stringify({ item_id: checkoutTarget.id }),
       });
       if (!addRes.ok && addRes.status !== 404) {
         const body = await addRes.json().catch(() => ({}));
@@ -247,10 +247,9 @@ export default function InventoryPage() {
       const cartId = addBody.cart?.id ?? 'current';
 
       // Step 2: immediately approve for superadmin.
-      const approveRes = await fetch(`/api/carts/${cartId}/approve`, {
+      const approveRes = await fetch(`${API_BASE}/transactions/carts/${cartId}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
       });
       if (!approveRes.ok && approveRes.status !== 404) {
         const body = await approveRes.json().catch(() => ({}));
