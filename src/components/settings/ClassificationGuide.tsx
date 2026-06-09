@@ -127,7 +127,7 @@ export function ClassificationGuide() {
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/settings/classification`, {
+      const res = await fetch(`${API_URL}/inventory/settings/classification`, {
         headers: authHeaders(),
       });
       if (res.status === 404) {
@@ -180,7 +180,7 @@ export function ClassificationGuide() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/settings/classification`, {
+      const res = await fetch(`${API_URL}/inventory/settings/classification`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({ entries: next }),

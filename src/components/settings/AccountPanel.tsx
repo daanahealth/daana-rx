@@ -71,7 +71,7 @@ export function AccountPanel({ onJumpToUsers }: AccountPanelProps) {
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}/api/account/password`, {
+      const res = await fetch(`${API_URL}/auth/account/password`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
