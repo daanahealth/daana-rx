@@ -93,6 +93,29 @@ interface InventoryRow extends Item {
   locationCode?: string | null; // denormalized for display when locationId resolves
 }
 
+// The inventory API returns snake_case rows (+ an embedded location); the table
+// reads the camelCase Item shape. Map raw rows so Location / DRX code / expiry /
+// dates render instead of "—".
+function mapInventoryRow(raw: any): InventoryRow {
+  return {
+    id: raw.id,
+    typeId: raw.type_id,
+    status: raw.status,
+    locationId: raw.location_id ?? null,
+    locationCode: raw.location?.code ?? raw.location_code ?? null,
+    expiryDate: raw.expiry_date ?? null,
+    unitCode: raw.unit_code,
+    attributes: raw.attributes ?? {},
+    createdAt: raw.created_at,
+    createdBy: raw.created_by ?? null,
+    lastEditedAt: raw.last_edited_at ?? null,
+    lastEditedBy: raw.last_edited_by ?? null,
+    removedAt: raw.removed_at ?? null,
+    removedBy: raw.removed_by ?? null,
+    removedReason: raw.removed_reason ?? null,
+  } as InventoryRow;
+}
+
 interface ListResponse {
   items: InventoryRow[];
   total?: number;
@@ -192,7 +215,7 @@ export default function InventoryPage() {
       }
       const body = (await res.json()) as ListResponse | InventoryRow[];
       const list = Array.isArray(body) ? body : body.items ?? [];
-      setRows(list);
+      setRows(list.map(mapInventoryRow));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load inventory';
       setError(msg);
