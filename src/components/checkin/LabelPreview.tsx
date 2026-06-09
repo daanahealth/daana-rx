@@ -1,12 +1,12 @@
 'use client';
 
-// LabelPreview — renders the MASS medication label using the
-// `MedicationLabel` component from @daana-health/domain-mass. Wraps it with a
-// print button driven by browser-native window.print() (the label component
-// uses Tailwind's `print:` utilities for print styling).
+// LabelPreview — renders the printable medication label for Check In step 6.
+// Uses the rich UnitLabel component (QR code + all medication fields) and prints
+// it at a real label size (4in x 2in) instead of a full page. The QR encodes
+// the DaanaRX unit code so the label can be scanned back to the unit.
 
 import type { Item } from '@daana-health/inventory-core';
-import { MedicationLabel } from '@daana-health/domain-mass';
+import { UnitLabel } from '@/components/unit-label/UnitLabel';
 import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,31 +16,50 @@ export interface LabelPreviewProps {
   readonly onPrint?: () => void;
 }
 
+function attrStr(attrs: Record<string, unknown>, key: string): string | null {
+  const v = attrs[key];
+  return typeof v === 'string' ? v : v == null ? null : String(v);
+}
+
 export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
+  const attrs = (item.attributes ?? {}) as Record<string, unknown>;
+  const qty = attrStr(attrs, 'quantity') ?? '1';
+
   const handlePrint = () => {
-    if (onPrint) {
-      onPrint();
-      return;
-    }
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
+    if (onPrint) return onPrint();
+    if (typeof window !== 'undefined') window.print();
   };
 
   return (
     <div className="space-y-3 daana-label-preview">
-      {/* Print-only stylesheet: hide everything else on the page so the printer
-          only emits the label inside .daana-label-preview. Tailwind's `print:`
-          utilities only affect classed elements; this rule isolates the whole
-          page. */}
+      {/* Print: isolate the label and size the page to a 4x2in label sheet so it
+          doesn't fill a full page. Only the .print-label region is emitted. */}
       <style jsx global>{`
         @media print {
-          body * { visibility: hidden !important; }
-          .daana-label-preview, .daana-label-preview * { visibility: visible !important; }
-          .daana-label-preview { position: absolute; left: 0; top: 0; width: 100%; padding: 24px; }
-          .daana-label-preview .no-print { display: none !important; }
+          @page {
+            size: 4in 2in;
+            margin: 0;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          .daana-label-preview .print-label,
+          .daana-label-preview .print-label * {
+            visibility: visible !important;
+          }
+          .daana-label-preview .print-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 384px !important;
+            height: 192px !important;
+          }
+          .daana-label-preview .no-print {
+            display: none !important;
+          }
         }
       `}</style>
+
       <div className="flex items-center justify-between gap-3 flex-wrap no-print">
         <div className="text-sm font-semibold">Label preview</div>
         <Button variant="outline" size="sm" onClick={handlePrint}>
@@ -49,7 +68,19 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
       </div>
 
       <div className="overflow-x-auto print:overflow-visible">
-        <MedicationLabel item={item} />
+        <div className="print-label">
+          <UnitLabel
+            unitId={item.unitCode || ''}
+            medicationName={attrStr(attrs, 'medication_name') ?? '—'}
+            strength={attrStr(attrs, 'dosage')}
+            strengthUnit={attrStr(attrs, 'unit')}
+            form={attrStr(attrs, 'form')}
+            availableQuantity={qty}
+            totalQuantity={qty}
+            expiryDate={item.expiryDate ?? null}
+            locationName={(item as unknown as { locationCode?: string | null }).locationCode ?? null}
+          />
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground no-print">
