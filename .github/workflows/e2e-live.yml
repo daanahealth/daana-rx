@@ -42,3 +42,20 @@ jobs:
           name: e2e-screenshots
           path: e2e/screenshots
           if-no-files-found: ignore
+
+      # Purge the throwaway test data this run created (E2E% clinics, demo items,
+      # etc.). Runs even if the tests failed. Calls a scoped, service_role-only
+      # SECURITY DEFINER function — needs the SUPABASE_* secrets.
+      - name: Clean up E2E test data
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — skipping cleanup"; exit 0
+          fi
+          curl -fsS -X POST "$SUPABASE_URL/rest/v1/rpc/cleanup_e2e_test_data" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" -d '{}'
