@@ -115,15 +115,17 @@ class DrugApiService {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached;
 
-      // Clean query for NDC search (numbers only)
+      // Clean query for NDC search (numbers and dashes only)
       const cleanedNDC = query.replace(/[^0-9-]/g, '');
+      const ndcDigits = cleanedNDC.replace(/-/g, '');
 
       let searchQuery = '';
 
-      // If query looks like an NDC (10-11 digits), search by NDC
-      // NDC format: product_ndc field without openfda prefix
-      if (cleanedNDC.length >= 10) {
-        searchQuery = `product_ndc:${cleanedNDC}*`;
+      // If query looks like an NDC (8+ digits), search by NDC.
+      // OpenFDA stores product_ndc *with* a dash (e.g. "79481-0503"),
+      // so we keep the dash if present and quote the value.
+      if (ndcDigits.length >= 8 && /^[0-9-]+$/.test(query.trim())) {
+        searchQuery = `product_ndc:"${cleanedNDC}"`;
       } else {
         // Search by brand name or generic name
         // Clean the query to avoid issues with special characters
@@ -300,9 +302,12 @@ class DrugApiService {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached[0] || null;
 
-      const cleanedNDC = ndc.replace(/[^0-9]/g, '');
+      // Preserve dashes (OpenFDA product_ndc is stored with dash, e.g. "79481-0503").
+      // Product NDCs are 8–10 digits (4-4, 5-3, or 5-4 segmentation).
+      const cleanedNDC = ndc.replace(/[^0-9-]/g, '');
+      const ndcDigits = cleanedNDC.replace(/-/g, '');
 
-      if (!cleanedNDC || cleanedNDC.length < 10) {
+      if (!ndcDigits || ndcDigits.length < 8) {
         console.warn(`OpenFDA: Invalid NDC format: ${ndc}`);
         return null;
       }
@@ -313,7 +318,7 @@ class DrugApiService {
         `${OPENFDA_BASE_URL}/drug/ndc.json`,
         {
           params: {
-            search: `product_ndc:${cleanedNDC}`,
+            search: `product_ndc:"${cleanedNDC}"`,
             limit: 1,
           },
           timeout: 10000,
@@ -427,7 +432,11 @@ class DrugApiService {
         }
       );
 
-      const classId = response.data?.rxclassMinConceptList?.rxclassMinConcept?.[0]?.classId;
+      // RxNav returns rxclassDrugInfoList.rxclassDrugInfo[], with each entry
+      // exposing the class via rxclassMinConceptItem.{classId,className}.
+      const drugInfo = response.data?.rxclassDrugInfoList?.rxclassDrugInfo?.[0];
+      const classId = drugInfo?.rxclassMinConceptItem?.classId;
+      const className = drugInfo?.rxclassMinConceptItem?.className;
       if (!classId) return [];
 
       // Get other drugs in the same class
@@ -450,7 +459,7 @@ class DrugApiService {
           rxcui: m.minConcept.rxcui,
           name: m.minConcept.name,
           relationship: 'same_class',
-          description: response.data?.rxclassMinConceptList?.rxclassMinConcept?.[0]?.className,
+          description: className,
         }));
     } catch (error) {
       console.error('Error getting drugs by class:', error);
@@ -481,13 +490,16 @@ class DrugApiService {
 
       if (ingredientConcepts.length === 0) return [];
 
-      // Get drugs containing the first ingredient
+      // Get drugs containing the first ingredient.
+      // RxNav expects space-separated TTYs ("SCD SBD"). Axios URL-encodes '+'
+      // to '%2B' which RxNav rejects, so pass a space (encoded as '%20'/'+'
+      // depending on encoder, both of which RxNav accepts as a separator).
       const ingredientRxcui = ingredientConcepts[0].rxcui;
       const drugsResponse = await axios.get(
         `${RXNAV_BASE_URL}/rxcui/${ingredientRxcui}/related.json`,
         {
           params: {
-            tty: 'SCD+SBD', // Semantic Clinical Drug + Semantic Branded Drug
+            tty: 'SCD SBD', // Semantic Clinical Drug + Semantic Branded Drug
           },
           timeout: 5000,
         }
@@ -546,8 +558,18 @@ class DrugApiService {
       const genericName = openfda.generic_name?.[0] || result.generic_name || openfda.substance_name?.[0] || '';
       const ndc = result.product_ndc || openfda.product_ndc?.[0] || '';
       const form = this.normalizeForm(openfda.dosage_form?.[0] || result.dosage_form || 'Tablet');
-      const strengthStr = openfda.strength?.[0] || result.strength || '0mg';
+
+      // Strength: prefer openfda.strength, fall back to root.strength, then
+      // active_ingredients[].strength (e.g. "200 mg/1"). Most NDC records only
+      // populate active_ingredients, so without this fallback strength is always 0.
+      const ingredientStrength = Array.isArray(result.active_ingredients) && result.active_ingredients.length > 0
+        ? result.active_ingredients[0].strength
+        : undefined;
+      const strengthStr = openfda.strength?.[0] || result.strength || ingredientStrength || '0mg';
       const { strength, unit } = this.parseStrength(strengthStr);
+
+      // Route lives at root for most NDC records; openfda.route is often null.
+      const routes: string[] = openfda.route || (Array.isArray(result.route) ? result.route : []);
 
       return {
         source: 'openfda',
@@ -557,8 +579,8 @@ class DrugApiService {
         strengthUnit: unit,
         ndcId: ndc,
         form,
-        manufacturer: openfda.manufacturer_name?.[0],
-        routes: openfda.route || [],
+        manufacturer: openfda.manufacturer_name?.[0] || result.labeler_name,
+        routes,
         confidence: 90, // openFDA is highly reliable
       };
     });
