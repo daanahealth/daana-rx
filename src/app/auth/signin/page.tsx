@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../../../store/authSlice';
 import { auth } from '@/lib/api';
+import { API_BASE } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,6 +91,14 @@ function SignInContent() {
   const [loading, setLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [expirationAlert, setExpirationAlert] = useState<ExpirationInfo | null>(null);
+
+  // Warm the backend fleet in parallel the moment the sign-in screen mounts.
+  // Render free-tier services spin down after ~15 min idle; without this the
+  // post-login fan-out wakes them one-by-one and the app appears to hang on
+  // "Loading clinic information…". Fire-and-forget — never blocks the UI.
+  useEffect(() => {
+    fetch(`${API_BASE}/warmup`).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const reason = searchParams?.get('reason');
