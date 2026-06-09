@@ -16,6 +16,19 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+/** Gateway base URL (NEXT_PUBLIC_API_URL in prod). */
+export const API_BASE = API_URL;
+
+/**
+ * Auth headers (Bearer token + x-clinic-id) for fetches made outside the
+ * apiGet/apiPost helpers — e.g. components that need custom status handling.
+ * Backend services authenticate via this Bearer token, NOT cookies, so any
+ * call to the gateway must send these instead of `credentials: 'include'`.
+ */
+export function authHeaders(): Record<string, string> {
+  return getHeaders();
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { headers: getHeaders() });
   if (!res.ok) {

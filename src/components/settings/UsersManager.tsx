@@ -100,7 +100,10 @@ export function UsersManager() {
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/users`, { headers: authHeaders() });
+      // Auth service exposes GET /users. (Write ops below — create/update/
+      // deactivate/upgrade — have no backend route yet; they degrade to
+      // "Endpoint pending" until the auth service adds them.)
+      const res = await fetch(`${API_URL}/auth/users`, { headers: authHeaders() });
       if (res.status === 404) {
         setEndpointPending(true);
         // Fall back to the legacy /auth/users endpoint when /api/users isn’t live.

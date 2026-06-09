@@ -19,6 +19,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import type { Item } from '@daana-health/inventory-core';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -102,10 +103,9 @@ export function RemoveItemModal({ item, open, onOpenChange, onRemoved }: RemoveI
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch(`/api/items/${item.id}/remove`, {
+      const res = await fetch(`${API_BASE}/inventory/items/${item.id}/remove`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
         body: JSON.stringify({
           reason,
           ...(note.trim().length > 0 ? { note: note.trim() } : {}),
@@ -113,7 +113,7 @@ export function RemoveItemModal({ item, open, onOpenChange, onRemoved }: RemoveI
       });
       if (!res.ok) {
         const bodyErr = await res.json().catch(() => ({}));
-        throw new Error(bodyErr.error || `POST /api/items/${item.id}/remove failed: ${res.status}`);
+        throw new Error(bodyErr.error || `POST /inventory/items/${item.id}/remove failed: ${res.status}`);
       }
       toast({
         title: 'Item removed',

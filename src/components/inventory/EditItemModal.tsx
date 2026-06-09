@@ -28,6 +28,7 @@ import {
   tenYearsBeforeToday,
 } from '@daana-health/domain-mass';
 import type { Item, ItemStatus, Location } from '@daana-health/inventory-core';
+import { API_BASE, authHeaders } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -183,15 +184,14 @@ export function EditItemModal({ item, open, onOpenChange, onSaved, locations }: 
         expiryDate: form.expiryDate,
         status: form.status,
       };
-      const res = await fetch(`/api/items/${item.id}`, {
+      const res = await fetch(`${API_BASE}/inventory/items/${item.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
         const bodyErr = await res.json().catch(() => ({}));
-        throw new Error(bodyErr.error || `PATCH /api/items/${item.id} failed: ${res.status}`);
+        throw new Error(bodyErr.error || `PATCH /inventory/items/${item.id} failed: ${res.status}`);
       }
       toast({ title: 'Saved', description: 'Inventory record updated.' });
       onSaved();
