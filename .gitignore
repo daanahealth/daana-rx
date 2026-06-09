@@ -49,3 +49,8 @@ jest-cache
 !vendor/**/dist/**
 test-results/
 playwright-report/
+
+# E2E artifacts
+e2e/screenshots/
+test-results/
+playwright-report/

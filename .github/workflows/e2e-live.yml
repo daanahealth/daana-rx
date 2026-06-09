@@ -1,0 +1,48 @@
+name: E2E (live)
+
+# Runs the end-to-end + browser specs against the LIVE deployment.
+# Manual-only: it hits production (daanahealth-gateway / daanahealth-rx),
+# requires credential secrets, and creates test data (a throwaway clinic via
+# functional-api, and a demo check-in item via checkin-flow) that should be
+# cleaned up periodically. Not run on push to avoid unattended prod writes.
+#
+# Required repo secrets:
+#   E2E_EMAIL, E2E_PASSWORD  — a real account for the browser check-in spec.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      E2E_GATEWAY_URL: https://daanahealth-gateway.onrender.com
+      E2E_FRONTEND_URL: https://daanahealth-rx.onrender.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Functional API E2E (every endpoint)
+        run: node e2e/functional-api.mjs
+
+      - name: Playwright smoke + user-flow crawl
+        run: npx playwright test --config e2e/playwright.config.ts e2e/smoke.spec.ts e2e/user-flow.spec.ts --reporter=list
+
+      - name: Browser check-in (real account)
+        run: npx playwright test --config e2e/playwright.config.ts e2e/checkin-flow.spec.ts --reporter=list
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: e2e/screenshots
+          if-no-files-found: ignore
