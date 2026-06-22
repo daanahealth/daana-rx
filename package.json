@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "preinstall": "node -e \"console.log('\\n\ud83d\udce6 Installing DaanaRx dependencies...\\n')\"",
-    "postinstall": "node -e \"console.log('\\n\u2705 Dependencies installed successfully!\\n\\n\ud83d\udccb Next steps:\\n1. Copy env-example.txt to .env.local\\n2. Fill in your Supabase credentials\\n3. Run: node scripts/verify-setup.js\\n4. Start development: npm run dev\\n')\"",
+    "preinstall": "node -e \"console.log('\\n📦 Installing DaanaRx dependencies...\\n')\"",
+    "postinstall": "node -e \"console.log('\\n✅ Dependencies installed successfully!\\n\\n📋 Next steps:\\n1. Copy env-example.txt to .env.local\\n2. Fill in your Supabase credentials\\n3. Run: node scripts/verify-setup.js\\n4. Start development: npm run dev\\n')\"",
     "verify": "node scripts/verify-setup.js",
     "dev": "next dev",
     "build": "next build",
