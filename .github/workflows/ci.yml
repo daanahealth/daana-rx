@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,10 +15,49 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      # next build type-checks the app (it ignores *.test / *.spec / e2e files).
+
+      # Parity with the daana-precommit-frontend skill's deterministic gate so
+      # the same checks are enforced on every PR (where --no-verify can't reach).
+      - name: Lint (ESLint / next lint)
+        run: npm run lint
+
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Unit tests (Jest)
+        run: npm test
+
+      # next build also type-checks the app (ignores *.test / *.spec / e2e).
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: https://daanahealth-gateway.onrender.com
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+  # react-doctor (>=90) gate. react-doctor is a Claude skill, so enforcing it in
+  # CI means running Claude Code headlessly. DISABLED by default: set the repo
+  # secret ANTHROPIC_API_KEY, then change `if: false` to `if: true` to activate,
+  # and add "react-doctor" to the required status checks in branch protection.
+  react-doctor:
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Claude Code
+        run: npm i -g @anthropic-ai/claude-code
+      - name: react-doctor gate (>=90)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          OUT="$(claude -p "Run the react-doctor skill on this repository. On the final line print exactly SCORE=<integer> and nothing else." --allowedTools "Bash,Read,Grep,Glob" 2>&1)"
+          echo "$OUT"
+          SCORE="$(printf '%s\n' "$OUT" | grep -oE 'SCORE=[0-9]+' | tail -1 | cut -d= -f2)"
+          if [ -z "$SCORE" ]; then echo "Could not parse react-doctor score"; exit 1; fi
+          echo "react-doctor score: $SCORE (need >=90)"
+          [ "$SCORE" -ge 90 ] || { echo "Below threshold"; exit 1; }
