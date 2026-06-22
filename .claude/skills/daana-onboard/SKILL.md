@@ -39,12 +39,12 @@ Confirm with the dev that `$WORKSPACE` is where the repos live (or will be
 cloned). If it's wrong or ambiguous, ask once and `export WORKSPACE=<their path>`,
 then reuse it everywhere. Repos and their local folder names:
 
-| Repo             | GitHub (clone)                              | Local path                   | What it is |
-| ---------------- | ------------------------------------------- | ---------------------------- | ---------- |
-| Frontend         | `github.com/daanahealth/daana-rx`           | `DaanarRX` (note double `a`)  | Next.js 16 / React 18 / TS web app |
-| Backend          | `github.com/daanahealth/DaanaRx-Backend`    | `DaanaRx-Backend`            | Consolidated Express/TS monolith (one service) |
-| Mobile           | `github.com/daanahealth/DaanaRx-Mobile`     | `DaanaRx-Mobile`             | React Native / Expo app |
-| Inventory engine | `github.com/daanahealth/daana-inventory`    | `daana-inventory`            | pnpm monorepo → `@daana-health/*` packages |
+| Repo             | GitHub (clone)                           | Local path                   | What it is                                     |
+| ---------------- | ---------------------------------------- | ---------------------------- | ---------------------------------------------- |
+| Frontend         | `github.com/daanahealth/daana-rx`        | `DaanarRX` (note double `a`) | Next.js 16 / React 18 / TS web app             |
+| Backend          | `github.com/daanahealth/DaanaRx-Backend` | `DaanaRx-Backend`            | Consolidated Express/TS monolith (one service) |
+| Mobile           | `github.com/daanahealth/DaanaRx-Mobile`  | `DaanaRx-Mobile`             | React Native / Expo app                        |
+| Inventory engine | `github.com/daanahealth/daana-inventory` | `daana-inventory`            | pnpm monorepo → `@daana-health/*` packages     |
 
 ```bash
 # First-time clone (run in your chosen parent directory):
@@ -129,7 +129,7 @@ Before touching anything, give the dev this mental model:
   `@daana-health/inventory-core` so the schema is shared with the frontend. Data
   lives in **Supabase** (`cnjajswnqmzzhzoyadqa`). Live URL:
   `https://daanahealth-gateway.onrender.com` (health `/health`, warm `/warmup`).
-  - *History:* the code under `services/{auth,inventory,transaction,notification}`
+  - _History:_ the code under `services/{auth,inventory,transaction,notification}`
     and `gateway/` is the old 5-service layout (ports 3001-3004 + a proxying
     gateway). The consolidated monolith reuses those routers but runs them in one
     process — collapsing 5 free-tier cold starts into one. Run those services
@@ -169,9 +169,14 @@ The DaanaRx workflow assumes two MCP servers. Connect them now so later phases
 
 1. Check `$WORKSPACE/.mcp.json` contains:
    ```json
-   { "mcpServers": { "supabase": {
-       "type": "http",
-       "url": "https://mcp.supabase.com/mcp?project_ref=cnjajswnqmzzhzoyadqa" } } }
+   {
+     "mcpServers": {
+       "supabase": {
+         "type": "http",
+         "url": "https://mcp.supabase.com/mcp?project_ref=cnjajswnqmzzhzoyadqa"
+       }
+     }
+   }
    ```
    If missing, add it (this file already exists in the workspace root).
 2. Verify connectivity by calling `mcp__supabase__list_tables`. Expect tables:
@@ -179,7 +184,7 @@ The DaanaRx workflow assumes two MCP servers. Connect them now so later phases
 3. **If the call fails**, tell the dev:
    > Run `/mcp` in Claude Code and authenticate the `supabase` server in the
    > browser, then tell me to continue.
-   Wait for them, then re-verify.
+   > Wait for them, then re-verify.
 
 ### Render MCP (recommended, for deploy/ops visibility)
 
@@ -227,19 +232,23 @@ npm run test:engine                # inventory-core unit tests
 ```
 
 Env vars the dev must fill in `.env` (get secrets from the team — never commit):
+
 - `SUPABASE_URL` = `https://cnjajswnqmzzhzoyadqa.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` (from Supabase dashboard / team)
 - `JWT_SECRET` (team-shared, or `openssl rand -base64 32` for local-only)
 - `PORT` (gateway default 4000), `ALLOWED_ORIGINS` (e.g. `http://localhost:3000`)
 
 Run the backend — the **consolidated monolith is the default**:
+
 ```bash
 npm run build:consolidated       # tsc → dist-consolidated/
 npm run start:consolidated       # single Express app on PORT (4000)
 ```
+
 All routes are served by this one process under `/auth/*`, `/inventory/*`,
 `/transactions/*`, `/notifications`. Only drop into a single service when
 isolating it:
+
 ```bash
 cd services/auth && npm install && npm run dev    # standalone, port 3001 (rarely needed)
 ```
@@ -259,7 +268,8 @@ npm run dev                        # http://localhost:3000
 ```
 
 Critical env values in `.env.local`:
-- `NEXT_PUBLIC_API_URL=http://localhost:4000`  ← the **gateway**, not 3000.
+
+- `NEXT_PUBLIC_API_URL=http://localhost:4000` ← the **gateway**, not 3000.
   (A known footgun: it sometimes reads `localhost:3000` or still has a dead
   `NEXT_PUBLIC_GRAPHQL_URL` — fix both.)
 - `NEXT_PUBLIC_SUPABASE_URL=https://cnjajswnqmzzhzoyadqa.supabase.co`
@@ -278,6 +288,7 @@ npm install
 # set EXPO_PUBLIC_API_URL=http://<your-LAN-ip>:4000 in the Expo env
 npx expo start
 ```
+
 Scan the QR with Expo Go, or run an emulator. Same REST client pattern as web.
 
 ## Phase 7 — Install the quality gates (pre-commit)
@@ -297,6 +308,7 @@ done
 ```
 
 At the time of writing this resolves to (verify against your Phase 0a catalog):
+
 - `DaanarRX/.claude/skills/daana-precommit-frontend` — ESLint + typecheck +
   Jest + react-doctor (>=90) + best-practices.
 - `DaanaRx-Backend/.claude/skills/daana-precommit-backend` — consolidated
@@ -305,6 +317,7 @@ At the time of writing this resolves to (verify against your Phase 0a catalog):
 If Phase 0a surfaced a pre-commit skill not listed here, install it too.
 
 Explain the two-layer model:
+
 - The **git hook** auto-runs the fast deterministic checks on every
   `git commit` and blocks on failure.
 - Before pushing, run the full **Claude skill** for the repo
@@ -314,6 +327,7 @@ Explain the two-layer model:
 
 Also explain the **server-side** enforcement (this is what actually guarantees
 the workflow, since local hooks can be bypassed with `--no-verify`):
+
 - `main` is **branch-protected** on both `daanahealth/daana-rx` and
   `daanahealth/DaanaRx-Backend`: direct pushes are blocked — all changes land via
   pull request. The pre-push hook (Phase 7) gives the same feedback locally.

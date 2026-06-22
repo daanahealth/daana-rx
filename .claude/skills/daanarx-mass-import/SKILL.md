@@ -25,7 +25,7 @@ An `.xlsx` has one sheet per type (`DATA-CARDS`→Card, `DATA-BOTTLES`→Bottle,
   code template `DRX-MASS-{LOCATION}-{counter:05d}`. **Verify the id each run.**
 - The MASS attribute schema is defined by **`@daana-health/domain-mass`** (in the
   `daana-inventory` monorepo). Required `attributes`: `medication_name, dosage,
-  unit, form, specialty_class`. `form` MUST be in MEDICATION_FORMS
+unit, form, specialty_class`. `form` MUST be in MEDICATION_FORMS
   (Bottle/Card/Cream/Nasal Spray/Insulin Pen/Injection/Other — **"Psych" is not
   a form**; map the Psych sheet to "Other"). `specialty_class` MUST be a
   classification-guide class (CARDIO, PAINFLAM, GASTRO, NEURO, UROL, ENDOCRINE,

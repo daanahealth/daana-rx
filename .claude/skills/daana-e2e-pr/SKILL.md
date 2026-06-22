@@ -58,6 +58,7 @@ bash .claude/skills/daana-e2e-pr/scripts/run-walkthrough.sh
 
 This installs Chromium, clears `e2e/screenshots/pr/`, and runs
 `e2e/pr-walkthrough.spec.ts`, which:
+
 - signs in (provisioned or provided account),
 - asserts it actually authenticated (not bounced to `/auth/signin`),
 - visits **home, inventory, check-in, checkout, reports, settings**, and for
@@ -90,6 +91,7 @@ section (idempotent), so you can run it after every push.
 ## 3. Report
 
 Summarize:
+
 ```
 E2E PR walkthrough — PR #<n>
   target ........... local :3000 (PR build) | live daanahealth-rx
@@ -97,6 +99,7 @@ E2E PR walkthrough — PR #<n>
   pages walked ..... 6/6 rendered OK   (or: FAILED on /reports, /settings)
   screenshots ...... 8 published to PR body
 ```
+
 - All pages OK → say the walkthrough passed and screenshots are in the PR.
 - Any page errored → "E2E found a regression", name the page(s), point at the
   screenshot, and stop short of approving the change.

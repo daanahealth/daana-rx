@@ -21,12 +21,12 @@ skill(s) to invoke and when, (3) an ordered plan, (4) the spec rules that apply.
 
 ## The repos (what changes where)
 
-| Repo | Path | Stack | Role |
-|---|---|---|---|
-| **DaanarRX** | `/Users/rithik/Code/DaanarRX` | Next.js 15 / React | Frontend app. Reads the core **`items`** schema via `GET /inventory/items`. → `daanahealth/daana-rx` |
-| **DaanaRx-Backend** | `/Users/rithik/Code/DaanaRx-Backend` | Express / TypeScript | Consolidated monolith (`daanahealth-gateway`): `/auth`, `/inventory/*`, `/transactions/*`, `/notifications`. Supabase service-role. → `daanahealth/DaanaRx-Backend` |
-| **DaanaRx-Mobile** | `/Users/rithik/Code/DaanaRx-Mobile` | Expo / React Native | Mobile app; same REST client pattern (`EXPO_PUBLIC_API_URL`). Keep parity with frontend behavior. |
-| **daana-inventory** | `/Users/rithik/Code/daana-inventory` | pnpm monorepo | Publishes `@daana-health/inventory-core` (generic engine: code templates, status state machine, validators), `@daana-health/domain-mass` (MASS medication schema, classification guide, DRX codes, labels), `@daana-health/inventory-react` (shared UI). Backend + frontend consume these. |
+| Repo                | Path                                 | Stack                | Role                                                                                                                                                                                                                                                                                       |
+| ------------------- | ------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **DaanarRX**        | `/Users/rithik/Code/DaanarRX`        | Next.js 15 / React   | Frontend app. Reads the core **`items`** schema via `GET /inventory/items`. → `daanahealth/daana-rx`                                                                                                                                                                                       |
+| **DaanaRx-Backend** | `/Users/rithik/Code/DaanaRx-Backend` | Express / TypeScript | Consolidated monolith (`daanahealth-gateway`): `/auth`, `/inventory/*`, `/transactions/*`, `/notifications`. Supabase service-role. → `daanahealth/DaanaRx-Backend`                                                                                                                        |
+| **DaanaRx-Mobile**  | `/Users/rithik/Code/DaanaRx-Mobile`  | Expo / React Native  | Mobile app; same REST client pattern (`EXPO_PUBLIC_API_URL`). Keep parity with frontend behavior.                                                                                                                                                                                          |
+| **daana-inventory** | `/Users/rithik/Code/daana-inventory` | pnpm monorepo        | Publishes `@daana-health/inventory-core` (generic engine: code templates, status state machine, validators), `@daana-health/domain-mass` (MASS medication schema, classification guide, DRX codes, labels), `@daana-health/inventory-react` (shared UI). Backend + frontend consume these. |
 
 **Layering rule:** domain-agnostic logic (codes, status transitions, validators)
 lives in `inventory-core`; MASS-specific rules (medication attribute schema,
@@ -37,15 +37,15 @@ it, then the backend and frontend pick it up.
 
 ## Delegate map (invoke these — don't reinvent)
 
-| The ask is about… | Invoke skill | Repo |
-|---|---|---|
-| "set me up", "run locally", "onboard", "new dev" | `daana-onboard` | all |
-| "commit / push / ready" **backend** code, or finished a backend change | `daana-precommit-backend` | backend |
-| "commit / push / ready" **frontend** code, or finished a frontend change | `daana-precommit-frontend` | frontend |
-| reviewing/finishing **React** work (component, hook, state) | `react-doctor` | frontend |
-| "e2e", "browser test the PR", "screenshots in the PR" | `daana-e2e-pr` | frontend |
-| import / refresh / re-ingest **MASS clinic data** from a spreadsheet | `daanarx-mass-import` | backend + inventory |
-| anything else (feature, bug, refactor, cross-repo) | **this skill's procedure** | depends |
+| The ask is about…                                                        | Invoke skill               | Repo                |
+| ------------------------------------------------------------------------ | -------------------------- | ------------------- |
+| "set me up", "run locally", "onboard", "new dev"                         | `daana-onboard`            | all                 |
+| "commit / push / ready" **backend** code, or finished a backend change   | `daana-precommit-backend`  | backend             |
+| "commit / push / ready" **frontend** code, or finished a frontend change | `daana-precommit-frontend` | frontend            |
+| reviewing/finishing **React** work (component, hook, state)              | `react-doctor`             | frontend            |
+| "e2e", "browser test the PR", "screenshots in the PR"                    | `daana-e2e-pr`             | frontend            |
+| import / refresh / re-ingest **MASS clinic data** from a spreadsheet     | `daanarx-mass-import`      | backend + inventory |
+| anything else (feature, bug, refactor, cross-repo)                       | **this skill's procedure** | depends             |
 
 If the ask cleanly matches a row, say so and invoke that skill rather than doing
 it by hand. If it spans several, sequence them (below).
@@ -83,7 +83,7 @@ it by hand. If it spans several, sequence them (below).
   `location_id/name/temp`.)
 - **`domain-mass` is the source of truth** for the MASS medication attribute
   schema, the `form` enum, the classification guide, and the `DRX-MASS-{LOCATION}-
-  {counter:05d}` code template. Don't hardcode these in the API or UI — import them.
+{counter:05d}` code template. Don't hardcode these in the API or UI — import them.
 - **Keep frontend ↔ mobile parity**: both use the same REST client shape; a
   behavior change in one usually needs the other.
 - **TypeScript strict**; no `any` escape hatches in new code. Match surrounding
