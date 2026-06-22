@@ -230,12 +230,16 @@ export default function InventoryPage() {
     fetchItems();
   }, [fetchItems]);
 
-  // Load locations once for the filter dropdown
+  // Load locations once for the filter dropdown.
+  // Use the /v2 endpoint, which returns the core-schema shape ({ id, code, ... })
+  // that this page (and the EditItemModal it feeds) consume. The legacy
+  // GET /inventory/locations returns { locationId, name, ... }, which would leave
+  // loc.id/loc.code undefined here (blank labels + a React duplicate-key warning).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/inventory/locations`, { headers: authHeaders() });
+        const res = await fetch(`${API_BASE}/inventory/locations/v2`, { headers: authHeaders() });
         if (!res.ok) return;
         const body = (await res.json()) as { locations?: Location[] } | Location[];
         const list = Array.isArray(body) ? body : body.locations ?? [];
