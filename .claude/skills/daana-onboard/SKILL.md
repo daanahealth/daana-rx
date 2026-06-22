@@ -20,9 +20,22 @@ possible. Work through the phases in order. After each phase, confirm success
 before moving on, and tell the dev what just happened in plain language.
 
 All repos are hosted in the **`daanahealth`** GitHub org (no hyphen — the old
-`daana-health` hyphenated org is deprecated). Clone them under one parent dir
-(these instructions assume `/Users/rithik/Code`; adjust if the dev cloned
-elsewhere — ask once and reuse the answer):
+`daana-health` hyphenated org is deprecated). Clone them all under ONE parent
+directory. Every path below is written relative to **`$WORKSPACE`** — the
+directory that holds the cloned repos. Do NOT assume any specific absolute path
+(e.g. not `/Users/<someone>/Code`); resolve `$WORKSPACE` for THIS machine first:
+
+```bash
+# If you're already inside one of the repos, the workspace is its parent:
+WORKSPACE="$(cd "$(git rev-parse --show-toplevel 2>/dev/null)/.." 2>/dev/null && pwd)"
+# Otherwise it's the directory the dev is running Claude Code from:
+WORKSPACE="${WORKSPACE:-$PWD}"
+echo "Workspace: $WORKSPACE"
+```
+
+Confirm with the dev that `$WORKSPACE` is where the repos live (or will be
+cloned). If it's wrong or ambiguous, ask once and `export WORKSPACE=<their path>`,
+then reuse it everywhere. Repos and their local folder names:
 
 | Repo             | GitHub (clone)                              | Local path                   | What it is |
 | ---------------- | ------------------------------------------- | ---------------------------- | ---------- |
@@ -52,7 +65,7 @@ repo's `.claude/skills/` directory:
 
 ```bash
 # All DaanaRx skills, repo-local and workspace-level (skip deps/build output).
-find /Users/rithik/Code \
+find "$WORKSPACE" \
   -type f -name SKILL.md \
   -path '*/.claude/skills/*' \
   -not -path '*/node_modules/*' \
@@ -71,7 +84,7 @@ For each `SKILL.md` found, read its YAML frontmatter and record `name` +
 A quick way to list them:
 
 ```bash
-for f in $(find /Users/rithik/Code ~/.claude/skills -type f -name SKILL.md \
+for f in $(find "$WORKSPACE" ~/.claude/skills -type f -name SKILL.md \
             -path '*/.claude/skills/*' -not -path '*/node_modules/*' \
             -not -path '*/.next/*' -not -path '*/dist*/*' 2>/dev/null | sort); do
   name=$(awk '/^name:/{print $2; exit}' "$f")
@@ -152,7 +165,7 @@ The DaanaRx workflow assumes two MCP servers. Connect them now so later phases
 
 ### Supabase MCP (required)
 
-1. Check `/Users/rithik/Code/.mcp.json` contains:
+1. Check `$WORKSPACE/.mcp.json` contains:
    ```json
    { "mcpServers": { "supabase": {
        "type": "http",
@@ -189,7 +202,7 @@ Everything depends on the `@daana-health/*` packages. The frontend/backend use
 `daana-inventory`:
 
 ```bash
-cd /Users/rithik/Code/daana-inventory
+cd "$WORKSPACE"/daana-inventory
 pnpm install
 pnpm build        # builds all packages
 pnpm typecheck    # strict TS across the monorepo
@@ -204,7 +217,7 @@ frontend/backend repos are enough — they can skip building the engine.
 ## Phase 4 — Backend up
 
 ```bash
-cd /Users/rithik/Code/DaanaRx-Backend
+cd "$WORKSPACE"/DaanaRx-Backend
 npm install --include=dev          # matches CI
 cp .env.example .env               # then fill in values (see below)
 npm run build:consolidated         # typecheck + build the consolidated monolith (CI gate)
@@ -236,7 +249,7 @@ deployed gateway (`https://daanahealth-gateway.onrender.com`).
 ## Phase 5 — Frontend up
 
 ```bash
-cd /Users/rithik/Code/DaanarRX
+cd "$WORKSPACE"/DaanarRX
 npm ci
 cp env-example.txt .env.local      # then edit
 node scripts/verify-setup.js       # built-in setup checker
@@ -258,7 +271,7 @@ backend (log in / list inventory). Source map of the app: `src/app` (routes),
 ## Phase 6 — Mobile up (only if the dev works on mobile)
 
 ```bash
-cd /Users/rithik/Code/DaanaRx-Mobile
+cd "$WORKSPACE"/DaanaRx-Mobile
 npm install
 # set EXPO_PUBLIC_API_URL=http://<your-LAN-ip>:4000 in the Expo env
 npx expo start
@@ -273,7 +286,7 @@ pre-commit skill rather than a hardcoded list:
 
 ```bash
 # Install the git hook for each discovered pre-commit gate.
-find /Users/rithik/Code -type f -name install-hook.sh \
+find "$WORKSPACE" -type f -name install-hook.sh \
   -path '*/.claude/skills/*precommit*/scripts/*' \
   -not -path '*/node_modules/*' 2>/dev/null | while read -r installer; do
     echo "→ installing hook from $installer"
@@ -315,7 +328,7 @@ the workflow, since local hooks can be bypassed with `--no-verify`):
 2. Summarize what's running, the ports (4000 consolidated backend / 3000 web;
    3001-3004 only if running services standalone), where the schema lives
    (`@daana-health/*`), and where to ask for secrets.
-3. Point them at the repo READMEs and `/Users/rithik/Code/.claude/session-progress.md`
+3. Point them at the repo READMEs and `$WORKSPACE/.claude/session-progress.md`
    for current project state and known issues.
 
 ## Onboarding checklist (track and report at the end)
