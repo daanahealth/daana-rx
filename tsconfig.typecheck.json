@@ -1,0 +1,16 @@
+{
+  "//": "Fast type-check of APP code only. next build is the source of truth for",
+  "//2": "app types (it ignores tests/e2e); ts-jest type-checks tests separately.",
+  "//3": "This config lets `tsc --noEmit -p tsconfig.typecheck.json` mirror that",
+  "//4": "scope for CI + the pre-commit gate without choking on jest/Playwright globals.",
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "e2e",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
+  ]
+}
