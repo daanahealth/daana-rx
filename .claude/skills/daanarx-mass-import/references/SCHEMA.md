@@ -33,7 +33,7 @@ Template vars rendered by `renderCodeTemplate`: `{LOCATION}`/`{locationCode}`,
 - `unit_code` text NOT NULL UNIQUE
 - `attributes` jsonb NOT NULL DEFAULT `{}`
   — MASS medication attrs: `medication_name, dosage, unit, form, quantity,
-  notes`; this importer also stores `lot_codes`, `source_ids`, `source_file`
+notes`; this importer also stores `lot_codes`, `source_ids`, `source_file`
 - `created_at`, `created_by` (→auth.users SET NULL), `last_edited_*`, `removed_*`
 
 ## transactions (core)
