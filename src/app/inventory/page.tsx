@@ -21,6 +21,7 @@ import { useSelector } from 'react-redux';
 import {
   AlertCircle,
   Edit,
+  Eye,
   Filter,
   History,
   Loader2,
@@ -36,6 +37,7 @@ import { AppShell } from '../../components/layout/AppShell';
 import { EditItemModal } from '../../components/inventory/EditItemModal';
 import { RemoveItemModal } from '../../components/inventory/RemoveItemModal';
 import { TransactionHistoryDrawer } from '../../components/inventory/TransactionHistoryDrawer';
+import { ItemDetailsModal } from '../../components/inventory/ItemDetailsModal';
 import type { RootState } from '../../store';
 import { Button } from '@/components/ui/button';
 import { API_BASE, authHeaders } from '@/lib/apiClient';
@@ -75,6 +77,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -184,8 +193,13 @@ export default function InventoryPage() {
   const [editTarget, setEditTarget] = useState<InventoryRow | null>(null);
   const [removeTarget, setRemoveTarget] = useState<InventoryRow | null>(null);
   const [historyTarget, setHistoryTarget] = useState<InventoryRow | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<InventoryRow | null>(null);
   const [checkoutTarget, setCheckoutTarget] = useState<InventoryRow | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+
+  // Pagination (client-side over the fetched rows)
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(1);
 
   // ─── Fetch items ──────────────────────────────────────────────────────────
 
@@ -297,6 +311,45 @@ export default function InventoryPage() {
     }
   };
 
+  // Restricted-user "quick checkout": spec-gated — they can only reserve the unit
+  // in their cart for superadmin approval, never complete a checkout directly.
+  const handleAddToCart = async (item: InventoryRow) => {
+    setCheckingOut(true);
+    try {
+      const res = await fetch(`${API_BASE}/transactions/carts/current/items`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ item_id: item.id }),
+      });
+      if (!res.ok && res.status !== 404) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Add to cart failed: ${res.status}`);
+      }
+      toast({
+        title: 'Added to cart',
+        description: `${readAttr(item.attributes, 'medication_name') || 'Item'} reserved — pending superadmin approval.`,
+      });
+      setDetailsTarget(null);
+      fetchItems();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not add to cart';
+      toast({ title: 'Add to cart failed', description: msg, variant: 'destructive' });
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  // Quick checkout from the details modal: superadmins get the confirm-and-checkout
+  // path; restricted users get the cart-reservation path above.
+  const handleQuickCheckout = (item: InventoryRow) => {
+    setDetailsTarget(null);
+    if (isSuperadmin) {
+      setCheckoutTarget(item);
+    } else {
+      handleAddToCart(item);
+    }
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   const hasFilters =
@@ -306,6 +359,14 @@ export default function InventoryPage() {
     expiryBefore.length > 0;
   const showEmpty = !loading && !error && rows.length === 0 && !hasFilters;
   const showNoMatches = !loading && !error && rows.length === 0 && hasFilters;
+
+  // Client-side pagination: clamp the page and slice the visible window.
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pagedRows = rows.slice(pageStart, pageStart + PAGE_SIZE);
+  const rangeStart = rows.length === 0 ? 0 : pageStart + 1;
+  const rangeEnd = Math.min(pageStart + PAGE_SIZE, rows.length);
 
   return (
     <AppShell>
@@ -344,7 +405,10 @@ export default function InventoryPage() {
                     id="inv-q"
                     placeholder="Medication, code, or notes…"
                     value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    onChange={(e) => {
+                      setQ(e.target.value);
+                      setPage(1);
+                    }}
                     className="pl-9"
                   />
                 </div>
@@ -354,7 +418,10 @@ export default function InventoryPage() {
                 <Label className="text-xs font-medium text-muted-foreground">Status</Label>
                 <Select
                   value={statusFilter}
-                  onValueChange={(v) => setStatusFilter(v as ItemStatus | 'all')}
+                  onValueChange={(v) => {
+                    setStatusFilter(v as ItemStatus | 'all');
+                    setPage(1);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -371,7 +438,13 @@ export default function InventoryPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Location</Label>
-                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <Select
+                  value={locationFilter}
+                  onValueChange={(v) => {
+                    setLocationFilter(v);
+                    setPage(1);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
@@ -394,7 +467,10 @@ export default function InventoryPage() {
                   id="inv-exp"
                   type="date"
                   value={expiryBefore}
-                  onChange={(e) => setExpiryBefore(e.target.value)}
+                  onChange={(e) => {
+                    setExpiryBefore(e.target.value);
+                    setPage(1);
+                  }}
                 />
               </div>
             </div>
@@ -411,6 +487,7 @@ export default function InventoryPage() {
                     setStatusFilter('all');
                     setLocationFilter('all');
                     setExpiryBefore('');
+                    setPage(1);
                   }}
                   className="h-7 px-2 text-xs"
                 >
@@ -472,11 +549,12 @@ export default function InventoryPage() {
           <>
             {/* Mobile card view */}
             <div className="space-y-3 lg:hidden">
-              {rows.map((item) => (
+              {pagedRows.map((item) => (
                 <InventoryCard
                   key={item.id}
                   item={item}
                   isSuperadmin={isSuperadmin}
+                  onDetails={() => setDetailsTarget(item)}
                   onEdit={() => setEditTarget(item)}
                   onCheckout={() => setCheckoutTarget(item)}
                   onRemove={() => setRemoveTarget(item)}
@@ -496,6 +574,7 @@ export default function InventoryPage() {
                         <TableHead>Dosage</TableHead>
                         <TableHead>Unit</TableHead>
                         <TableHead>Form</TableHead>
+                        <TableHead className="text-right">Quantity</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Expiry</TableHead>
                         <TableHead>DRX Code</TableHead>
@@ -509,16 +588,23 @@ export default function InventoryPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rows.map((item) => {
+                      {pagedRows.map((item) => {
                         const expired = isExpired(item);
                         return (
-                          <TableRow key={item.id}>
+                          <TableRow
+                            key={item.id}
+                            className="cursor-pointer"
+                            onClick={() => setDetailsTarget(item)}
+                          >
                             <TableCell className="font-medium">
                               {readAttr(item.attributes, 'medication_name') || '—'}
                             </TableCell>
                             <TableCell>{readAttr(item.attributes, 'dosage') || '—'}</TableCell>
                             <TableCell>{readAttr(item.attributes, 'unit') || '—'}</TableCell>
                             <TableCell>{readAttr(item.attributes, 'form') || '—'}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {readAttr(item.attributes, 'quantity') || '—'}
+                            </TableCell>
                             <TableCell>{item.locationCode ?? '—'}</TableCell>
                             <TableCell className={cn(expired && 'text-destructive font-medium')}>
                               {formatDate(item.expiryDate)}
@@ -542,10 +628,11 @@ export default function InventoryPage() {
                             <TableCell className="text-sm text-muted-foreground">
                               {formatDateTime(item.lastEditedAt)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
                               <RowActions
                                 item={item}
                                 isSuperadmin={isSuperadmin}
+                                onDetails={() => setDetailsTarget(item)}
                                 onEdit={() => setEditTarget(item)}
                                 onCheckout={() => setCheckoutTarget(item)}
                                 onRemove={() => setRemoveTarget(item)}
@@ -560,6 +647,48 @@ export default function InventoryPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Pagination — shown once results overflow a single page */}
+            {rows.length > PAGE_SIZE ? (
+              <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+                <p className="text-xs text-muted-foreground">
+                  Showing {rangeStart}–{rangeEnd} of {rows.length}
+                </p>
+                <Pagination className="mx-0 w-auto justify-end">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        aria-disabled={currentPage <= 1}
+                        className={cn(currentPage <= 1 && 'pointer-events-none opacity-50')}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage((p) => Math.max(1, p - 1));
+                        }}
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-3 text-sm text-muted-foreground">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        aria-disabled={currentPage >= totalPages}
+                        className={cn(
+                          currentPage >= totalPages && 'pointer-events-none opacity-50'
+                        )}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage((p) => Math.min(totalPages, p + 1));
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -597,6 +726,25 @@ export default function InventoryPage() {
         open={historyTarget !== null}
         onOpenChange={(open) => {
           if (!open) setHistoryTarget(null);
+        }}
+      />
+
+      {/* Item details modal (QR + history + quick checkout) */}
+      <ItemDetailsModal
+        item={detailsTarget}
+        open={detailsTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailsTarget(null);
+        }}
+        isSuperadmin={isSuperadmin}
+        checkingOut={checkingOut}
+        onCheckout={() => {
+          if (detailsTarget) handleQuickCheckout(detailsTarget);
+        }}
+        onViewFullHistory={() => {
+          const target = detailsTarget;
+          setDetailsTarget(null);
+          setHistoryTarget(target);
         }}
       />
 
@@ -674,6 +822,7 @@ export default function InventoryPage() {
 function RowActions({
   item,
   isSuperadmin,
+  onDetails,
   onEdit,
   onCheckout,
   onRemove,
@@ -681,6 +830,7 @@ function RowActions({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
   onRemove: () => void;
@@ -697,6 +847,10 @@ function RowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onDetails}>
+          <Eye className="mr-2 h-4 w-4" />
+          View details
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onEdit} disabled={terminal}>
           <Edit className="mr-2 h-4 w-4" />
           Edit
@@ -726,6 +880,7 @@ function RowActions({
 function InventoryCard({
   item,
   isSuperadmin,
+  onDetails,
   onEdit,
   onCheckout,
   onRemove,
@@ -733,6 +888,7 @@ function InventoryCard({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
   onRemove: () => void;
@@ -743,7 +899,11 @@ function InventoryCard({
     <Card>
       <CardContent className="space-y-3 pt-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1">
+          <button
+            type="button"
+            onClick={onDetails}
+            className="min-w-0 space-y-1 text-left"
+          >
             <p className="break-words text-sm font-semibold">
               {readAttr(item.attributes, 'medication_name') || '—'}
             </p>
@@ -751,10 +911,11 @@ function InventoryCard({
               {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')} ·{' '}
               {readAttr(item.attributes, 'form') || '—'}
             </p>
-          </div>
+          </button>
           <RowActions
             item={item}
             isSuperadmin={isSuperadmin}
+            onDetails={onDetails}
             onEdit={onEdit}
             onCheckout={onCheckout}
             onRemove={onRemove}
@@ -782,6 +943,8 @@ function InventoryCard({
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
           <dt className="text-muted-foreground">DRX code</dt>
           <dd className="font-mono">{item.unitCode}</dd>
+          <dt className="text-muted-foreground">Quantity</dt>
+          <dd>{readAttr(item.attributes, 'quantity') || '—'}</dd>
           <dt className="text-muted-foreground">Received</dt>
           <dd>{formatDate(item.dateReceived ?? item.createdAt)}</dd>
           <dt className="text-muted-foreground">Checked in</dt>
