@@ -102,12 +102,53 @@ function diffEntries(
 }
 
 export function TransactionHistoryDrawer({ item, open, onOpenChange }: TransactionHistoryDrawerProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-lg">
+        <div className="flex h-full flex-col">
+          <SheetHeader className="border-b p-6">
+            <SheetTitle>Transaction history</SheetTitle>
+            <SheetDescription>
+              {item ? (
+                <span>
+                  <span className="font-medium">
+                    {readAttr(item.attributes, 'medication_name') || 'Item'}
+                  </span>{' '}
+                  · <span className="font-mono text-xs">{item.unitCode}</span>
+                </span>
+              ) : (
+                'Audit log for this inventory record.'
+              )}
+            </SheetDescription>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="p-6">
+              <TransactionHistoryList item={item} enabled={open} />
+            </div>
+          </ScrollArea>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// Fetches + renders an item's transaction log. Extracted from the drawer so the
+// item-details modal can reuse the exact same implementation rather than
+// duplicating the GET /inventory/items/{id}/transactions call and rendering.
+export function TransactionHistoryList({
+  item,
+  enabled,
+}: {
+  item: Item | null;
+  enabled: boolean;
+}) {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open || !item) return;
+    if (!enabled || !item) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -140,57 +181,33 @@ export function TransactionHistoryDrawer({ item, open, onOpenChange }: Transacti
     return () => {
       cancelled = true;
     };
-  }, [open, item]);
+  }, [enabled, item]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-lg">
-        <div className="flex h-full flex-col">
-          <SheetHeader className="border-b p-6">
-            <SheetTitle>Transaction history</SheetTitle>
-            <SheetDescription>
-              {item ? (
-                <span>
-                  <span className="font-medium">
-                    {readAttr(item.attributes, 'medication_name') || 'Item'}
-                  </span>{' '}
-                  · <span className="font-mono text-xs">{item.unitCode}</span>
-                </span>
-              ) : (
-                'Audit log for this inventory record.'
-              )}
-            </SheetDescription>
-          </SheetHeader>
-
-          <ScrollArea className="flex-1">
-            <div className="space-y-4 p-6">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : null}
-
-              {error ? (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              ) : null}
-
-              {!loading && !error && transactions.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground">
-                  No transactions recorded yet for this item.
-                </p>
-              ) : null}
-
-              {transactions.map((tx) => (
-                <TxEntry key={tx.id} tx={tx} />
-              ))}
-            </div>
-          </ScrollArea>
+    <div className="space-y-4">
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      </SheetContent>
-    </Sheet>
+      ) : null}
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {!loading && !error && transactions.length === 0 ? (
+        <p className="text-center text-sm text-muted-foreground">
+          No transactions recorded yet for this item.
+        </p>
+      ) : null}
+
+      {transactions.map((tx) => (
+        <TxEntry key={tx.id} tx={tx} />
+      ))}
+    </div>
   );
 }
 
