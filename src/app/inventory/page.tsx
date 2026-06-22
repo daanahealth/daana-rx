@@ -314,7 +314,7 @@ export default function InventoryPage() {
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const pagedRows = useMemo(
     () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [rows, page],
+    [rows, page]
   );
   // Jump back to page 1 whenever the filter/search query changes.
   useEffect(() => {

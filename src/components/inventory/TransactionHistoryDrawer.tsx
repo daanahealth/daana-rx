@@ -85,12 +85,9 @@ function stringifyValue(v: unknown): string {
 
 function diffEntries(
   oldValue: Record<string, unknown> | null,
-  newValue: Record<string, unknown> | null,
+  newValue: Record<string, unknown> | null
 ): Array<{ key: string; before: unknown; after: unknown }> {
-  const keys = new Set<string>([
-    ...Object.keys(oldValue ?? {}),
-    ...Object.keys(newValue ?? {}),
-  ]);
+  const keys = new Set<string>([...Object.keys(oldValue ?? {}), ...Object.keys(newValue ?? {})]);
   const out: Array<{ key: string; before: unknown; after: unknown }> = [];
   for (const key of keys) {
     const before = oldValue?.[key];
@@ -101,7 +98,11 @@ function diffEntries(
   return out;
 }
 
-export function TransactionHistoryDrawer({ item, open, onOpenChange }: TransactionHistoryDrawerProps) {
+export function TransactionHistoryDrawer({
+  item,
+  open,
+  onOpenChange,
+}: TransactionHistoryDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-lg">
@@ -136,13 +137,7 @@ export function TransactionHistoryDrawer({ item, open, onOpenChange }: Transacti
 // Fetches + renders an item's transaction log. Extracted from the drawer so the
 // item-details modal can reuse the exact same implementation rather than
 // duplicating the GET /inventory/items/{id}/transactions call and rendering.
-export function TransactionHistoryList({
-  item,
-  enabled,
-}: {
-  item: Item | null;
-  enabled: boolean;
-}) {
+export function TransactionHistoryList({ item, enabled }: { item: Item | null; enabled: boolean }) {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,11 +160,11 @@ export function TransactionHistoryList({
           }
           const bodyErr = await res.json().catch(() => ({}));
           throw new Error(
-            bodyErr.error || `GET /api/items/${item.id}/transactions failed: ${res.status}`,
+            bodyErr.error || `GET /api/items/${item.id}/transactions failed: ${res.status}`
           );
         }
         const body = (await res.json()) as { transactions?: TxRow[] } | TxRow[];
-        const list = Array.isArray(body) ? body : body.transactions ?? [];
+        const list = Array.isArray(body) ? body : (body.transactions ?? []);
         if (!cancelled) setTransactions(list);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Failed to load history.';
@@ -219,7 +214,7 @@ function TxEntry({ tx }: { tx: TxRow }) {
         <span
           className={cn(
             'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-            ACTION_CLASSES[tx.action],
+            ACTION_CLASSES[tx.action]
           )}
         >
           {ACTION_LABELS[tx.action]}
