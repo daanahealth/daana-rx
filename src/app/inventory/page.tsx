@@ -214,7 +214,7 @@ export default function InventoryPage() {
         throw new Error(body.error || `GET /inventory/items failed: ${res.status}`);
       }
       const body = (await res.json()) as ListResponse | InventoryRow[];
-      const list = Array.isArray(body) ? body : body.items ?? [];
+      const list = Array.isArray(body) ? body : (body.items ?? []);
       setRows(list.map(mapInventoryRow));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load inventory';
@@ -242,7 +242,7 @@ export default function InventoryPage() {
         const res = await fetch(`${API_BASE}/inventory/locations/v2`, { headers: authHeaders() });
         if (!res.ok) return;
         const body = (await res.json()) as { locations?: Location[] } | Location[];
-        const list = Array.isArray(body) ? body : body.locations ?? [];
+        const list = Array.isArray(body) ? body : (body.locations ?? []);
         if (!cancelled) setLocations(list);
       } catch {
         // non-fatal; filter just collapses to no options
@@ -300,7 +300,10 @@ export default function InventoryPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   const hasFilters =
-    q.trim().length > 0 || statusFilter !== 'all' || locationFilter !== 'all' || expiryBefore.length > 0;
+    q.trim().length > 0 ||
+    statusFilter !== 'all' ||
+    locationFilter !== 'all' ||
+    expiryBefore.length > 0;
   const showEmpty = !loading && !error && rows.length === 0 && !hasFilters;
   const showNoMatches = !loading && !error && rows.length === 0 && hasFilters;
 
@@ -608,7 +611,8 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle>Check out medication</DialogTitle>
             <DialogDescription>
-              Confirm the details below. This action moves the unit out of active inventory and logs a transaction.
+              Confirm the details below. This action moves the unit out of active inventory and logs
+              a transaction.
             </DialogDescription>
           </DialogHeader>
           {checkoutTarget ? (
@@ -647,7 +651,11 @@ export default function InventoryPage() {
             </div>
           ) : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutTarget(null)} disabled={checkingOut}>
+            <Button
+              variant="outline"
+              onClick={() => setCheckoutTarget(null)}
+              disabled={checkingOut}
+            >
               Cancel
             </Button>
             <Button onClick={handleDirectCheckout} disabled={checkingOut || !isSuperadmin}>
@@ -740,8 +748,8 @@ function InventoryCard({
               {readAttr(item.attributes, 'medication_name') || '—'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')}{' '}
-              · {readAttr(item.attributes, 'form') || '—'}
+              {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')} ·{' '}
+              {readAttr(item.attributes, 'form') || '—'}
             </p>
           </div>
           <RowActions
@@ -759,7 +767,7 @@ function InventoryCard({
           <span
             className={cn(
               'inline-flex items-center rounded-md border bg-muted/40 px-2 py-0.5 text-xs',
-              expired && 'border-destructive/40 bg-destructive/10 text-destructive',
+              expired && 'border-destructive/40 bg-destructive/10 text-destructive'
             )}
           >
             Exp {formatDate(item.expiryDate)}
