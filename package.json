@@ -3,17 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "preinstall": "node -e \"console.log('\\n📦 Installing DaanaRx dependencies...\\n')\"",
-    "postinstall": "node -e \"console.log('\\n✅ Dependencies installed successfully!\\n\\n📋 Next steps:\\n1. Copy env-example.txt to .env.local\\n2. Fill in your Supabase credentials\\n3. Run: node scripts/verify-setup.js\\n4. Start development: npm run dev\\n')\"",
+    "preinstall": "node -e \"console.log('\\n\ud83d\udce6 Installing DaanaRx dependencies...\\n')\"",
+    "postinstall": "node -e \"console.log('\\n\u2705 Dependencies installed successfully!\\n\\n\ud83d\udccb Next steps:\\n1. Copy env-example.txt to .env.local\\n2. Fill in your Supabase credentials\\n3. Run: node scripts/verify-setup.js\\n4. Start development: npm run dev\\n')\"",
     "verify": "node scripts/verify-setup.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:drug-api": "node scripts/test-drug-api.js"
+    "test:drug-api": "node scripts/test-drug-api.js",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@daana-health/domain-mass": "file:./vendor/domain-mass",
@@ -63,13 +66,18 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.60.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.0.3",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
+    "jest": "^30.4.2",
+    "prettier": "^3.8.4",
     "shadcn": "^3.6.2",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.6.0"
   }
 }

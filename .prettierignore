@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+out
+coverage
+vendor
+e2e/screenshots
+public
+package-lock.json
