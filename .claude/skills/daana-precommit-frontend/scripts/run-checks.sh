@@ -23,14 +23,22 @@ fi
 fail=0
 section() { printf "\n\033[1m=== %s ===\033[0m\n" "$1"; }
 
-section "1/3 ESLint (next lint)"
-if npm run lint; then echo "✅ lint clean"; else echo "❌ lint failed"; fail=1; fi
+section "1/3 ESLint (if configured)"
+if ls eslint.config.* .eslintrc.* >/dev/null 2>&1; then
+  if npx --no-install eslint .; then echo "✅ lint clean"; else echo "❌ lint failed"; fail=1; fi
+else
+  echo "⚠️  No ESLint flat config — skipping. Next 16 removed 'next lint'; add eslint.config.mjs (eslint-config-next) to enable the lint gate."
+fi
 
 section "2/3 TypeScript typecheck (tsc --noEmit)"
 if npx --no-install tsc --noEmit -p tsconfig.typecheck.json; then echo "✅ typecheck clean"; else echo "❌ typecheck failed"; fail=1; fi
 
-section "3/3 Jest unit tests"
-if npm test --silent; then echo "✅ unit tests passed"; else echo "❌ unit tests failed"; fail=1; fi
+section "3/3 Jest unit tests (if installed)"
+if [ -x node_modules/.bin/jest ]; then
+  if npm test --silent; then echo "✅ unit tests passed"; else echo "❌ unit tests failed"; fail=1; fi
+else
+  echo "⚠️  jest not installed (declared in test script but missing from devDependencies). Add jest + ts-jest + @types/jest to enable the test gate."
+fi
 
 echo
 if [ "$fail" -ne 0 ]; then
