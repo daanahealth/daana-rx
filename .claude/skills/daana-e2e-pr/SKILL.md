@@ -11,6 +11,8 @@ description: >
   up test data.
 ---
 
+> 🧭 Routing / where-to-start / cross-repo work: see the **daana-engineer** skill — it decomposes the ask and delegates to the right skill.
+
 # DaanarRX E2E PR Walkthrough + Screenshots
 
 Runs a real-browser end-to-end walkthrough of a DaanarRX PR and publishes the

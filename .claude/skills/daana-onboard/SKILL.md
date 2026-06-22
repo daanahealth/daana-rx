@@ -12,6 +12,8 @@ description: >
   installs the pre-commit quality gates.
 ---
 
+> 🧭 Routing / where-to-start / cross-repo work: see the **daana-engineer** skill — it decomposes the ask and delegates to the right skill.
+
 # DaanaRx New-Developer Onboarding
 
 Goal: take a brand-new developer from a fresh machine to a **running, verified**

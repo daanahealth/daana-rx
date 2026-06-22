@@ -10,6 +10,8 @@ description: >
   setup if it is not.
 ---
 
+> 🧭 Routing / where-to-start / cross-repo work: see the **daana-engineer** skill — it decomposes the ask and delegates to the right skill.
+
 # DaanarRX Frontend Pre-Commit Gate
 
 This skill is the authoritative quality gate for the **DaanarRX** repo
