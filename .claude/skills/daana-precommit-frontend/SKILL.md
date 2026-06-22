@@ -59,15 +59,17 @@ It executes, in order, and fails fast:
 | Gate            | Command                          | Pass criteria              |
 | --------------- | -------------------------------- | -------------------------- |
 | Lint            | `npm run lint` (next lint)       | exit 0, no errors          |
-| Typecheck       | `npx tsc --noEmit`               | exit 0                     |
+| Typecheck       | `tsc --noEmit -p tsconfig.typecheck.json` | exit 0           |
 | Unit tests      | `npm test` (jest)                | all tests pass             |
 
 If the runner exits non-zero, surface the failing section's output verbatim and
 stop. Do not attempt to auto-`--fix` lint or edit tests just to make them pass
 unless the user asks — report first.
 
-> Note: CI (`.github/workflows/ci.yml`) gates on `npm run build`, which also
-> type-checks. `tsc --noEmit` is the fast local equivalent. If the diff touches
+> Note: the typecheck uses `tsconfig.typecheck.json` (app code only). `next build`
+> and this config both ignore `*.test.*` / `e2e/**` — tests are type-checked by
+> ts-jest, e2e by Playwright — so a blanket `tsc --noEmit` would wrongly fail on
+> jest globals. If the diff touches
 > `next.config.js`, route segment configs, or server components, also run
 > `npm run build` to catch build-time-only errors.
 

@@ -27,7 +27,7 @@ section "1/3 ESLint (next lint)"
 if npm run lint; then echo "✅ lint clean"; else echo "❌ lint failed"; fail=1; fi
 
 section "2/3 TypeScript typecheck (tsc --noEmit)"
-if npx --no-install tsc --noEmit; then echo "✅ typecheck clean"; else echo "❌ typecheck failed"; fail=1; fi
+if npx --no-install tsc --noEmit -p tsconfig.typecheck.json; then echo "✅ typecheck clean"; else echo "❌ typecheck failed"; fail=1; fi
 
 section "3/3 Jest unit tests"
 if npm test --silent; then echo "✅ unit tests passed"; else echo "❌ unit tests failed"; fail=1; fi
