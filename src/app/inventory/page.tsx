@@ -20,7 +20,10 @@ import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import {
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
   Edit,
+  Eye,
   Filter,
   History,
   Loader2,
@@ -34,6 +37,7 @@ import {
 import type { Item, ItemStatus, Location } from '@daana-health/inventory-core';
 import { AppShell } from '../../components/layout/AppShell';
 import { EditItemModal } from '../../components/inventory/EditItemModal';
+import { ItemDetailsModal } from '../../components/inventory/ItemDetailsModal';
 import { RemoveItemModal } from '../../components/inventory/RemoveItemModal';
 import { TransactionHistoryDrawer } from '../../components/inventory/TransactionHistoryDrawer';
 import type { RootState } from '../../store';
@@ -184,8 +188,13 @@ export default function InventoryPage() {
   const [editTarget, setEditTarget] = useState<InventoryRow | null>(null);
   const [removeTarget, setRemoveTarget] = useState<InventoryRow | null>(null);
   const [historyTarget, setHistoryTarget] = useState<InventoryRow | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<InventoryRow | null>(null);
   const [checkoutTarget, setCheckoutTarget] = useState<InventoryRow | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+
+  // Pagination (client-side over the fetched working set)
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
 
   // ─── Fetch items ──────────────────────────────────────────────────────────
 
@@ -195,6 +204,9 @@ export default function InventoryPage() {
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (locationFilter !== 'all') params.set('locationId', locationFilter);
     if (expiryBefore) params.set('expiryBefore', expiryBefore);
+    // Pull the backend's max page (default is only 50) so client-side
+    // pagination below has the full working set to page through.
+    params.set('limit', '200');
     return params.toString();
   }, [q, statusFilter, locationFilter, expiryBefore]);
 
@@ -296,6 +308,23 @@ export default function InventoryPage() {
       setCheckingOut(false);
     }
   };
+
+  // ─── Pagination ─────────────────────────────────────────────────────────────
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = useMemo(
+    () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [rows, page]
+  );
+  // Jump back to page 1 whenever the filter/search query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [queryString]);
+  // Clamp the page if the result set shrinks below the current page (e.g. after
+  // a checkout/remove refresh).
+  useEffect(() => {
+    setPage((p) => Math.min(p, pageCount));
+  }, [pageCount]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -472,11 +501,12 @@ export default function InventoryPage() {
           <>
             {/* Mobile card view */}
             <div className="space-y-3 lg:hidden">
-              {rows.map((item) => (
+              {pagedRows.map((item) => (
                 <InventoryCard
                   key={item.id}
                   item={item}
                   isSuperadmin={isSuperadmin}
+                  onDetails={() => setDetailsTarget(item)}
                   onEdit={() => setEditTarget(item)}
                   onCheckout={() => setCheckoutTarget(item)}
                   onRemove={() => setRemoveTarget(item)}
@@ -496,6 +526,7 @@ export default function InventoryPage() {
                         <TableHead>Dosage</TableHead>
                         <TableHead>Unit</TableHead>
                         <TableHead>Form</TableHead>
+                        <TableHead>Quantity</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Expiry</TableHead>
                         <TableHead>DRX Code</TableHead>
@@ -509,16 +540,23 @@ export default function InventoryPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rows.map((item) => {
+                      {pagedRows.map((item) => {
                         const expired = isExpired(item);
                         return (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">
-                              {readAttr(item.attributes, 'medication_name') || '—'}
+                              <button
+                                type="button"
+                                onClick={() => setDetailsTarget(item)}
+                                className="text-left hover:underline focus-visible:underline focus-visible:outline-none"
+                              >
+                                {readAttr(item.attributes, 'medication_name') || '—'}
+                              </button>
                             </TableCell>
                             <TableCell>{readAttr(item.attributes, 'dosage') || '—'}</TableCell>
                             <TableCell>{readAttr(item.attributes, 'unit') || '—'}</TableCell>
                             <TableCell>{readAttr(item.attributes, 'form') || '—'}</TableCell>
+                            <TableCell>{readAttr(item.attributes, 'quantity') || '—'}</TableCell>
                             <TableCell>{item.locationCode ?? '—'}</TableCell>
                             <TableCell className={cn(expired && 'text-destructive font-medium')}>
                               {formatDate(item.expiryDate)}
@@ -546,6 +584,7 @@ export default function InventoryPage() {
                               <RowActions
                                 item={item}
                                 isSuperadmin={isSuperadmin}
+                                onDetails={() => setDetailsTarget(item)}
                                 onEdit={() => setEditTarget(item)}
                                 onCheckout={() => setCheckoutTarget(item)}
                                 onRemove={() => setRemoveTarget(item)}
@@ -560,6 +599,39 @@ export default function InventoryPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Pagination */}
+            {rows.length > PAGE_SIZE ? (
+              <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+                <p className="text-xs text-muted-foreground">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, rows.length)} of{' '}
+                  {rows.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {pageCount}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                    disabled={page >= pageCount}
+                  >
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -597,6 +669,23 @@ export default function InventoryPage() {
         open={historyTarget !== null}
         onOpenChange={(open) => {
           if (!open) setHistoryTarget(null);
+        }}
+      />
+
+      {/* Item details modal — QR code, transaction history, quick checkout */}
+      <ItemDetailsModal
+        item={detailsTarget}
+        open={detailsTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailsTarget(null);
+        }}
+        isSuperadmin={isSuperadmin}
+        onCheckout={() => {
+          // Hand off to the existing superadmin-gated checkout confirmation
+          // dialog so approval + transaction logging stay in one place.
+          const target = detailsTarget;
+          setDetailsTarget(null);
+          setCheckoutTarget(target);
         }}
       />
 
@@ -674,6 +763,7 @@ export default function InventoryPage() {
 function RowActions({
   item,
   isSuperadmin,
+  onDetails,
   onEdit,
   onCheckout,
   onRemove,
@@ -681,6 +771,7 @@ function RowActions({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
   onRemove: () => void;
@@ -697,6 +788,11 @@ function RowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onDetails}>
+          <Eye className="mr-2 h-4 w-4" />
+          View details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onEdit} disabled={terminal}>
           <Edit className="mr-2 h-4 w-4" />
           Edit
@@ -726,6 +822,7 @@ function RowActions({
 function InventoryCard({
   item,
   isSuperadmin,
+  onDetails,
   onEdit,
   onCheckout,
   onRemove,
@@ -733,6 +830,7 @@ function InventoryCard({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
   onRemove: () => void;
@@ -744,9 +842,13 @@ function InventoryCard({
       <CardContent className="space-y-3 pt-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 space-y-1">
-            <p className="break-words text-sm font-semibold">
+            <button
+              type="button"
+              onClick={onDetails}
+              className="break-words text-left text-sm font-semibold hover:underline focus-visible:underline focus-visible:outline-none"
+            >
               {readAttr(item.attributes, 'medication_name') || '—'}
-            </p>
+            </button>
             <p className="text-xs text-muted-foreground">
               {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')} ·{' '}
               {readAttr(item.attributes, 'form') || '—'}
@@ -755,6 +857,7 @@ function InventoryCard({
           <RowActions
             item={item}
             isSuperadmin={isSuperadmin}
+            onDetails={onDetails}
             onEdit={onEdit}
             onCheckout={onCheckout}
             onRemove={onRemove}
@@ -780,6 +883,8 @@ function InventoryCard({
         </div>
 
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+          <dt className="text-muted-foreground">Quantity</dt>
+          <dd>{readAttr(item.attributes, 'quantity') || '—'}</dd>
           <dt className="text-muted-foreground">DRX code</dt>
           <dd className="font-mono">{item.unitCode}</dd>
           <dt className="text-muted-foreground">Received</dt>
