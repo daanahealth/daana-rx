@@ -42,7 +42,10 @@ async function signIn(page: Page) {
   await page.goto('/auth/signin', { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
   await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
+  await page
+    .getByRole('button', { name: /sign in/i })
+    .first()
+    .click();
   await page
     .waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
     .catch(() => {});
@@ -79,9 +82,9 @@ test('inventory details dialog: QR + history + superadmin quick-checkout hand-of
   // 1c. Transaction-history section renders (entries or the empty message — i.e.
   //     it resolved out of the loading state, not stuck spinning).
   await expect(dialog.getByText('Transaction history')).toBeVisible();
-  await expect(
-    dialog.getByText(/Check In|No transactions recorded/i).first(),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(dialog.getByText(/Check In|No transactions recorded/i).first()).toBeVisible({
+    timeout: 30_000,
+  });
 
   // 1d. Superadmin sees Quick checkout.
   const quickCheckout = dialog.getByRole('button', { name: /quick checkout/i });
@@ -102,6 +105,9 @@ test('inventory details dialog: QR + history + superadmin quick-checkout hand-of
   // 3. Re-open details and verify Close dismisses the dialog.
   await firstRow.locator('button').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: /^close$/i }).first().click();
+  await page
+    .getByRole('button', { name: /^close$/i })
+    .first()
+    .click();
   await expect(page.getByRole('dialog')).toBeHidden();
 });
