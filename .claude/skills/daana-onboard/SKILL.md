@@ -29,6 +29,55 @@ once and reuse the answer):
 | Mobile                | `DaanaRx-Mobile`                  | React Native / Expo app |
 | Inventory engine      | `daana-inventory`                 | pnpm monorepo → `@daana-health/*` packages |
 
+## Phase 0a — Discover the platform's skills (recurse the repos)
+
+Don't assume a fixed list of skills — **discover them** so this onboarding stays
+correct as skills are added/removed (e.g. data-ingestion, mass-import, new
+pre-commit gates). Recursively find every skill across the workspace and each
+repo's `.claude/skills/` directory:
+
+```bash
+# All DaanaRx skills, repo-local and workspace-level (skip deps/build output).
+find /Users/rithik/Code \
+  -type f -name SKILL.md \
+  -path '*/.claude/skills/*' \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.next/*' -not -path '*/dist/*' -not -path '*/dist-consolidated/*' \
+  2>/dev/null | sort
+```
+
+Also check user-level skills (shared across all projects):
+
+```bash
+find ~/.claude/skills -type f -name SKILL.md 2>/dev/null | sort
+```
+
+For each `SKILL.md` found, read its YAML frontmatter and record `name` +
+`description` (the frontmatter is the block between the leading `---` fences).
+A quick way to list them:
+
+```bash
+for f in $(find /Users/rithik/Code ~/.claude/skills -type f -name SKILL.md \
+            -path '*/.claude/skills/*' -not -path '*/node_modules/*' \
+            -not -path '*/.next/*' -not -path '*/dist*/*' 2>/dev/null | sort); do
+  name=$(awk '/^name:/{print $2; exit}' "$f")
+  echo "• ${name:-?}  —  $f"
+done
+```
+
+Build a catalog and present it to the dev: skill name, one-line purpose (from
+`description`), the repo it lives in, and how to invoke it (`/<name>`). Use this
+catalog to drive later phases instead of hardcoded paths:
+
+- Any skill whose directory name matches `*precommit*` (or whose description
+  mentions "pre-commit") is a **quality gate** → install its hook in Phase 7 by
+  running the `scripts/install-hook.sh` that sits next to its `SKILL.md`.
+- Skills about data import/ingestion (e.g. `daanarx-mass-import`, the ingestion
+  skill) → mention them as the path for loading clinic data; don't run them
+  during onboarding.
+- If you discover a skill not described in this document, surface it anyway —
+  the catalog is the source of truth, this prose is just the expected baseline.
+
 ## Phase 0 — Orientation (explain the architecture first)
 
 Before touching anything, give the dev this mental model:
@@ -204,15 +253,27 @@ Scan the QR with Expo Go, or run an emulator. Same REST client pattern as web.
 
 ## Phase 7 — Install the quality gates (pre-commit)
 
-Wire up the pre-commit skills so the dev's first commit is already protected:
+Wire up the pre-commit skills so the dev's first commit is already protected.
+Use the catalog from **Phase 0a** — install the hook for every discovered
+pre-commit skill rather than a hardcoded list:
 
 ```bash
-# Frontend gate: ESLint + typecheck + Jest + react-doctor (>=90) + best-practices
-bash /Users/rithik/Code/DaanarRX/.claude/skills/daana-precommit-frontend/scripts/install-hook.sh
-
-# Backend gate: consolidated typecheck + engine tests + lint + best-practices
-bash /Users/rithik/Code/DaanaRx-Backend/.claude/skills/daana-precommit-backend/scripts/install-hook.sh
+# Install the git hook for each discovered pre-commit gate.
+find /Users/rithik/Code -type f -name install-hook.sh \
+  -path '*/.claude/skills/*precommit*/scripts/*' \
+  -not -path '*/node_modules/*' 2>/dev/null | while read -r installer; do
+    echo "→ installing hook from $installer"
+    bash "$installer"
+done
 ```
+
+At the time of writing this resolves to (verify against your Phase 0a catalog):
+- `DaanarRX/.claude/skills/daana-precommit-frontend` — ESLint + typecheck +
+  Jest + react-doctor (>=90) + best-practices.
+- `DaanaRx-Backend/.claude/skills/daana-precommit-backend` — consolidated
+  typecheck + engine tests + lint + best-practices.
+
+If Phase 0a surfaced a pre-commit skill not listed here, install it too.
 
 Explain the two-layer model:
 - The **git hook** auto-runs the fast deterministic checks on every
