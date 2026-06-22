@@ -19,15 +19,29 @@ DaanaRx stack with the quality gates installed — with as little friction as
 possible. Work through the phases in order. After each phase, confirm success
 before moving on, and tell the dev what just happened in plain language.
 
-Repos live under `/Users/rithik/Code` (adjust if the dev cloned elsewhere — ask
-once and reuse the answer):
+All repos are hosted in the **`daanahealth`** GitHub org (no hyphen — the old
+`daana-health` hyphenated org is deprecated). Clone them under one parent dir
+(these instructions assume `/Users/rithik/Code`; adjust if the dev cloned
+elsewhere — ask once and reuse the answer):
 
-| Repo                  | Path                              | What it is |
-| --------------------- | --------------------------------- | ---------- |
-| Frontend              | `DaanarRX` (note double `a`)       | Next.js 16 / React 18 / TS web app |
-| Backend               | `DaanaRx-Backend`                 | Consolidated Express/TS monolith (one service) |
-| Mobile                | `DaanaRx-Mobile`                  | React Native / Expo app |
-| Inventory engine      | `daana-inventory`                 | pnpm monorepo → `@daana-health/*` packages |
+| Repo             | GitHub (clone)                              | Local path                   | What it is |
+| ---------------- | ------------------------------------------- | ---------------------------- | ---------- |
+| Frontend         | `github.com/daanahealth/daana-rx`           | `DaanarRX` (note double `a`)  | Next.js 16 / React 18 / TS web app |
+| Backend          | `github.com/daanahealth/DaanaRx-Backend`    | `DaanaRx-Backend`            | Consolidated Express/TS monolith (one service) |
+| Mobile           | `github.com/daanahealth/DaanaRx-Mobile`     | `DaanaRx-Mobile`             | React Native / Expo app |
+| Inventory engine | `github.com/daanahealth/daana-inventory`    | `daana-inventory`            | pnpm monorepo → `@daana-health/*` packages |
+
+```bash
+# First-time clone (run in your chosen parent directory):
+git clone https://github.com/daanahealth/daana-rx.git DaanarRX
+git clone https://github.com/daanahealth/DaanaRx-Backend.git
+git clone https://github.com/daanahealth/daana-inventory.git
+git clone https://github.com/daanahealth/DaanaRx-Mobile.git      # only if doing mobile
+```
+
+> If a clone 404s, the dev needs to be added to the `daanahealth` org (ask an
+> owner). If an existing clone still points at `daana-health` (hyphen), repoint
+> it: `git remote set-url origin https://github.com/daanahealth/<repo>.git`.
 
 ## Phase 0a — Discover the platform's skills (recurse the repos)
 
@@ -282,6 +296,17 @@ Explain the two-layer model:
   (`daana-precommit-frontend` / `daana-precommit-backend`) — that adds the
   react-doctor >=90 gate (frontend) and the best-practices + Supabase-advisor
   review that a plain shell hook can't do.
+
+Also explain the **server-side** enforcement (this is what actually guarantees
+the workflow, since local hooks can be bypassed with `--no-verify`):
+- `main` is **branch-protected** on both `daanahealth/daana-rx` and
+  `daanahealth/DaanaRx-Backend`: direct pushes are blocked — all changes land via
+  pull request. The pre-push hook (Phase 7) gives the same feedback locally.
+- Each PR must pass the **`build-and-test`** GitHub Actions check (lint +
+  typecheck + tests, mirroring the local gate) and be up to date with `main`
+  before it can merge.
+- Workflow: branch → commit (pre-commit gate runs) → run the repo's
+  pre-commit skill → push branch → open PR → CI green → merge.
 
 ## Phase 8 — First-commit dry run & wrap-up
 

@@ -134,6 +134,16 @@ DaanarRX pre-commit gate
 - **Any red** → state "Commit blocked" with the failing gate(s) and the
   shortest path to green. Do not commit.
 
+## CI & branch protection (daanahealth org)
+
+This repo lives at `github.com/daanahealth/daana-rx` (org **daanahealth**, not the
+deprecated hyphenated `daana-health`). `main` is branch-protected: direct pushes
+are blocked and every change merges via pull request, which must pass the
+**`build-and-test`** GitHub Actions check (lint + tsc + Jest — the deterministic subset of this gate) and be up to date with
+`main`. Run this skill's full gate (incl. react-doctor >=90 +
+best-practices) locally before opening the PR; CI runs react-doctor only when
+the `ANTHROPIC_API_KEY` repo secret is configured.
+
 ## Installing the automatic git hook (optional, recommended)
 
 To enforce the deterministic gates (Section 1) automatically on every
