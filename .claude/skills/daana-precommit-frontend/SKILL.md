@@ -10,6 +10,8 @@ description: >
   setup if it is not.
 ---
 
+> 🧭 Routing / where-to-start / cross-repo work: see the **daana-engineer** skill — it decomposes the ask and delegates to the right skill.
+
 # DaanarRX Frontend Pre-Commit Gate
 
 This skill is the authoritative quality gate for the **DaanarRX** repo
@@ -56,11 +58,11 @@ bash .claude/skills/daana-precommit-frontend/scripts/run-checks.sh
 
 It executes, in order, and fails fast:
 
-| Gate            | Command                          | Pass criteria              |
-| --------------- | -------------------------------- | -------------------------- |
-| Lint            | `npm run lint` (next lint)       | exit 0, no errors          |
-| Typecheck       | `tsc --noEmit -p tsconfig.typecheck.json` | exit 0           |
-| Unit tests      | `npm test` (jest)                | all tests pass             |
+| Gate       | Command                                   | Pass criteria     |
+| ---------- | ----------------------------------------- | ----------------- |
+| Lint       | `npm run lint` (next lint)                | exit 0, no errors |
+| Typecheck  | `tsc --noEmit -p tsconfig.typecheck.json` | exit 0            |
+| Unit tests | `npm test` (jest)                         | all tests pass    |
 
 If the runner exits non-zero, surface the failing section's output verbatim and
 stop. Do not attempt to auto-`--fix` lint or edit tests just to make them pass
@@ -83,7 +85,7 @@ This is mandatory for any change touching `.tsx`/`.jsx`, hooks, components, or
 3. If < 90:
    - List every issue react-doctor flagged, grouped by severity.
    - Offer to fix them. After fixes, re-run react-doctor until the score is
-     >= 90. Re-run the deterministic gates (Section 1) after any code change.
+     > = 90. Re-run the deterministic gates (Section 1) after any code change.
    - Do **not** commit while the score is < 90.
 4. If the staged diff contains no React/JSX/hook changes (e.g. only `*.md`,
    config, or `src/utils/*.ts` pure logic), note that react-doctor is N/A for
