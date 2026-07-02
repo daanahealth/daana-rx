@@ -181,7 +181,7 @@ export default function CheckInPage() {
     watch('quantity'),
     watch('notes'),
     watch('supervisor_acknowledged'),
-  ]);  
+  ]);
 
   // ---------------------------------------------------------------------
   // Navigation handlers
