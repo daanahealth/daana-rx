@@ -251,36 +251,34 @@ export default function CheckInPage() {
         headers: authHeaders(),
         body: JSON.stringify(payload),
       });
-      // Surface a real failure (the write goes to the inventory service via the
-      // gateway). Kept as a soft toast so a transient error still lets the UX
-      // flow complete, but the message reflects the actual endpoint.
+      // A failed save must never reach the success screen — the unit was not
+      // persisted, so showing a unit code would report a phantom check-in.
+      // Stay on the form with the server's error so the user can fix + retry.
       if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         toast({
-          title: 'Check-in not saved',
-          description: `POST /inventory/items returned ${res.status}.`,
+          title: 'Check-in failed — nothing was saved',
+          description: body.error || `POST /inventory/items returned ${res.status}.`,
+          variant: 'destructive',
         });
+        return;
       }
+      // Prefer the unit code the server actually persisted; the client-side
+      // preview counter can drift if someone else checked in concurrently.
+      const body = (await res.json().catch(() => ({}))) as { unit_code?: string };
       setCreatedUnit({
-        unitCode: previewItem.item.unitCode,
+        unitCode: body.unit_code ?? previewItem.item.unitCode,
         locationCode,
         medicationName: values.medication_name,
       });
       setPhase('success');
     } catch (err) {
       toast({
-        title: 'Backend not yet wired',
+        title: 'Check-in failed — nothing was saved',
         description:
-          err instanceof Error
-            ? err.message
-            : 'POST /api/items failed; recording locally for demo.',
+          err instanceof Error ? err.message : 'Could not reach the inventory service.',
+        variant: 'destructive',
       });
-      const values = getValues();
-      setCreatedUnit({
-        unitCode: previewItem.item.unitCode,
-        locationCode,
-        medicationName: values.medication_name,
-      });
-      setPhase('success');
     } finally {
       setSubmitting(false);
     }
