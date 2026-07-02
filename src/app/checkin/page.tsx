@@ -99,40 +99,37 @@ export default function CheckInPage() {
 
   // Whenever the location changes (after the user is at step 5+), fetch a
   // new counter value.
-  const fetchNextCounter = useCallback(
-    async (loc: string) => {
-      if (!loc) return;
-      setCounterLoading(true);
-      setCounterError(null);
-      try {
-        const url = `${API_BASE}/inventory/items/next-code?location=${encodeURIComponent(loc)}`;
-        const res = await fetch(url, { cache: 'no-store', headers: authHeaders() });
-        if (!res.ok) {
-          throw new Error(`Counter API returned ${res.status}`);
-        }
-        const json = (await res.json()) as { counter?: number; next?: number };
-        const value = typeof json.counter === 'number' ? json.counter : json.next;
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-          throw new Error('Counter API returned no numeric value');
-        }
-        setCounter(value);
-      } catch (err) {
-        // Backend not yet wired — fall back to a mock counter so the agent's
-        // intake flow can still be exercised end-to-end. The error message is
-        // still surfaced so we know the wire-up is pending.
-        const mock = Math.floor(Math.random() * 99999) + 1;
-        setCounter(mock);
-        setCounterError(
-          err instanceof Error
-            ? `Using mock counter (${err.message})`
-            : 'Using mock counter (backend not wired yet)',
-        );
-      } finally {
-        setCounterLoading(false);
+  const fetchNextCounter = useCallback(async (loc: string) => {
+    if (!loc) return;
+    setCounterLoading(true);
+    setCounterError(null);
+    try {
+      const url = `${API_BASE}/inventory/items/next-code?location=${encodeURIComponent(loc)}`;
+      const res = await fetch(url, { cache: 'no-store', headers: authHeaders() });
+      if (!res.ok) {
+        throw new Error(`Counter API returned ${res.status}`);
       }
-    },
-    [],
-  );
+      const json = (await res.json()) as { counter?: number; next?: number };
+      const value = typeof json.counter === 'number' ? json.counter : json.next;
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('Counter API returned no numeric value');
+      }
+      setCounter(value);
+    } catch (err) {
+      // Backend not yet wired — fall back to a mock counter so the agent's
+      // intake flow can still be exercised end-to-end. The error message is
+      // still surfaced so we know the wire-up is pending.
+      const mock = Math.floor(Math.random() * 99999) + 1;
+      setCounter(mock);
+      setCounterError(
+        err instanceof Error
+          ? `Using mock counter (${err.message})`
+          : 'Using mock counter (backend not wired yet)'
+      );
+    } finally {
+      setCounterLoading(false);
+    }
+  }, []);
 
   // ---------------------------------------------------------------------
   // Preview Item assembled for label rendering + validation
@@ -171,7 +168,20 @@ export default function CheckInPage() {
       removedReason: null,
     };
     return { item };
-  }, [counter, locationCode, getValues, watch('medication_name'), watch('dosage'), watch('unit'), watch('form'), watch('specialty_class'), watch('expiry_date'), watch('quantity'), watch('notes'), watch('supervisor_acknowledged')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    counter,
+    locationCode,
+    getValues,
+    watch('medication_name'),
+    watch('dosage'),
+    watch('unit'),
+    watch('form'),
+    watch('specialty_class'),
+    watch('expiry_date'),
+    watch('quantity'),
+    watch('notes'),
+    watch('supervisor_acknowledged'),
+  ]);  
 
   // ---------------------------------------------------------------------
   // Navigation handlers
@@ -275,8 +285,7 @@ export default function CheckInPage() {
     } catch (err) {
       toast({
         title: 'Check-in failed — nothing was saved',
-        description:
-          err instanceof Error ? err.message : 'Could not reach the inventory service.',
+        description: err instanceof Error ? err.message : 'Could not reach the inventory service.',
         variant: 'destructive',
       });
     } finally {
@@ -299,11 +308,10 @@ export default function CheckInPage() {
   // ---------------------------------------------------------------------
   const classification = useMemo(
     () => suggestLocationForClass(specialtyClass ?? ''),
-    [specialtyClass],
+    [specialtyClass]
   );
   const needsSupervisorReview = classification.requires_supervisor_review;
-  const blockSubmitForSupervisor =
-    needsSupervisorReview && !supervisorAcknowledged;
+  const blockSubmitForSupervisor = needsSupervisorReview && !supervisorAcknowledged;
 
   // ---------------------------------------------------------------------
   // Expiry fallback hint
@@ -340,12 +348,9 @@ export default function CheckInPage() {
     <AppShell>
       <div className="mx-auto max-w-3xl px-4 pb-32 sm:pb-8 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Check In
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Check In</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Guided intake for donated medications. Each step leads naturally
-            to the next.
+            Guided intake for donated medications. Each step leads naturally to the next.
           </p>
         </div>
 
@@ -367,23 +372,14 @@ export default function CheckInPage() {
                     <span className="text-sm">
                       No expiry on the donor package? Use the spec fallback:
                     </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={applyExpiryFallback}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={applyExpiryFallback}>
                       Use {expiryFallback} (10 years from today)
                     </Button>
                   </AlertDescription>
                 </Alert>
               )}
 
-              <FlowFooter
-                onBack={null}
-                onNext={goToLocation}
-                nextLabel="Next: location"
-              />
+              <FlowFooter onBack={null} onNext={goToLocation} nextLabel="Next: location" />
             </CardContent>
           </Card>
         )}
@@ -419,8 +415,8 @@ export default function CheckInPage() {
                       Supervisor acknowledgement
                     </span>
                     <span className="block text-muted-foreground mt-1">
-                      A superadmin has personally reviewed this intake.
-                      Required for high-risk specialty classes and Hold.
+                      A superadmin has personally reviewed this intake. Required for high-risk
+                      specialty classes and Hold.
                     </span>
                   </span>
                 </label>
@@ -456,8 +452,7 @@ export default function CheckInPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Write this label onto the pre-printed blank, then place the
-                  medication in bin{' '}
+                  Write this label onto the pre-printed blank, then place the medication in bin{' '}
                   <span className="font-mono font-semibold">{locationCode}</span>.
                 </AlertDescription>
               </Alert>
@@ -466,9 +461,7 @@ export default function CheckInPage() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="font-semibold">
-                      Cannot submit — fix the following:
-                    </div>
+                    <div className="font-semibold">Cannot submit — fix the following:</div>
                     <ul className="list-disc pl-5 mt-2 text-sm">
                       {validationIssues.map((i) => (
                         <li key={i}>{i}</li>
@@ -482,8 +475,8 @@ export default function CheckInPage() {
                 <Alert variant="destructive">
                   <ShieldCheck className="h-4 w-4" />
                   <AlertDescription>
-                    Supervisor acknowledgement required before confirming
-                    placement. Return to the location step to check the box.
+                    Supervisor acknowledgement required before confirming placement. Return to the
+                    location step to check the box.
                   </AlertDescription>
                 </Alert>
               )}
@@ -491,14 +484,8 @@ export default function CheckInPage() {
               <FlowFooter
                 onBack={() => setPhase('location')}
                 onNext={handleSubmit}
-                nextLabel={
-                  submitting ? 'Confirming…' : 'Confirm placed'
-                }
-                nextDisabled={
-                  submitting ||
-                  counter == null ||
-                  blockSubmitForSupervisor
-                }
+                nextLabel={submitting ? 'Confirming…' : 'Confirm placed'}
+                nextDisabled={submitting || counter == null || blockSubmitForSupervisor}
                 nextBusy={submitting}
                 primary
               />
@@ -555,21 +542,11 @@ function FlowFooter({
       {/* Mobile: sticky bottom CTA bar */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-3 flex items-center gap-2">
         {onBack && (
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="flex-shrink-0"
-            aria-label="Back"
-          >
+          <Button variant="outline" onClick={onBack} className="flex-shrink-0" aria-label="Back">
             <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
-        <Button
-          onClick={onNext}
-          disabled={nextDisabled}
-          className="flex-1"
-          size="lg"
-        >
+        <Button onClick={onNext} disabled={nextDisabled} className="flex-1" size="lg">
           {nextBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {nextLabel}
         </Button>
@@ -592,13 +569,7 @@ function buildPreviewUnitCode(locationCode: string, counter: number): string {
 // FlowProgress — inline 3-step progress indicator.
 // -----------------------------------------------------------------------------
 
-function FlowProgress({
-  activeStep,
-  labels,
-}: {
-  activeStep: number;
-  labels: readonly string[];
-}) {
+function FlowProgress({ activeStep, labels }: { activeStep: number; labels: readonly string[] }) {
   return (
     <ol className="flex items-center gap-2 overflow-x-auto" role="list">
       {labels.map((label, idx) => {
@@ -611,7 +582,7 @@ function FlowProgress({
                 'flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                 done && 'bg-primary border-primary text-primary-foreground',
                 active && !done && 'border-primary text-primary',
-                !done && !active && 'border-muted text-muted-foreground',
+                !done && !active && 'border-muted text-muted-foreground'
               )}
               aria-current={active ? 'step' : undefined}
             >
@@ -620,17 +591,14 @@ function FlowProgress({
             <span
               className={cn(
                 'text-sm whitespace-nowrap',
-                active ? 'font-semibold' : 'text-muted-foreground',
+                active ? 'font-semibold' : 'text-muted-foreground'
               )}
             >
               {label}
             </span>
             {idx < labels.length - 1 && (
               <span
-                className={cn(
-                  'h-[2px] w-6 sm:w-12',
-                  done ? 'bg-primary' : 'bg-muted',
-                )}
+                className={cn('h-[2px] w-6 sm:w-12', done ? 'bg-primary' : 'bg-muted')}
                 aria-hidden
               />
             )}
