@@ -295,7 +295,7 @@ export default function InventoryPage() {
       const cartId = addBody.cart_id ?? addBody.cart?.id;
       if (!cartId) {
         throw new Error(
-          'Checkout could not start: the server did not return a cart id. The unit is still reserved — refresh and try again.',
+          'Checkout could not start: the server did not return a cart id. The unit is still reserved — refresh and try again.'
         );
       }
 
@@ -308,7 +308,7 @@ export default function InventoryPage() {
         const body = await approveRes.json().catch(() => ({}));
         throw new Error(
           body.error ||
-            `Approve failed: ${approveRes.status}. The unit is still reserved — refresh before retrying.`,
+            `Approve failed: ${approveRes.status}. The unit is still reserved — refresh before retrying.`
         );
       }
 
