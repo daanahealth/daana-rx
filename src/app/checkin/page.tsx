@@ -201,7 +201,21 @@ export default function CheckInPage() {
       removedReason: null,
     };
     return { item };
-  }, [counter, locationCode, serverUnitCode, getValues, watch('medication_name'), watch('dosage'), watch('unit'), watch('form'), watch('specialty_class'), watch('expiry_date'), watch('quantity'), watch('notes'), watch('supervisor_acknowledged')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    counter,
+    locationCode,
+    serverUnitCode,
+    getValues,
+    watch('medication_name'),
+    watch('dosage'),
+    watch('unit'),
+    watch('form'),
+    watch('specialty_class'),
+    watch('expiry_date'),
+    watch('quantity'),
+    watch('notes'),
+    watch('supervisor_acknowledged'),
+  ]);
 
   // ---------------------------------------------------------------------
   // Navigation handlers
@@ -300,36 +314,33 @@ export default function CheckInPage() {
         headers: authHeaders(),
         body: JSON.stringify(payload),
       });
-      // Surface a real failure (the write goes to the inventory service via the
-      // gateway). Kept as a soft toast so a transient error still lets the UX
-      // flow complete, but the message reflects the actual endpoint.
+      // A failed save must never reach the success screen — the unit was not
+      // persisted, so showing a unit code would report a phantom check-in.
+      // Stay on the form with the server's error so the user can fix + retry.
       if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         toast({
-          title: 'Check-in not saved',
-          description: `POST /inventory/items returned ${res.status}.`,
+          title: 'Check-in failed — nothing was saved',
+          description: body.error || `POST /inventory/items returned ${res.status}.`,
+          variant: 'destructive',
         });
+        return;
       }
+      // Prefer the unit code the server actually persisted; the client-side
+      // preview counter can drift if someone else checked in concurrently.
+      const body = (await res.json().catch(() => ({}))) as { unit_code?: string };
       setCreatedUnit({
-        unitCode: previewItem.item.unitCode,
+        unitCode: body.unit_code ?? previewItem.item.unitCode,
         locationCode,
         medicationName: values.medication_name,
       });
       setPhase('success');
     } catch (err) {
       toast({
-        title: 'Backend not yet wired',
-        description:
-          err instanceof Error
-            ? err.message
-            : 'POST /api/items failed; recording locally for demo.',
+        title: 'Check-in failed — nothing was saved',
+        description: err instanceof Error ? err.message : 'Could not reach the inventory service.',
+        variant: 'destructive',
       });
-      const values = getValues();
-      setCreatedUnit({
-        unitCode: previewItem.item.unitCode,
-        locationCode,
-        medicationName: values.medication_name,
-      });
-      setPhase('success');
     } finally {
       setSubmitting(false);
     }
@@ -350,11 +361,10 @@ export default function CheckInPage() {
   // ---------------------------------------------------------------------
   const classification = useMemo(
     () => suggestLocationForClass(specialtyClass ?? ''),
-    [specialtyClass],
+    [specialtyClass]
   );
   const needsSupervisorReview = classification.requires_supervisor_review;
-  const blockSubmitForSupervisor =
-    needsSupervisorReview && !supervisorAcknowledged;
+  const blockSubmitForSupervisor = needsSupervisorReview && !supervisorAcknowledged;
 
   // ---------------------------------------------------------------------
   // Expiry fallback hint
@@ -391,12 +401,9 @@ export default function CheckInPage() {
     <AppShell>
       <div className="mx-auto max-w-3xl px-4 pb-32 sm:pb-8 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Check In
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Check In</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Guided intake for donated medications. Each step leads naturally
-            to the next.
+            Guided intake for donated medications. Each step leads naturally to the next.
           </p>
         </div>
 
@@ -418,23 +425,14 @@ export default function CheckInPage() {
                     <span className="text-sm">
                       No expiry on the donor package? Use the spec fallback:
                     </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={applyExpiryFallback}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={applyExpiryFallback}>
                       Use {expiryFallback} (10 years from today)
                     </Button>
                   </AlertDescription>
                 </Alert>
               )}
 
-              <FlowFooter
-                onBack={null}
-                onNext={goToLocation}
-                nextLabel="Next: location"
-              />
+              <FlowFooter onBack={null} onNext={goToLocation} nextLabel="Next: location" />
             </CardContent>
           </Card>
         )}
@@ -506,8 +504,8 @@ export default function CheckInPage() {
                       Supervisor acknowledgement
                     </span>
                     <span className="block text-muted-foreground mt-1">
-                      A superadmin has personally reviewed this intake.
-                      Required for high-risk specialty classes and Hold.
+                      A superadmin has personally reviewed this intake. Required for high-risk
+                      specialty classes and Hold.
                     </span>
                   </span>
                 </label>
@@ -543,8 +541,7 @@ export default function CheckInPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Write this label onto the pre-printed blank, then place the
-                  medication in bin{' '}
+                  Write this label onto the pre-printed blank, then place the medication in bin{' '}
                   <span className="font-mono font-semibold">{locationCode}</span>.
                 </AlertDescription>
               </Alert>
@@ -553,9 +550,7 @@ export default function CheckInPage() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="font-semibold">
-                      Cannot submit — fix the following:
-                    </div>
+                    <div className="font-semibold">Cannot submit — fix the following:</div>
                     <ul className="list-disc pl-5 mt-2 text-sm">
                       {validationIssues.map((i) => (
                         <li key={i}>{i}</li>
@@ -569,8 +564,8 @@ export default function CheckInPage() {
                 <Alert variant="destructive">
                   <ShieldCheck className="h-4 w-4" />
                   <AlertDescription>
-                    Supervisor acknowledgement required before confirming
-                    placement. Return to the location step to check the box.
+                    Supervisor acknowledgement required before confirming placement. Return to the
+                    location step to check the box.
                   </AlertDescription>
                 </Alert>
               )}
@@ -578,14 +573,8 @@ export default function CheckInPage() {
               <FlowFooter
                 onBack={() => setPhase('location')}
                 onNext={handleSubmit}
-                nextLabel={
-                  submitting ? 'Confirming…' : 'Confirm placed'
-                }
-                nextDisabled={
-                  submitting ||
-                  counter == null ||
-                  blockSubmitForSupervisor
-                }
+                nextLabel={submitting ? 'Confirming…' : 'Confirm placed'}
+                nextDisabled={submitting || counter == null || blockSubmitForSupervisor}
                 nextBusy={submitting}
                 primary
               />
@@ -642,21 +631,11 @@ function FlowFooter({
       {/* Mobile: sticky bottom CTA bar */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-3 flex items-center gap-2">
         {onBack && (
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="flex-shrink-0"
-            aria-label="Back"
-          >
+          <Button variant="outline" onClick={onBack} className="flex-shrink-0" aria-label="Back">
             <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
-        <Button
-          onClick={onNext}
-          disabled={nextDisabled}
-          className="flex-1"
-          size="lg"
-        >
+        <Button onClick={onNext} disabled={nextDisabled} className="flex-1" size="lg">
           {nextBusy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {nextLabel}
         </Button>
@@ -679,13 +658,7 @@ function FlowFooter({
 // FlowProgress — inline 3-step progress indicator.
 // -----------------------------------------------------------------------------
 
-function FlowProgress({
-  activeStep,
-  labels,
-}: {
-  activeStep: number;
-  labels: readonly string[];
-}) {
+function FlowProgress({ activeStep, labels }: { activeStep: number; labels: readonly string[] }) {
   return (
     <ol className="flex items-center gap-2 overflow-x-auto" role="list">
       {labels.map((label, idx) => {
@@ -698,7 +671,7 @@ function FlowProgress({
                 'flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                 done && 'bg-primary border-primary text-primary-foreground',
                 active && !done && 'border-primary text-primary',
-                !done && !active && 'border-muted text-muted-foreground',
+                !done && !active && 'border-muted text-muted-foreground'
               )}
               aria-current={active ? 'step' : undefined}
             >
@@ -707,17 +680,14 @@ function FlowProgress({
             <span
               className={cn(
                 'text-sm whitespace-nowrap',
-                active ? 'font-semibold' : 'text-muted-foreground',
+                active ? 'font-semibold' : 'text-muted-foreground'
               )}
             >
               {label}
             </span>
             {idx < labels.length - 1 && (
               <span
-                className={cn(
-                  'h-[2px] w-6 sm:w-12',
-                  done ? 'bg-primary' : 'bg-muted',
-                )}
+                className={cn('h-[2px] w-6 sm:w-12', done ? 'bg-primary' : 'bg-muted')}
                 aria-hidden
               />
             )}
