@@ -31,8 +31,16 @@ test.beforeAll(async () => {
   });
   expect(su.status(), 'signup').toBe(200);
   const { token, clinic } = await su.json();
-  const headers = { Authorization: `Bearer ${token}`, 'x-clinic-id': clinic?.clinicId ?? '', 'Content-Type': 'application/json' };
-  const loc = await ctx.post(`${GATEWAY}/inventory/locations`, { headers, data: { name: BIN, temp: 'room temp' }, timeout: 60_000 });
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'x-clinic-id': clinic?.clinicId ?? '',
+    'Content-Type': 'application/json',
+  };
+  const loc = await ctx.post(`${GATEWAY}/inventory/locations`, {
+    headers,
+    data: { name: BIN, temp: 'room temp' },
+    timeout: 60_000,
+  });
   expect([200, 201]).toContain(loc.status());
   await ctx.dispose();
   // eslint-disable-next-line no-console
@@ -43,8 +51,13 @@ async function signIn(page: Page) {
   await page.goto('/auth/signin', { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
   await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 }).catch(() => {});
+  await page
+    .getByRole('button', { name: /sign in/i })
+    .first()
+    .click();
+  await page
+    .waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
+    .catch(() => {});
   await page.waitForLoadState('networkidle').catch(() => {});
 }
 
@@ -53,7 +66,9 @@ test('1. check-in + QR label + label-sized print', async ({ page }) => {
   await signIn(page);
   await page.goto('/checkin', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2_000);
-  const fill = async (l: any, v: string) => { if (await l.count()) await l.first().fill(v); };
+  const fill = async (l: any, v: string) => {
+    if (await l.count()) await l.first().fill(v);
+  };
   await fill(page.getByPlaceholder(/Lisinopril/i), MED);
   await fill(page.getByPlaceholder('e.g. 10'), '500');
   await fill(page.getByPlaceholder(/mg, mcg/i), 'mg');
@@ -68,7 +83,11 @@ test('1. check-in + QR label + label-sized print', async ({ page }) => {
   // QR verification: the UnitLabel renders a QR <svg> inside .print-label.
   const qr = page.locator('.print-label svg').first();
   await expect(qr, 'QR code present on label').toBeVisible({ timeout: 15_000 });
-  const labelText = (await page.locator('.print-label').innerText().catch(() => '')) || '';
+  const labelText =
+    (await page
+      .locator('.print-label')
+      .innerText()
+      .catch(() => '')) || '';
   // eslint-disable-next-line no-console
   console.log('[label text] ' + labelText.replace(/\n+/g, ' | '));
   // label carries medication + DRX code
@@ -78,7 +97,10 @@ test('1. check-in + QR label + label-sized print', async ({ page }) => {
 
   // Print layout: emulate print media; the label is isolated + label-sized.
   await page.emulateMedia({ media: 'print' });
-  await page.locator('.print-label').screenshot({ path: `${SHOT}/flow-01b-label-print.png` }).catch(() => {});
+  await page
+    .locator('.print-label')
+    .screenshot({ path: `${SHOT}/flow-01b-label-print.png` })
+    .catch(() => {});
   const box = await page.locator('.print-label').boundingBox();
   // eslint-disable-next-line no-console
   console.log('[print label box] ' + JSON.stringify(box)); // ~384x192 (4x2in @96dpi)
@@ -86,7 +108,11 @@ test('1. check-in + QR label + label-sized print', async ({ page }) => {
 
   await page.getByRole('button', { name: /Confirm placed/i }).click();
   await page.waitForTimeout(3_500);
-  const body = (await page.locator('body').innerText().catch(() => '')) || '';
+  const body =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   expect(body, 'check-in submitted').not.toContain('Confirm placed');
 });
 
@@ -94,12 +120,18 @@ test('2. home search finds the medication', async ({ page }) => {
   await signIn(page);
   await page.goto('/', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1_500);
-  const search = page.locator('input[inputmode="search"], input[type="search"], input[placeholder*="medication" i]').first();
+  const search = page
+    .locator('input[inputmode="search"], input[type="search"], input[placeholder*="medication" i]')
+    .first();
   await expect(search, 'search box present').toBeVisible({ timeout: 15_000 });
   await search.fill(MED);
   await page.waitForTimeout(3_000); // debounce + FEFO fetch
   await page.screenshot({ path: `${SHOT}/flow-02-search.png`, fullPage: true });
-  const body = (await page.locator('body').innerText().catch(() => '')) || '';
+  const body =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   // eslint-disable-next-line no-console
   console.log('[search shows MED] ' + body.includes(MED));
   expect(body, 'search result includes the medication').toContain(MED);
@@ -111,7 +143,9 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   await page.goto('/checkout', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1_500);
   const search = page
-    .locator('input[aria-label="Search medications"], input[inputmode="search"], input[placeholder*="medication" i]')
+    .locator(
+      'input[aria-label="Search medications"], input[inputmode="search"], input[placeholder*="medication" i]'
+    )
     .first();
   await expect(search).toBeVisible({ timeout: 15_000 });
   await search.fill(MED);
@@ -130,7 +164,11 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   await checkOutBtn.click();
   await page.waitForTimeout(2_000);
   // Open the cart sidebar explicitly (don't rely on auto-open).
-  await page.getByRole('button', { name: /View Cart/i }).first().click().catch(() => {});
+  await page
+    .getByRole('button', { name: /View Cart/i })
+    .first()
+    .click()
+    .catch(() => {});
   await page.waitForTimeout(1_500);
   await page.screenshot({ path: `${SHOT}/flow-03b-cart.png`, fullPage: true });
 
@@ -140,7 +178,11 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   await confirm.click();
   await page.waitForTimeout(3_000);
   await page.screenshot({ path: `${SHOT}/flow-03c-after-checkout.png`, fullPage: true });
-  const afterText = (await page.locator('body').innerText().catch(() => '')) || '';
+  const afterText =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   // eslint-disable-next-line no-console
   console.log('[checkout completed] ' + /checked out|checkout complete/i.test(afterText));
   expect(afterText, 'checkout completed').toMatch(/checked out|checkout complete|approved/i);
@@ -150,7 +192,9 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   await page.goto('/checkout', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1_500);
   const search2 = page
-    .locator('input[aria-label="Search medications"], input[inputmode="search"], input[placeholder*="medication" i]')
+    .locator(
+      'input[aria-label="Search medications"], input[inputmode="search"], input[placeholder*="medication" i]'
+    )
     .first();
   await search2.fill(MED);
   await page.waitForTimeout(3_500);
@@ -169,9 +213,15 @@ test('4. reports dashboard loads', async ({ page }) => {
   await page.goto('/reports', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2_500);
   await page.screenshot({ path: `${SHOT}/flow-04-reports.png`, fullPage: true });
-  const body = (await page.locator('body').innerText().catch(() => '')) || '';
+  const body =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   expect(body.length, 'reports rendered').toBeGreaterThan(40);
-  expect(/error|something went wrong/i.test(body) && !/expir|capacity|report/i.test(body)).toBeFalsy();
+  expect(
+    /error|something went wrong/i.test(body) && !/expir|capacity|report/i.test(body)
+  ).toBeFalsy();
 });
 
 test('5. settings loads', async ({ page }) => {
@@ -179,6 +229,10 @@ test('5. settings loads', async ({ page }) => {
   await page.goto('/settings', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2_500);
   await page.screenshot({ path: `${SHOT}/flow-05-settings.png`, fullPage: true });
-  const body = (await page.locator('body').innerText().catch(() => '')) || '';
+  const body =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   expect(body.length, 'settings rendered').toBeGreaterThan(40);
 });

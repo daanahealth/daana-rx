@@ -28,16 +28,18 @@ export function ResultsList({ state }: ResultsListProps) {
       )}
 
       {state.kind === 'api-missing' && (
-        <div className={cn(
-          'rounded-xl border border-warning/40 bg-warning/5 backdrop-blur-md',
-          'p-4 sm:p-5 text-sm flex items-start gap-3',
-        )}>
+        <div
+          className={cn(
+            'rounded-xl border border-warning/40 bg-warning/5 backdrop-blur-md',
+            'p-4 sm:p-5 text-sm flex items-start gap-3'
+          )}
+        >
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" aria-hidden />
           <div>
             <p className="font-medium">Connect inventory API</p>
             <p className="text-muted-foreground mt-1">
-              The items API endpoint is not yet available. Once the backend is wired up,
-              search results will appear here.
+              The items API endpoint is not yet available. Once the backend is wired up, search
+              results will appear here.
             </p>
           </div>
         </div>

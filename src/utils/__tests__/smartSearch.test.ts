@@ -23,11 +23,7 @@ describe('Smart Search Parser', () => {
     });
 
     it('should parse NDC codes', () => {
-      const testCases = [
-        'ndc:0093-7214-01',
-        'ndc 12345',
-        'NDC: 0093-7214-01',
-      ];
+      const testCases = ['ndc:0093-7214-01', 'ndc 12345', 'NDC: 0093-7214-01'];
 
       testCases.forEach((query) => {
         const result = parseSmartSearch(query);
@@ -93,7 +89,7 @@ describe('Smart Search Parser', () => {
 
     it('should handle complex combined queries', () => {
       const result = parseSmartSearch('lisinopril 10mg expiring next week');
-      
+
       expect(result.filters.medicationName).toBe('lisinopril');
       expect(result.filters.minStrength).toBe(10);
       expect(result.filters.maxStrength).toBe(10);
@@ -102,7 +98,7 @@ describe('Smart Search Parser', () => {
 
     it('should handle empty or invalid queries gracefully', () => {
       const testCases = ['', '   ', null, undefined];
-      
+
       testCases.forEach((query) => {
         const result = parseSmartSearch(query as any);
         expect(result.filters).toEqual({});
@@ -111,17 +107,13 @@ describe('Smart Search Parser', () => {
 
     it('should extract medication name after removing patterns', () => {
       const result = parseSmartSearch('metformin expiring in 30 days');
-      
+
       expect(result.filters.medicationName).toBe('metformin');
       expect(result.filters.expirationWindow).toBe('EXPIRING_30_DAYS');
     });
 
     it('should handle location keywords in search terms', () => {
-      const testCases = [
-        'at fridge',
-        'location: fridge',
-        'in room temp',
-      ];
+      const testCases = ['at fridge', 'location: fridge', 'in room temp'];
 
       testCases.forEach((query) => {
         const result = parseSmartSearch(query);
@@ -130,11 +122,7 @@ describe('Smart Search Parser', () => {
     });
 
     it('should handle form types in search terms', () => {
-      const testCases = [
-        'tablets',
-        'capsules',
-        'liquid medications',
-      ];
+      const testCases = ['tablets', 'capsules', 'liquid medications'];
 
       testCases.forEach((query) => {
         const result = parseSmartSearch(query);
@@ -147,31 +135,31 @@ describe('Smart Search Parser', () => {
     it('should return expiration suggestions for "exp" prefix', () => {
       const suggestions = getSearchSuggestions('exp');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('expir'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('expir'))).toBe(true);
     });
 
     it('should return strength suggestions for numeric prefix', () => {
       const suggestions = getSearchSuggestions('10m');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('mg'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('mg'))).toBe(true);
     });
 
     it('should return location suggestions for "loc" prefix', () => {
       const suggestions = getSearchSuggestions('loc');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('location'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('location'))).toBe(true);
     });
 
     it('should return NDC suggestions for "ndc" prefix', () => {
       const suggestions = getSearchSuggestions('ndc');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('ndc'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('ndc'))).toBe(true);
     });
 
     it('should return sort suggestions for "sort" prefix', () => {
       const suggestions = getSearchSuggestions('sort');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('sort'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('sort'))).toBe(true);
     });
   });
 
@@ -184,32 +172,32 @@ describe('Smart Search Parser', () => {
 
     it('should return diverse examples covering different features', () => {
       const examples = getExampleQueries();
-      
+
       // Should have medication search examples
-      expect(examples.some(e => /lisinopril|metformin/i.test(e))).toBe(true);
-      
+      expect(examples.some((e) => /lisinopril|metformin/i.test(e))).toBe(true);
+
       // Should have expiration examples
-      expect(examples.some(e => /expir/i.test(e))).toBe(true);
-      
+      expect(examples.some((e) => /expir/i.test(e))).toBe(true);
+
       // Should have strength examples
-      expect(examples.some(e => /\d+mg/i.test(e))).toBe(true);
-      
+      expect(examples.some((e) => /\d+mg/i.test(e))).toBe(true);
+
       // Should have NDC examples
-      expect(examples.some(e => /ndc/i.test(e))).toBe(true);
+      expect(examples.some((e) => /ndc/i.test(e))).toBe(true);
     });
   });
 
   describe('Real-world use cases', () => {
     it('should handle typical daily inventory check query', () => {
       const result = parseSmartSearch('expiring next week sort by expiry');
-      
+
       expect(result.filters.expirationWindow).toBe('EXPIRING_7_DAYS');
       expect(result.filters.sortBy).toBe('EXPIRY_DATE');
     });
 
     it('should handle specific medication lookup with strength', () => {
       const result = parseSmartSearch('metformin 500mg');
-      
+
       expect(result.filters.medicationName).toBe('metformin');
       expect(result.filters.minStrength).toBe(500);
       expect(result.filters.maxStrength).toBe(500);
@@ -217,22 +205,22 @@ describe('Smart Search Parser', () => {
 
     it('should handle compliance report query', () => {
       const result = parseSmartSearch('expired medications sort by name');
-      
+
       expect(result.filters.expirationWindow).toBe('EXPIRED');
       expect(result.filters.sortBy).toBe('MEDICATION_NAME');
     });
 
     it('should handle location-specific inventory check', () => {
       const result = parseSmartSearch('tablets at fridge expiring in 30 days');
-      
+
       expect(result.filters.expirationWindow).toBe('EXPIRING_30_DAYS');
-      expect(result.searchTerms.some(term => term.includes('fridge'))).toBe(true);
-      expect(result.searchTerms.some(term => term.includes('tablet'))).toBe(true);
+      expect(result.searchTerms.some((term) => term.includes('fridge'))).toBe(true);
+      expect(result.searchTerms.some((term) => term.includes('tablet'))).toBe(true);
     });
 
     it('should handle strength range analysis', () => {
       const result = parseSmartSearch('medications 10-50mg sort by strength ascending');
-      
+
       expect(result.filters.minStrength).toBe(10);
       expect(result.filters.maxStrength).toBe(50);
       expect(result.filters.sortBy).toBe('STRENGTH');
@@ -240,7 +228,3 @@ describe('Smart Search Parser', () => {
     });
   });
 });
-
-
-
-

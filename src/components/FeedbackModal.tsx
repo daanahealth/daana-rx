@@ -97,8 +97,7 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
       reset();
       onClose();
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to submit feedback.';
+      const message = error instanceof Error ? error.message : 'Failed to submit feedback.';
       toast({
         title: 'Error',
         description: message,
@@ -127,9 +126,7 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <DialogTitle>
-              {activeOption ? activeOption.title : 'How can we help?'}
-            </DialogTitle>
+            <DialogTitle>{activeOption ? activeOption.title : 'How can we help?'}</DialogTitle>
           </div>
           <DialogDescription>
             {activeOption
@@ -163,9 +160,7 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
                   </span>
                   <span className="flex flex-col">
                     <span className="text-sm font-semibold">{opt.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {opt.description}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{opt.description}</span>
                   </span>
                 </button>
               );
@@ -211,18 +206,11 @@ export function FeedbackModal({ opened, onClose }: FeedbackModalProps) {
         )}
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           {feedbackType && (
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !title.trim() || !body.trim()}
-            >
+            <Button onClick={handleSubmit} disabled={isSubmitting || !title.trim() || !body.trim()}>
               {isSubmitting ? 'Sending…' : 'Send'}
             </Button>
           )}

@@ -13,34 +13,43 @@ interface LotCapacityAlertProps {
 
 /**
  * LotCapacityAlert - Displays lot capacity information in an alert box
- * 
+ *
  * Shows current capacity with color-coded badge and optional available capacity
  * Automatically determines alert color and icon based on capacity usage
- * 
+ *
  * @example
  * <LotCapacityAlert currentCapacity={50} maxCapacity={100} showAvailable />
  * // Shows: "Lot Capacity: 50/100 units (50 available)"
  */
-export function LotCapacityAlert({ 
-  currentCapacity, 
+export function LotCapacityAlert({
+  currentCapacity,
   maxCapacity,
   showAvailable = true,
-  variant
+  variant,
 }: LotCapacityAlertProps) {
   const availableCapacity = maxCapacity - currentCapacity;
   const percentage = maxCapacity > 0 ? (currentCapacity / maxCapacity) * 100 : 0;
-  
-  // Determine alert variant and icon based on capacity usage if variant not provided
-  const alertVariant = variant === 'error' ? 'destructive' 
-    : variant === 'warning' ? 'default'
-    : variant === 'info' ? 'default'
-    : percentage >= 100 ? 'destructive'
-    : percentage >= 90 ? 'default'
-    : 'default';
 
-  const Icon = percentage >= 100 || variant === 'error' ? AlertCircle
-    : percentage >= 90 || variant === 'warning' ? AlertTriangle
-    : Info;
+  // Determine alert variant and icon based on capacity usage if variant not provided
+  const alertVariant =
+    variant === 'error'
+      ? 'destructive'
+      : variant === 'warning'
+        ? 'default'
+        : variant === 'info'
+          ? 'default'
+          : percentage >= 100
+            ? 'destructive'
+            : percentage >= 90
+              ? 'default'
+              : 'default';
+
+  const Icon =
+    percentage >= 100 || variant === 'error'
+      ? AlertCircle
+      : percentage >= 90 || variant === 'warning'
+        ? AlertTriangle
+        : Info;
 
   return (
     <Alert variant={alertVariant}>
@@ -48,14 +57,9 @@ export function LotCapacityAlert({
       <AlertDescription>
         <div className="text-sm">
           <strong>Lot Capacity:</strong>{' '}
-          <CapacityBadge 
-            current={currentCapacity} 
-            max={maxCapacity}
-          />
+          <CapacityBadge current={currentCapacity} max={maxCapacity} />
           {showAvailable && availableCapacity > 0 && (
-            <span className="ml-2 text-muted-foreground">
-              ({availableCapacity} available)
-            </span>
+            <span className="ml-2 text-muted-foreground">({availableCapacity} available)</span>
           )}
         </div>
         {percentage >= 100 && (

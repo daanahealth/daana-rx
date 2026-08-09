@@ -1,7 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const FRONTEND_URL =
-  process.env.E2E_FRONTEND_URL ?? 'https://daanahealth-rx.onrender.com';
+const FRONTEND_URL = process.env.E2E_FRONTEND_URL ?? 'https://daanahealth-rx.onrender.com';
 
 export default defineConfig({
   testDir: '.',

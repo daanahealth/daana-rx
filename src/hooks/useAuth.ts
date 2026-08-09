@@ -42,7 +42,7 @@ export function useAuth() {
     if (!isAuthenticated || !hasHydrated) return;
 
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-    
+
     events.forEach((event) => {
       window.addEventListener(event, handleActivity);
     });
@@ -60,7 +60,7 @@ export function useAuth() {
 
     const checkTokenExpiry = () => {
       const now = Date.now();
-      
+
       if (now >= expiresAt) {
         dispatch(logout('token_expired'));
         router.push('/auth/signin?reason=token_expired');
@@ -96,7 +96,7 @@ export function useAuth() {
     if (!hasHydrated) return;
 
     const isAuthPage = pathname?.startsWith('/auth/');
-    
+
     if (!isAuthenticated && !isAuthPage) {
       router.push('/auth/signin');
     }
@@ -107,4 +107,3 @@ export function useAuth() {
     hasHydrated,
   };
 }
-

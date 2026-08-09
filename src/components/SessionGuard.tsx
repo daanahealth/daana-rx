@@ -40,8 +40,8 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
         >
           <div className="font-medium">Your session is about to expire.</div>
           <div className="mt-0.5 text-xs">
-            Move the cursor or press any key to stay signed in. Items in your
-            cart are preserved for 24 hours.
+            Move the cursor or press any key to stay signed in. Items in your cart are preserved for
+            24 hours.
           </div>
         </div>
       )}

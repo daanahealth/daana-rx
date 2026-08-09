@@ -10,9 +10,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminPage() {
@@ -28,13 +48,24 @@ export default function AdminPage() {
   const [updatingClinic, setUpdatingClinic] = useState(false);
 
   useEffect(() => {
-    inventory.getLocations().then(setLocations).catch(() => {});
-    auth.getClinic().then((clinic) => {
-      if (clinic?.requireLotLocation !== undefined) setRequireLotLocation(clinic.requireLotLocation);
-    }).catch(() => {});
+    inventory
+      .getLocations()
+      .then(setLocations)
+      .catch(() => {});
+    auth
+      .getClinic()
+      .then((clinic) => {
+        if (clinic?.requireLotLocation !== undefined)
+          setRequireLotLocation(clinic.requireLotLocation);
+      })
+      .catch(() => {});
   }, []);
 
-  const refetch = () => inventory.getLocations().then(setLocations).catch(() => {});
+  const refetch = () =>
+    inventory
+      .getLocations()
+      .then(setLocations)
+      .catch(() => {});
 
   const handleRequireLotLocationChange = async (checked: boolean) => {
     setRequireLotLocation(checked);
@@ -113,9 +144,13 @@ export default function AdminPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Admin</h1>
-            <p className="text-base sm:text-lg text-muted-foreground">Manage locations and clinic settings</p>
+            <p className="text-base sm:text-lg text-muted-foreground">
+              Manage locations and clinic settings
+            </p>
           </div>
-          <Button onClick={openCreateModal} size="lg" className="w-full sm:w-auto">Create Location</Button>
+          <Button onClick={openCreateModal} size="lg" className="w-full sm:w-auto">
+            Create Location
+          </Button>
         </div>
 
         <Card className="animate-fade-in">
@@ -129,16 +164,27 @@ export default function AdminPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="require-lot-location" className="text-base font-semibold">Require Location (L/R) for Lot Codes</Label>
-                <p className="text-sm text-muted-foreground">When enabled, users must specify Left (L) or Right (R) when creating new lots</p>
+                <Label htmlFor="require-lot-location" className="text-base font-semibold">
+                  Require Location (L/R) for Lot Codes
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, users must specify Left (L) or Right (R) when creating new lots
+                </p>
               </div>
-              <Switch id="require-lot-location" checked={requireLotLocation} onCheckedChange={handleRequireLotLocationChange} disabled={updatingClinic} />
+              <Switch
+                id="require-lot-location"
+                checked={requireLotLocation}
+                onCheckedChange={handleRequireLotLocationChange}
+                disabled={updatingClinic}
+              />
             </div>
           </CardContent>
         </Card>
 
         <Card className="animate-fade-in">
-          <CardHeader><CardTitle className="text-2xl">Locations</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-2xl">Locations</CardTitle>
+          </CardHeader>
           <CardContent>
             {locations.length > 0 ? (
               <div className="overflow-x-auto -mx-6 sm:-mx-6">
@@ -148,20 +194,42 @@ export default function AdminPage() {
                       <TableRow>
                         <TableHead className="font-semibold min-w-[120px]">Name</TableHead>
                         <TableHead className="font-semibold min-w-[100px]">Temperature</TableHead>
-                        <TableHead className="font-semibold hidden sm:table-cell min-w-[100px]">Created</TableHead>
+                        <TableHead className="font-semibold hidden sm:table-cell min-w-[100px]">
+                          Created
+                        </TableHead>
                         <TableHead className="font-semibold min-w-[140px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {locations.map((location) => (
                         <TableRow key={location.locationId} className="hover:bg-accent/50">
-                          <TableCell className="font-semibold break-words">{location.name}</TableCell>
-                          <TableCell className="capitalize font-medium text-sm">{location.temp.replace('_', ' ')}</TableCell>
-                          <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{new Date(location.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="font-semibold break-words">
+                            {location.name}
+                          </TableCell>
+                          <TableCell className="capitalize font-medium text-sm">
+                            {location.temp.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                            {new Date(location.createdAt).toLocaleDateString()}
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-col sm:flex-row gap-2">
-                              <Button size="sm" variant="outline" onClick={() => handleEdit(location)} className="w-full sm:w-auto">Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleDelete(location.locationId)} className="w-full sm:w-auto">Delete</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(location)}
+                                className="w-full sm:w-auto"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(location.locationId)}
+                                className="w-full sm:w-auto"
+                              >
+                                Delete
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -171,7 +239,9 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-base text-muted-foreground text-center py-8">No locations created yet</p>
+              <p className="text-base text-muted-foreground text-center py-8">
+                No locations created yet
+              </p>
             )}
           </CardContent>
         </Card>
@@ -179,18 +249,35 @@ export default function AdminPage() {
         <Dialog open={modalOpened} onOpenChange={setModalOpened}>
           <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl">{editingLocation ? 'Edit Location' : 'Create Location'}</DialogTitle>
-              <DialogDescription className="text-base">{editingLocation ? 'Update the location details' : 'Add a new storage location for medications'}</DialogDescription>
+              <DialogTitle className="text-2xl">
+                {editingLocation ? 'Edit Location' : 'Create Location'}
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                {editingLocation
+                  ? 'Update the location details'
+                  : 'Add a new storage location for medications'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-5 py-4">
               <div className="space-y-3">
-                <Label htmlFor="location-name" className="text-base font-semibold">Location Name *</Label>
-                <Input id="location-name" placeholder="e.g., Main Refrigerator" value={name} onChange={(e) => setName(e.target.value)} />
+                <Label htmlFor="location-name" className="text-base font-semibold">
+                  Location Name *
+                </Label>
+                <Input
+                  id="location-name"
+                  placeholder="e.g., Main Refrigerator"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
               <div className="space-y-3">
-                <Label htmlFor="temperature" className="text-base font-semibold">Temperature *</Label>
+                <Label htmlFor="temperature" className="text-base font-semibold">
+                  Temperature *
+                </Label>
                 <Select value={temp} onValueChange={setTemp}>
-                  <SelectTrigger id="temperature"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="temperature">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="fridge">Refrigerated (Fridge)</SelectItem>
                     <SelectItem value="room_temp">Room Temperature</SelectItem>
@@ -199,7 +286,9 @@ export default function AdminPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setModalOpened(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setModalOpened(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleSubmit} disabled={creating || updating}>
                 {(creating || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingLocation ? 'Update' : 'Create'}

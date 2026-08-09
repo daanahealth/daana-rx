@@ -58,13 +58,14 @@ npm run dev
 
 Before you begin, ensure you have the following installed:
 
-| Requirement | Version | Download |
-|------------|---------|----------|
-| **Node.js** | 18+ | [nodejs.org](https://nodejs.org/) |
-| **npm** | 9+ | Included with Node.js |
+| Requirement          | Version         | Download                              |
+| -------------------- | --------------- | ------------------------------------- |
+| **Node.js**          | 18+             | [nodejs.org](https://nodejs.org/)     |
+| **npm**              | 9+              | Included with Node.js                 |
 | **Supabase Account** | Free tier works | [supabase.com](https://supabase.com/) |
 
 **Optional:**
+
 - Google Cloud Project (for OAuth)
 
 ## 🚀 Installation
@@ -90,7 +91,7 @@ After installation completes, you'll see helpful next steps automatically displa
    - Open the `supabase-schema.sql` file from this project
    - Copy all contents and paste into SQL Editor
    - Click **Run**
-   
+
    This creates all necessary tables, security policies, and seed data.
 
 3. **Get Your API Keys**
@@ -103,26 +104,29 @@ After installation completes, you'll see helpful next steps automatically displa
 ### Step 3: Configure Environment Variables
 
 1. **Copy the template file:**
+
    ```bash
    cp env-example.txt .env.local
    ```
 
 2. **Edit `.env.local` with your credentials:**
+
    ```bash
    # Required - Get from Supabase Dashboard → Settings → API
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
    SUPABASE_SERVICE_KEY=your_service_role_key_here
-   
+
    # Required - Generate with: openssl rand -base64 32
    JWT_SECRET=your_random_secret_at_least_32_characters
    ```
 
 3. **Verify your setup:**
+
    ```bash
    npm run verify
    ```
-   
+
    This script checks:
    - ✅ Node.js version
    - ✅ Dependencies installed
@@ -136,11 +140,13 @@ After installation completes, you'll see helpful next steps automatically displa
 You need a secure random string for JWT_SECRET. Use one of these methods:
 
 **Option 1 - OpenSSL (Mac/Linux):**
+
 ```bash
 openssl rand -base64 32
 ```
 
 **Option 2 - Node.js (Any OS):**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
@@ -167,11 +173,13 @@ If you want to enable Google Sign-In:
 ### Development Mode
 
 **Start the development server:**
+
 ```bash
 npm run dev
 ```
 
 This starts:
+
 - 🌐 Next.js frontend: http://localhost:3000
 - 🔌 GraphQL API: http://localhost:3000/api/graphql (integrated)
 
@@ -190,7 +198,9 @@ npm run start
 ## 🎨 Core Features
 
 ### 1. Check-In Flow
+
 Create inventory from donated medications:
+
 - Create or select existing lot (donation source)
 - Search drugs by NDC barcode or manual entry
 - Create unit with quantity and expiry date
@@ -198,7 +208,9 @@ Create inventory from donated medications:
 - Print labels
 
 ### 2. Check-Out Flow
+
 Dispense medications to patients:
+
 - Scan QR code or search by unit ID
 - View unit details and available quantity
 - Dispense medication with patient reference
@@ -206,59 +218,72 @@ Dispense medications to patients:
 - Transaction logging
 
 ### 3. Scan/Lookup
+
 Quick unit information:
+
 - Quick unit information lookup
 - View transaction history
 - Direct link to check-out
 
 ### 4. Inventory Management
+
 Complete stock visibility:
+
 - View all units with pagination
 - Search by drug name or notes
 - See expiry dates and stock levels
 - Color-coded status (expired, expiring soon)
 
 ### 5. Reports
+
 Complete audit trail:
+
 - Complete transaction audit trail
 - Filter by date, type, patient reference
 - Export capabilities (future enhancement)
 
 ### 6. Admin Panel
+
 Location management:
+
 - Create and manage storage locations
 - Set temperature requirements (fridge/room temp)
 - Delete protection for locations with inventory
 
 ### 7. Settings (Superadmin Only)
+
 User management:
+
 - Invite new users
 - Assign roles (Admin, Employee)
 - View all clinic users
 
 ## 👥 User Roles
 
-| Role | Check-In | Check-Out | Inventory | Reports | Admin | Settings |
-|------|----------|-----------|-----------|---------|-------|----------|
-| **Superadmin** | ✅ Full | ✅ Full | ✅ Edit | ✅ Full | ✅ Full | ✅ Full |
-| **Admin** | ✅ Yes | ✅ Yes | 👁️ Read | 👁️ Read | ✅ Locations | ❌ No |
-| **Employee** | ✅ Yes | ✅ Yes | 👁️ View | ❌ No | ❌ No | ❌ No |
+| Role           | Check-In | Check-Out | Inventory | Reports | Admin        | Settings |
+| -------------- | -------- | --------- | --------- | ------- | ------------ | -------- |
+| **Superadmin** | ✅ Full  | ✅ Full   | ✅ Edit   | ✅ Full | ✅ Full      | ✅ Full  |
+| **Admin**      | ✅ Yes   | ✅ Yes    | 👁️ Read   | 👁️ Read | ✅ Locations | ❌ No    |
+| **Employee**   | ✅ Yes   | ✅ Yes    | 👁️ View   | ❌ No   | ❌ No        | ❌ No    |
 
 ### Role Details
 
 **Superadmin:**
+
 - Full access to all features
 - Can edit units and transactions
 - User management
 - Location management
 
 **Admin:**
+
 - Can check-in and check-out medications
 - Read-only access to inventory and reports
 - Can create locations
 - Cannot edit existing data or manage users
 
 **Employee:**
+
 - Can check-in medications
 - Can check-out medications
 - View-only access to inventory
@@ -306,6 +331,7 @@ DaanarRX/
 
 **Problem:** Dependencies not installed  
 **Solution:**
+
 ```bash
 npm install
 ```
@@ -314,6 +340,7 @@ npm install
 
 **Problem:** `.env.local` file missing or incomplete  
 **Solution:**
+
 ```bash
 # 1. Copy the template
 cp env-example.txt .env.local
@@ -327,6 +354,7 @@ npm run verify
 
 **Problem:** Database schema not initialized  
 **Solution:**
+
 1. Open Supabase Dashboard → SQL Editor
 2. Copy contents of `supabase-schema.sql`
 3. Paste and run in SQL Editor
@@ -336,6 +364,7 @@ npm run verify
 
 **Problem:** GraphQL queries failing  
 **Solution:**
+
 ```bash
 # GraphQL runs as part of Next.js on port 3000
 # Make sure the dev server is running
@@ -348,6 +377,7 @@ npm run dev
 
 **Problem:** Type definitions or dependencies missing  
 **Solution:**
+
 ```bash
 # Reinstall dependencies
 rm -rf node_modules package-lock.json
@@ -361,6 +391,7 @@ npx tsc --version  # Should be 5.6+
 
 **Problem:** Port 3000 already in use  
 **Solution:**
+
 ```bash
 # Find and kill process on port 3000
 lsof -ti:3000 | xargs kill -9
@@ -373,6 +404,7 @@ PORT=3001 npm run dev
 
 **Problem:** Browser doesn't have camera permissions  
 **Solution:**
+
 - Barcode scanning requires HTTPS in production
 - Use localhost for development (HTTPS not required)
 - Check browser permissions: Settings → Privacy → Camera
@@ -381,16 +413,19 @@ PORT=3001 npm run dev
 ## 🧪 Testing
 
 Run the setup verification:
+
 ```bash
 npm run verify
 ```
 
 Test the drug API integration:
+
 ```bash
 npm run test:drug-api
 ```
 
 Run unit tests (when available):
+
 ```bash
 npm test              # Run once
 npm run test:watch    # Watch mode
@@ -401,15 +436,15 @@ npm run test:coverage # With coverage
 
 ### Key Tables
 
-| Table | Description |
-|-------|-------------|
-| `clinics` | Clinic information and branding |
-| `users` | User accounts with role-based access |
-| `locations` | Storage locations with temperature tracking |
-| `lots` | Donation batches linked to locations |
-| `drugs` | Universal drug database (cached from APIs) |
-| `units` | Individual medication units in inventory |
-| `transactions` | Complete audit trail of all operations |
+| Table          | Description                                 |
+| -------------- | ------------------------------------------- |
+| `clinics`      | Clinic information and branding             |
+| `users`        | User accounts with role-based access        |
+| `locations`    | Storage locations with temperature tracking |
+| `lots`         | Donation batches linked to locations        |
+| `drugs`        | Universal drug database (cached from APIs)  |
+| `units`        | Individual medication units in inventory    |
+| `transactions` | Complete audit trail of all operations      |
 
 ### Security Features
 
@@ -421,12 +456,14 @@ npm run test:coverage # With coverage
 ## 🔌 API Integration
 
 ### RxNorm API
+
 - NDC barcode lookup
 - Drug name search
 - Strength and form information
 - **No API key required**
 
 ### openFDA API
+
 - Fallback for NDC lookups
 - Additional drug information
 - **No API key required**
@@ -436,6 +473,7 @@ Both APIs are called automatically and results are cached locally.
 ## 🏗️ Technology Stack
 
 ### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **React 18** - UI library
 - **TypeScript** - Type safety
@@ -445,31 +483,34 @@ Both APIs are called automatically and results are cached locally.
 - **Redux Toolkit** - Global state management
 
 ### Backend
+
 - **Express** - Web server
 - **Apollo Server** - GraphQL API
 - **Node.js 18+** - Runtime
 - **TypeScript** - Type safety
 
 ### Database
+
 - **Supabase/PostgreSQL** - Database with built-in auth
 - **Row-Level Security** - Multi-tenancy
 - **Real-time subscriptions** - Optional feature
 
 ### External APIs
+
 - **RxNorm API** - Drug information
 - **openFDA API** - Drug data fallback
 
 ## 📊 Key Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install dependencies with helpful post-install messages |
+| Command          | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `npm install`    | Install dependencies with helpful post-install messages    |
 | `npm run verify` | Verify your development environment is properly configured |
-| `npm run dev` | Start the development server (includes GraphQL API) |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run tests |
+| `npm run dev`    | Start the development server (includes GraphQL API)        |
+| `npm run build`  | Build for production                                       |
+| `npm run start`  | Start production server                                    |
+| `npm run lint`   | Run ESLint                                                 |
+| `npm test`       | Run tests                                                  |
 
 ## 🎓 First Time Setup Checklist
 

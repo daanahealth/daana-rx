@@ -33,8 +33,12 @@ test.beforeAll(async () => {
 function attachErrorCollectors(page: Page) {
   const consoleErrors: string[] = [];
   const failed: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 200)); });
-  page.on('response', (r) => { if (r.status() >= 500) failed.push(`${r.status()} ${r.url()}`); });
+  page.on('console', (m) => {
+    if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 200));
+  });
+  page.on('response', (r) => {
+    if (r.status() >= 500) failed.push(`${r.status()} ${r.url()}`);
+  });
   return { consoleErrors, failed };
 }
 
@@ -44,8 +48,13 @@ test('user signs in through the UI', async ({ page }) => {
   await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
   await page.screenshot({ path: `${SHOT_DIR}/01-signin-filled.png`, fullPage: true });
   await Promise.all([
-    page.waitForURL((u) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 }).catch(() => {}),
-    page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Sign In")').first().click(),
+    page
+      .waitForURL((u) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
+      .catch(() => {}),
+    page
+      .locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Sign In")')
+      .first()
+      .click(),
   ]);
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.screenshot({ path: `${SHOT_DIR}/02-after-signin.png`, fullPage: true });
@@ -66,17 +75,28 @@ for (const p of PAGES) {
     await page.goto('/auth/signin', { waitUntil: 'networkidle' });
     await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
     await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
-    await page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Sign In")').first().click();
-    await page.waitForURL((u) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 }).catch(() => {});
+    await page
+      .locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Sign In")')
+      .first()
+      .click();
+    await page
+      .waitForURL((u) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
+      .catch(() => {});
 
     const { consoleErrors, failed } = attachErrorCollectors(page);
     await page.goto(p.path, { waitUntil: 'networkidle' }).catch(() => {});
     await page.waitForTimeout(2500); // let client fetches settle
     await page.screenshot({ path: `${SHOT_DIR}/${p.name}.png`, fullPage: true });
 
-    const bodyText = (await page.locator('body').innerText().catch(() => '')) || '';
+    const bodyText =
+      (await page
+        .locator('body')
+        .innerText()
+        .catch(() => '')) || '';
     // eslint-disable-next-line no-console
-    console.log(`\n[${p.path}] url=${page.url()} chars=${bodyText.length} consoleErrors=${consoleErrors.length} failed5xx=${failed.length}`);
+    console.log(
+      `\n[${p.path}] url=${page.url()} chars=${bodyText.length} consoleErrors=${consoleErrors.length} failed5xx=${failed.length}`
+    );
     if (consoleErrors.length) console.log('  console errors:', consoleErrors.slice(0, 5));
     if (failed.length) console.log('  5xx responses:', failed.slice(0, 5));
 

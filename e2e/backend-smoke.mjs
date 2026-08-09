@@ -58,7 +58,7 @@ async function main() {
           pass: r.status === 200,
           body: r.body,
         };
-      }),
+      })
     );
   }
 
@@ -71,7 +71,7 @@ async function main() {
         body: JSON.stringify({}),
       });
       return { status: r.status, pass: r.status === 401, body: r.body };
-    }),
+    })
   );
 
   // 3) GET /items without auth => expect 401
@@ -79,7 +79,7 @@ async function main() {
     await timed('inventory:GET /items no-auth -> 401', async () => {
       const r = await doFetch(`${SERVICES.inventory}/items`);
       return { status: r.status, pass: r.status === 401, body: r.body };
-    }),
+    })
   );
 
   // 4) gateway /health via gateway prefix also (already covered) - add a 404 sanity check
@@ -91,7 +91,7 @@ async function main() {
         pass: r.status === 404 || r.status === 401 || r.status === 403,
         body: r.body,
       };
-    }),
+    })
   );
 
   const summary = {

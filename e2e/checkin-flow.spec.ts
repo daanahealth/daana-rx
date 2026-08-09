@@ -50,8 +50,13 @@ async function signIn(page: Page) {
   await page.goto('/auth/signin', { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
   await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 }).catch(() => {});
+  await page
+    .getByRole('button', { name: /sign in/i })
+    .first()
+    .click();
+  await page
+    .waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
+    .catch(() => {});
   await page.waitForLoadState('networkidle').catch(() => {});
 }
 
@@ -66,7 +71,9 @@ test('real browser check-in (self-provisioned account)', async ({ page }) => {
   await page.goto('/checkin', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2_000);
 
-  const fill = async (loc: any, val: string) => { if (await loc.count()) await loc.first().fill(val); };
+  const fill = async (loc: any, val: string) => {
+    if (await loc.count()) await loc.first().fill(val);
+  };
   await fill(page.getByPlaceholder(/Lisinopril/i), MED_NAME);
   await fill(page.getByPlaceholder('e.g. 10'), '500');
   await fill(page.getByPlaceholder(/mg, mcg/i), 'mg');
@@ -88,7 +95,11 @@ test('real browser check-in (self-provisioned account)', async ({ page }) => {
 
   await page.waitForTimeout(4_000);
   await page.screenshot({ path: `${SHOT}/ci-05-result.png`, fullPage: true });
-  const body = (await page.locator('body').innerText().catch(() => '')) || '';
+  const body =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   // eslint-disable-next-line no-console
   console.log('\n[result] ' + body.slice(0, 500).replace(/\n+/g, ' | '));
   expect(body, 'submitted (left the label step)').not.toContain('Confirm placed');
@@ -102,7 +113,11 @@ test('real browser check-in (self-provisioned account)', async ({ page }) => {
     await page.waitForTimeout(3_000);
   }
   await page.screenshot({ path: `${SHOT}/ci-06-inventory.png`, fullPage: true });
-  const invText = (await page.locator('body').innerText().catch(() => '')) || '';
+  const invText =
+    (await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')) || '';
   // eslint-disable-next-line no-console
   console.log('[inventory shows ' + MED_NAME + '] ' + invText.includes(MED_NAME));
   expect(invText, 'checked-in item visible in inventory').toContain(MED_NAME);

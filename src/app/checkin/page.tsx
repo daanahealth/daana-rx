@@ -60,9 +60,7 @@ import { suggestLocationForClass, MASS_CLASSIFICATION_GUIDE } from '@daana-healt
 function specialtyClassForLocation(bin: string): string | null {
   const base = (bin ?? '').trim().toUpperCase().replace(/\d+$/, '');
   if (!base) return null;
-  const entry = MASS_CLASSIFICATION_GUIDE.find(
-    (e) => e.location_code.toUpperCase() === base,
-  );
+  const entry = MASS_CLASSIFICATION_GUIDE.find((e) => e.location_code.toUpperCase() === base);
   return entry?.class_name ?? null;
 }
 
@@ -152,14 +150,12 @@ export default function CheckInPage() {
         // label step block until a real code can be issued.
         setCounter(null);
         setServerUnitCode(null);
-        setCounterError(
-          err instanceof Error ? err.message : 'Could not reach the code service',
-        );
+        setCounterError(err instanceof Error ? err.message : 'Could not reach the code service');
       } finally {
         setCounterLoading(false);
       }
     },
-    [getValues],
+    [getValues]
   );
 
   // ---------------------------------------------------------------------
@@ -225,13 +221,7 @@ export default function CheckInPage() {
     // location step is the authoritative placement, and staff often know the
     // shelf before they know the specialty label. Specialty is backfilled from
     // the chosen bin on the way to the label step.
-    const ok = await trigger([
-      'medication_name',
-      'dosage',
-      'unit',
-      'form',
-      'date_received',
-    ]);
+    const ok = await trigger(['medication_name', 'dosage', 'unit', 'form', 'date_received']);
     if (!ok) {
       toast({
         title: 'Fix the highlighted fields',
@@ -454,10 +444,7 @@ export default function CheckInPage() {
                   asked for here instead of sending staff back a step. */}
               {locationCode && !specialtyClassForLocation(locationCode) && (
                 <div className="space-y-1.5">
-                  <label
-                    htmlFor="chk-specialty-class"
-                    className="text-sm font-medium leading-none"
-                  >
+                  <label htmlFor="chk-specialty-class" className="text-sm font-medium leading-none">
                     Specialty class
                   </label>
                   <select

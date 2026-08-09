@@ -58,7 +58,7 @@ function CheckOutInner() {
   const isSuperadmin = user?.userRole === 'superadmin';
   const firstName = React.useMemo(
     () => deriveFirstName(user?.username, user?.email),
-    [user?.username, user?.email],
+    [user?.username, user?.email]
   );
   const cart = useCart();
 

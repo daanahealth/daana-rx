@@ -39,8 +39,9 @@ export function CapacityExplainer() {
         <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-100">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            When a bin reaches its configured capacity, Check In suggests the next sequential bin within the same
-            specialty (e.g. CARDIO1 full → CARDIO2). If no overflow bin exists, create one in Locations before continuing.
+            When a bin reaches its configured capacity, Check In suggests the next sequential bin
+            within the same specialty (e.g. CARDIO1 full → CARDIO2). If no overflow bin exists,
+            create one in Locations before continuing.
           </p>
         </div>
       </CardContent>

@@ -7,17 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Loader2,
-  CheckCircle2,
-  Circle,
-  ArrowLeft,
-  ShieldCheck,
-} from 'lucide-react';
-import {
-  evaluatePassword,
-  validatePassword,
-} from '@/lib/passwordRules';
+import { Loader2, CheckCircle2, Circle, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { evaluatePassword, validatePassword } from '@/lib/passwordRules';
 
 /**
  * Reset Password — Step 2.
@@ -41,9 +32,7 @@ function DaanaLogo() {
         <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
           DaanaRX
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Choose a new password
-        </p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Choose a new password</p>
       </div>
     </div>
   );
@@ -93,9 +82,7 @@ function ResetPasswordContent() {
       setDone(true);
       setTimeout(() => router.push('/auth/signin'), 1800);
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : 'Failed to reset password.',
-      );
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to reset password.');
     } finally {
       setSubmitting(false);
     }
@@ -159,10 +146,7 @@ function ResetPasswordContent() {
 
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="new-password"
-                    className="text-slate-700 dark:text-slate-200"
-                  >
+                  <Label htmlFor="new-password" className="text-slate-700 dark:text-slate-200">
                     New password
                   </Label>
                   <Input
@@ -179,10 +163,7 @@ function ResetPasswordContent() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="confirm-password"
-                    className="text-slate-700 dark:text-slate-200"
-                  >
+                  <Label htmlFor="confirm-password" className="text-slate-700 dark:text-slate-200">
                     Confirm password
                   </Label>
                   <Input

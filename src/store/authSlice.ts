@@ -29,7 +29,10 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setAuth: (state, action: PayloadAction<{ user: User; clinic: Clinic; token: string; clinics?: Clinic[] }>) => {
+    setAuth: (
+      state,
+      action: PayloadAction<{ user: User; clinic: Clinic; token: string; clinics?: Clinic[] }>
+    ) => {
       const now = Date.now();
       const expiresAt = now + TWO_HOURS_IN_MS;
 
@@ -75,7 +78,7 @@ const authSlice = createSlice({
     },
     logout: (state, action: PayloadAction<string | undefined>) => {
       const reason = action.payload;
-      
+
       state.user = null;
       state.clinic = null;
       state.clinics = [];
@@ -93,7 +96,7 @@ const authSlice = createSlice({
         localStorage.removeItem('clinics');
         localStorage.removeItem('authExpiresAt');
         localStorage.removeItem('lastActivity');
-        
+
         // Store logout reason if provided
         if (reason) {
           localStorage.setItem('logoutReason', reason);
@@ -103,7 +106,7 @@ const authSlice = createSlice({
     restoreAuth: (state) => {
       // Always set hasHydrated to true, regardless of window availability
       state.hasHydrated = true;
-      
+
       if (typeof window !== 'undefined') {
         try {
           const token = localStorage.getItem('authToken');

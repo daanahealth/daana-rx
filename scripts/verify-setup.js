@@ -2,7 +2,7 @@
 
 /**
  * DaanaRx Setup Verification Script
- * 
+ *
  * This script checks if the development environment is properly configured
  * and provides helpful error messages for common setup issues.
  */
@@ -67,7 +67,7 @@ const nodeModulesPath = path.join(__dirname, 'node_modules');
 
 if (fs.existsSync(nodeModulesPath)) {
   logSuccess('node_modules directory exists');
-  
+
   // Check if package-lock.json exists
   const packageLockPath = path.join(__dirname, 'package-lock.json');
   if (fs.existsSync(packageLockPath)) {
@@ -90,30 +90,30 @@ const envExamplePath = path.join(__dirname, 'env-example.txt');
 
 if (fs.existsSync(envLocalPath)) {
   logSuccess('.env.local file exists');
-  
+
   // Read and validate .env.local
   const envContent = fs.readFileSync(envLocalPath, 'utf8');
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_KEY',
-    'JWT_SECRET'
+    'JWT_SECRET',
   ];
-  
+
   const missingVars = [];
   const placeholderVars = [];
-  
-  requiredVars.forEach(varName => {
+
+  requiredVars.forEach((varName) => {
     const regex = new RegExp(`^${varName}=(.*)$`, 'm');
     const match = envContent.match(regex);
-    
+
     if (!match || !match[1].trim()) {
       missingVars.push(varName);
     } else if (match[1].includes('your_') || match[1].includes('here')) {
       placeholderVars.push(varName);
     }
   });
-  
+
   if (missingVars.length > 0) {
     logError(`Missing required environment variables: ${missingVars.join(', ')}`);
     hasErrors = true;
@@ -124,7 +124,6 @@ if (fs.existsSync(envLocalPath)) {
   } else {
     logSuccess('All required environment variables are set');
   }
-  
 } else {
   logError('.env.local file not found');
   logInfo(`1. Copy env-example.txt to .env.local`);
@@ -139,7 +138,7 @@ const schemaPath = path.join(__dirname, 'supabase-schema.sql');
 
 if (fs.existsSync(schemaPath)) {
   logSuccess('supabase-schema.sql exists');
-  logInfo('Make sure you\'ve run this SQL in your Supabase dashboard');
+  logInfo("Make sure you've run this SQL in your Supabase dashboard");
 } else {
   logError('supabase-schema.sql not found');
   hasErrors = true;
@@ -177,15 +176,9 @@ if (fs.existsSync(nextConfigPath)) {
 
 // Check for key directories
 logSection('Checking Project Structure');
-const requiredDirs = [
-  'src/app',
-  'src/components',
-  'src/lib',
-  'server/graphql',
-  'server/services',
-];
+const requiredDirs = ['src/app', 'src/components', 'src/lib', 'server/graphql', 'server/services'];
 
-requiredDirs.forEach(dir => {
+requiredDirs.forEach((dir) => {
   const dirPath = path.join(__dirname, dir);
   if (fs.existsSync(dirPath)) {
     logSuccess(`${dir}/ exists`);
@@ -201,7 +194,7 @@ logSection('Setup Verification Summary');
 if (!hasErrors && !hasWarnings) {
   logSuccess('All checks passed! Your environment is ready.');
   console.log('\nNext steps:');
-  logInfo('1. Make sure you\'ve run supabase-schema.sql in Supabase dashboard');
+  logInfo("1. Make sure you've run supabase-schema.sql in Supabase dashboard");
   logInfo('2. Start the development servers: npm run dev:all');
   logInfo('3. Open http://localhost:3000 in your browser');
   process.exit(0);
@@ -218,4 +211,3 @@ if (!hasErrors && !hasWarnings) {
   logInfo('4. Run this script again: node scripts/verify-setup.js');
   process.exit(1);
 }
-

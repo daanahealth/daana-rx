@@ -136,7 +136,16 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      'Roboto',
+      'Oxygen',
+      'Ubuntu',
+      'Cantarell',
+      sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -149,7 +158,11 @@
   }
 
   /* Smooth transitions inspired by base44.com */
-  button, a, input, select, textarea {
+  button,
+  a,
+  input,
+  select,
+  textarea {
     @apply transition-all duration-200 ease-in-out;
   }
 }
@@ -247,7 +260,9 @@
 
   /* Improve touch targets on mobile */
   @media (max-width: 768px) {
-    button, a[role="button"], [role="button"] {
+    button,
+    a[role='button'],
+    [role='button'] {
       min-height: 44px;
       min-width: 44px;
     }
@@ -260,14 +275,14 @@
     size: 4in 2in;
     margin: 0;
   }
-  
+
   .print-label {
     width: 384px !important;
     height: 192px !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-  
+
   .print-label > div {
     width: 384px !important;
     height: 192px !important;

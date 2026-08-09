@@ -44,7 +44,8 @@ export function QRScanner({
       if (scannerRef.current) {
         try {
           const state = scannerRef.current.getState();
-          if (state === 2) { // Html5QrcodeScannerState.SCANNING
+          if (state === 2) {
+            // Html5QrcodeScannerState.SCANNING
             await scannerRef.current.stop();
           }
         } catch (err) {
@@ -61,15 +62,15 @@ export function QRScanner({
 
       // Additionally, stop any lingering media streams
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput');
+
       if (videoDevices.length > 0) {
         // Get all video elements and stop their streams
         const videoElements = document.querySelectorAll('video');
-        videoElements.forEach(video => {
+        videoElements.forEach((video) => {
           if (video.srcObject) {
             const stream = video.srcObject as MediaStream;
-            stream.getTracks().forEach(track => {
+            stream.getTracks().forEach((track) => {
               track.stop();
             });
             video.srcObject = null;
@@ -129,18 +130,20 @@ export function QRScanner({
         return false;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
       });
-      
+
       // Stop the test stream immediately
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       return true;
     } catch (err: any) {
       console.error('Camera permission error:', err);
-      
+
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera permission denied. Please enable camera access in your browser settings and reload.');
+        setError(
+          'Camera permission denied. Please enable camera access in your browser settings and reload.'
+        );
       } else if (err.name === 'NotFoundError') {
         setError('No camera found on this device. Please use manual entry.');
       } else if (err.name === 'NotReadableError') {
@@ -228,7 +231,10 @@ export function QRScanner({
 
   return (
     <Dialog open={opened} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[600px]" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-w-[calc(100vw-2rem)] sm:max-w-[600px]"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -245,17 +251,10 @@ export function QRScanner({
 
           {!showManualInput ? (
             <>
-              <div
-                id="qr-reader"
-                className="w-full min-h-[300px] rounded-lg overflow-hidden"
-              />
+              <div id="qr-reader" className="w-full min-h-[300px] rounded-lg overflow-hidden" />
 
               <div className="flex flex-col sm:flex-row justify-between gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={handleSwitchToManual}
-                  className="w-full sm:w-auto"
-                >
+                <Button variant="ghost" onClick={handleSwitchToManual} className="w-full sm:w-auto">
                   <Keyboard className="mr-2 h-4 w-4" />
                   Manual Entry
                 </Button>

@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -74,10 +80,7 @@ function normaliseUser(raw: any): UserRow {
     email: raw.email || '',
     username: raw.username,
     role,
-    canCheckout:
-      typeof raw.canCheckout === 'boolean'
-        ? raw.canCheckout
-        : role === 'Superadmin', // Default: Superadmin can checkout, Restricted cannot
+    canCheckout: typeof raw.canCheckout === 'boolean' ? raw.canCheckout : role === 'Superadmin', // Default: Superadmin can checkout, Restricted cannot
     deactivated_at: raw.deactivated_at || raw.deactivatedAt || null,
   };
 }
@@ -111,7 +114,7 @@ export function UsersManager() {
           const fallback = await fetch(`${API_URL}/auth/users`, { headers: authHeaders() });
           if (fallback.ok) {
             const data = await fallback.json();
-            const rows = Array.isArray(data) ? data : data?.users ?? [];
+            const rows = Array.isArray(data) ? data : (data?.users ?? []);
             setUsers(rows.map(normaliseUser));
           } else {
             setUsers([]);
@@ -123,7 +126,7 @@ export function UsersManager() {
       }
       if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
       const body = await res.json();
-      const rows = Array.isArray(body) ? body : body?.users ?? [];
+      const rows = Array.isArray(body) ? body : (body?.users ?? []);
       setUsers(rows.map(normaliseUser));
       setEndpointPending(false);
     } catch {
@@ -146,7 +149,11 @@ export function UsersManager() {
 
   async function handleAdd() {
     if (!addEmail || !addEmail.includes('@')) {
-      toast({ title: 'Invalid email', description: 'Enter a valid email address.', variant: 'destructive' });
+      toast({
+        title: 'Invalid email',
+        description: 'Enter a valid email address.',
+        variant: 'destructive',
+      });
       return;
     }
     setSaving(true);
@@ -171,7 +178,11 @@ export function UsersManager() {
       setAddEmail('');
       setAddRole('Restricted User');
     } catch (err: any) {
-      toast({ title: 'Add failed', description: err?.message ?? 'Unknown', variant: 'destructive' });
+      toast({
+        title: 'Add failed',
+        description: err?.message ?? 'Unknown',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -196,7 +207,11 @@ export function UsersManager() {
       }
       setEditing(null);
     } catch (err: any) {
-      toast({ title: 'Save failed', description: err?.message ?? 'Unknown', variant: 'destructive' });
+      toast({
+        title: 'Save failed',
+        description: err?.message ?? 'Unknown',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -218,7 +233,11 @@ export function UsersManager() {
       toast({ title: 'User deactivated' });
       await refetch();
     } catch (err: any) {
-      toast({ title: 'Deactivate failed', description: err?.message ?? 'Unknown', variant: 'destructive' });
+      toast({
+        title: 'Deactivate failed',
+        description: err?.message ?? 'Unknown',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -239,7 +258,11 @@ export function UsersManager() {
       toast({ title: 'User upgraded to Superadmin' });
       await refetch();
     } catch (err: any) {
-      toast({ title: 'Upgrade failed', description: err?.message ?? 'Unknown', variant: 'destructive' });
+      toast({
+        title: 'Upgrade failed',
+        description: err?.message ?? 'Unknown',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -250,7 +273,8 @@ export function UsersManager() {
           <div>
             <CardTitle className="text-2xl">Users</CardTitle>
             <CardDescription>
-              Manage Superadmins and Restricted Users. Restricted Users cannot complete checkout without superadmin approval.
+              Manage Superadmins and Restricted Users. Restricted Users cannot complete checkout
+              without superadmin approval.
             </CardDescription>
           </div>
           <Button onClick={() => setAddOpen(true)} size="sm">
@@ -266,7 +290,8 @@ export function UsersManager() {
             <div>
               <p className="font-medium">Backend endpoint pending</p>
               <p className="text-xs">
-                <code>GET /api/users</code> isn’t live yet. Showing legacy auth users where available.
+                <code>GET /api/users</code> isn’t live yet. Showing legacy auth users where
+                available.
               </p>
             </div>
           </div>
@@ -303,7 +328,9 @@ export function UsersManager() {
                   <TableRow key={u.userId} className={u.deactivated_at ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">{u.email || u.username || '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={u.role === 'Superadmin' ? 'default' : 'outline'}>{u.role}</Badge>
+                      <Badge variant={u.role === 'Superadmin' ? 'default' : 'outline'}>
+                        {u.role}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {u.canCheckout ? (
@@ -321,7 +348,12 @@ export function UsersManager() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)} aria-label="Edit user">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(u)}
+                          aria-label="Edit user"
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         {u.role !== 'Superadmin' && !u.deactivated_at && (
@@ -361,7 +393,8 @@ export function UsersManager() {
           <DialogHeader>
             <DialogTitle>Add sub-user</DialogTitle>
             <DialogDescription>
-              They’ll receive an email invitation. Restricted Users cannot complete checkout without superadmin approval.
+              They’ll receive an email invitation. Restricted Users cannot complete checkout without
+              superadmin approval.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

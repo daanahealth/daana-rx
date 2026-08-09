@@ -17,17 +17,17 @@ interface CapacityStatus {
 
 /**
  * LotCapacityStatus - Shows real-time validation status when adding units to a lot
- * 
+ *
  * Displays what will happen after adding the specified quantity:
  * - Green: < 80% full after adding
  * - Yellow: 80-89% full after adding
- * - Orange: 90-99% full after adding  
+ * - Orange: 90-99% full after adding
  * - Red: Would exceed capacity (invalid)
- * 
+ *
  * @example
- * <LotCapacityStatus 
- *   currentCapacity={50} 
- *   maxCapacity={100} 
+ * <LotCapacityStatus
+ *   currentCapacity={50}
+ *   maxCapacity={100}
  *   addingQuantity={40}
  * />
  * // Shows: "✓ After adding: 90/100 units (90% full)"
@@ -76,15 +76,12 @@ export function LotCapacityStatus({
 
     // Calculate percentage
     const percentUsed = Math.round((newTotal / maxCapacity) * 100);
-    
-    // Determine color based on percentage
-    const color = percentUsed >= 90 ? 'orange'
-      : percentUsed >= 80 ? 'yellow'
-      : 'green';
 
-    const icon = percentUsed >= 80 
-      ? <AlertTriangle className="h-4 w-4" />
-      : <Check className="h-4 w-4" />;
+    // Determine color based on percentage
+    const color = percentUsed >= 90 ? 'orange' : percentUsed >= 80 ? 'yellow' : 'green';
+
+    const icon =
+      percentUsed >= 80 ? <AlertTriangle className="h-4 w-4" /> : <Check className="h-4 w-4" />;
 
     return {
       isValid: true,
@@ -100,9 +97,7 @@ export function LotCapacityStatus({
   return (
     <Alert variant={status.variant}>
       {status.icon}
-      <AlertDescription>
-        {status.message}
-      </AlertDescription>
+      <AlertDescription>{status.message}</AlertDescription>
     </Alert>
   );
 }

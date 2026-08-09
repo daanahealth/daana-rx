@@ -5,7 +5,14 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { reports, type ExpiringItem } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +25,11 @@ function urgencyClass(days: number): string {
 }
 
 function formatDate(iso: string): string {
-  try { return new Date(iso).toLocaleDateString(); } catch { return iso; }
+  try {
+    return new Date(iso).toLocaleDateString();
+  } catch {
+    return iso;
+  }
 }
 
 export function ExpiringSoonPanel() {
@@ -33,10 +44,18 @@ export function ExpiringSoonPanel() {
     setError(null);
     reports
       .expiring(window)
-      .then((res) => { if (!cancelled) setRows(res.rows || []); })
-      .catch((err) => { if (!cancelled) setError(err?.message || 'Failed to load expiring report'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setRows(res.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || 'Failed to load expiring report');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [window]);
 
   return (
@@ -85,9 +104,15 @@ export function ExpiringSoonPanel() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{r.medicationName}</p>
-                        <p className="text-xs text-muted-foreground">{r.dosage}{r.form ? ` · ${r.form}` : ''}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {r.dosage}
+                          {r.form ? ` · ${r.form}` : ''}
+                        </p>
                       </div>
-                      <Badge variant="outline" className={cn('whitespace-nowrap', urgencyClass(r.daysUntilExpiry))}>
+                      <Badge
+                        variant="outline"
+                        className={cn('whitespace-nowrap', urgencyClass(r.daysUntilExpiry))}
+                      >
                         {r.daysUntilExpiry}d
                       </Badge>
                     </div>
@@ -120,7 +145,10 @@ export function ExpiringSoonPanel() {
                     {rows.map((r) => (
                       <TableRow key={r.unitId}>
                         <TableCell className="font-medium">{r.medicationName}</TableCell>
-                        <TableCell>{r.dosage}{r.form ? ` · ${r.form}` : ''}</TableCell>
+                        <TableCell>
+                          {r.dosage}
+                          {r.form ? ` · ${r.form}` : ''}
+                        </TableCell>
                         <TableCell>{formatDate(r.expiryDate)}</TableCell>
                         <TableCell>{r.location?.name ?? '—'}</TableCell>
                         <TableCell className="font-mono text-xs">{r.drxCode}</TableCell>

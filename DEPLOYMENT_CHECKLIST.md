@@ -5,6 +5,7 @@ Use this checklist when committing and deploying these cleanup changes.
 ## Pre-Commit Checklist
 
 ### 1. Review Changes
+
 - [ ] Review all modified files
 - [ ] Verify no sensitive data in env-example.txt
 - [ ] Check that .gitignore still includes .env.local
@@ -12,6 +13,7 @@ Use this checklist when committing and deploying these cleanup changes.
 - [ ] Verify package.json has correct dependencies
 
 ### 2. Test Locally
+
 - [ ] Run `npm install` in a clean directory
 - [ ] Verify postinstall message appears
 - [ ] Run `npm run verify` (it should show errors for missing .env.local)
@@ -22,6 +24,7 @@ Use this checklist when committing and deploying these cleanup changes.
 - [ ] Visit http://localhost:3000 and test basic functionality
 
 ### 3. Documentation
+
 - [ ] Read through the new README.md
 - [ ] Verify all links work
 - [ ] Check that instructions are clear
@@ -30,6 +33,7 @@ Use this checklist when committing and deploying these cleanup changes.
 ## Git Commit Strategy
 
 ### Option 1: Single Commit (Recommended)
+
 ```bash
 git add .
 git commit -m "chore: cleanup project and improve onboarding
@@ -48,6 +52,7 @@ BREAKING: Removes many internal markdown files. Team members with local copies s
 ```
 
 ### Option 2: Multiple Commits (If you prefer)
+
 ```bash
 # Commit 1: Remove files
 git add -u
@@ -91,11 +96,13 @@ Documents all changes made during cleanup and provides before/after comparison."
 ## Post-Commit Checklist
 
 ### 1. Push to Remote
+
 ```bash
 git push origin main  # or your branch name
 ```
 
 ### 2. Test with Fresh Clone
+
 ```bash
 # In a separate directory
 git clone <your-repo-url> test-fresh-clone
@@ -105,12 +112,14 @@ npm install
 ```
 
 ### 3. Update Team
+
 - [ ] Send message to team about cleanup
 - [ ] Share link to CLEANUP_SUMMARY.md
 - [ ] Recommend fresh clone or review changes
 - [ ] Share new onboarding process
 
 ### 4. Test with New Developer
+
 - [ ] Have someone unfamiliar with the project try to set it up
 - [ ] Observe where they get stuck
 - [ ] Update README if needed
@@ -127,6 +136,7 @@ Hi team! 👋
 I've completed a major cleanup of our DaanaRx repository to improve the onboarding experience for new developers.
 
 **What Changed:**
+
 - ✅ Removed 32 internal documentation files that were cluttering the repo
 - ✅ Cleaned up backup files and unused dependencies
 - ✅ Added automated setup verification (`npm run verify`)
@@ -134,11 +144,13 @@ I've completed a major cleanup of our DaanaRx repository to improve the onboardi
 - ✅ Completely rewrote README with comprehensive onboarding guide
 
 **Impact:**
+
 - New developers can now get set up in ~15 minutes (down from 30-60 min)
 - Automated checks catch setup issues immediately
 - Clear troubleshooting guide for common errors
 
 **What You Need to Do:**
+
 1. Pull latest changes: `git pull origin main`
 2. Run: `npm install` (to update dependencies)
 3. Read CLEANUP_SUMMARY.md to see what changed
@@ -156,6 +168,7 @@ Let me know if you have any questions! 🚀
 After deployment, verify these work:
 
 ### Test 1: Clean Install
+
 ```bash
 # New directory
 git clone <repo>
@@ -165,12 +178,14 @@ npm install
 ```
 
 ### Test 2: Setup Verification
+
 ```bash
 npm run verify
 # Should check everything and report status
 ```
 
 ### Test 3: Environment Setup
+
 ```bash
 cp env-example.txt .env.local
 # Edit .env.local
@@ -179,12 +194,14 @@ npm run verify
 ```
 
 ### Test 4: Development Servers
+
 ```bash
 npm run dev:all
 # Both servers should start without errors
 ```
 
 ### Test 5: README Links
+
 - [ ] Click every link in README.md
 - [ ] Verify external links work (Supabase, Node.js, etc.)
 - [ ] Check internal references
@@ -194,6 +211,7 @@ npm run dev:all
 If something goes wrong:
 
 ### Quick Rollback
+
 ```bash
 # Revert to previous commit
 git revert HEAD
@@ -201,6 +219,7 @@ git push origin main
 ```
 
 ### Partial Rollback
+
 ```bash
 # Restore specific files from previous commit
 git checkout HEAD~1 -- path/to/file
@@ -209,6 +228,7 @@ git push origin main
 ```
 
 ### Full Restore
+
 ```bash
 # Go back to commit before cleanup
 git reset --hard <commit-hash-before-cleanup>
@@ -220,12 +240,14 @@ git push origin main --force  # ⚠️ Only if necessary!
 Track these after deployment:
 
 ### Week 1
+
 - [ ] Number of new developers onboarded
 - [ ] Average time to working setup
 - [ ] Number of setup-related questions in Slack
 - [ ] Feedback on new README
 
 ### Month 1
+
 - [ ] Setup success rate (no. successful / total attempts)
 - [ ] Most common issues (update troubleshooting section)
 - [ ] Developer satisfaction with onboarding
@@ -233,12 +255,14 @@ Track these after deployment:
 ## Continuous Improvement
 
 ### Monthly Review
+
 - [ ] Review setup verification logs (if you add logging)
 - [ ] Update troubleshooting section with new issues
 - [ ] Check if environment variables have changed
 - [ ] Update dependencies in package.json
 
 ### Quarterly Review
+
 - [ ] Survey new developers about onboarding experience
 - [ ] Consider Docker setup if team grows
 - [ ] Evaluate if CI/CD would help
@@ -247,6 +271,7 @@ Track these after deployment:
 ## Notes for Future Cleanups
 
 Document lessons learned:
+
 - What worked well?
 - What could be improved?
 - What to avoid next time?
@@ -265,4 +290,3 @@ Keep this checklist updated based on experience!
 - [ ] Rollback plan understood
 
 **Let's ship it!** 🚀
-

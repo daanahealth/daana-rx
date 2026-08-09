@@ -60,7 +60,7 @@ export function AddToCartButton({
   const cart = useCart();
   const [loading, setLoading] = React.useState(false);
 
-  const disabled = loading || !cartId || item.status !== 'active' && !overrideNote;
+  const disabled = loading || !cartId || (item.status !== 'active' && !overrideNote);
 
   const handleClick = React.useCallback(async () => {
     if (!cartId) {
@@ -75,11 +75,7 @@ export function AddToCartButton({
 
     // Optimistic add: insert into local cart state immediately. We will roll
     // back if the server rejects (e.g. concurrent conflict).
-    const optimistic = platformItemToCartItem(
-      item,
-      new Date().toISOString(),
-      addedByName ?? null,
-    );
+    const optimistic = platformItemToCartItem(item, new Date().toISOString(), addedByName ?? null);
     if (cart.myCart) {
       cart.setMyCart({
         ...cart.myCart,
@@ -139,12 +135,7 @@ export function AddToCartButton({
   ]);
 
   return (
-    <Button
-      size="lg"
-      onClick={handleClick}
-      disabled={disabled}
-      className={className}
-    >
+    <Button size="lg" onClick={handleClick} disabled={disabled} className={className}>
       {loading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
       ) : (

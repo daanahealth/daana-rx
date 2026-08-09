@@ -27,13 +27,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Related medications API error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to get related medications',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
 }
-

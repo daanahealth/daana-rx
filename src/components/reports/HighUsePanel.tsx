@@ -14,16 +14,21 @@ export function HighUsePanel() {
     let cancelled = false;
     reports
       .highUse()
-      .then((res) => { if (!cancelled) setRows(res.rows || []); })
-      .catch((err) => { if (!cancelled) setError(err?.message || 'Failed to load high-use report'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setRows(res.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || 'Failed to load high-use report');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const max = useMemo(
-    () => rows.reduce((m, r) => Math.max(m, r.checkoutCount), 0),
-    [rows]
-  );
+  const max = useMemo(() => rows.reduce((m, r) => Math.max(m, r.checkoutCount), 0), [rows]);
 
   return (
     <section id="high-use" className="scroll-mt-24">
@@ -33,7 +38,9 @@ export function HighUsePanel() {
             <TrendingUp className="h-5 w-5 text-emerald-500" />
             High-Use Medications
           </CardTitle>
-          <p className="text-sm text-muted-foreground">Top 25 by checkout frequency in the last 30 days</p>
+          <p className="text-sm text-muted-foreground">
+            Top 25 by checkout frequency in the last 30 days
+          </p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -60,10 +67,14 @@ export function HighUsePanel() {
                         <p className="truncate text-sm font-medium">
                           {r.medicationName}
                           <span className="ml-2 text-xs text-muted-foreground">
-                            {r.dosage}{r.strengthUnit ? r.strengthUnit : ''}{r.form ? ` · ${r.form}` : ''}
+                            {r.dosage}
+                            {r.strengthUnit ? r.strengthUnit : ''}
+                            {r.form ? ` · ${r.form}` : ''}
                           </span>
                         </p>
-                        <span className="text-xs font-semibold tabular-nums">{r.checkoutCount}</span>
+                        <span className="text-xs font-semibold tabular-nums">
+                          {r.checkoutCount}
+                        </span>
                       </div>
                       <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
                         <div

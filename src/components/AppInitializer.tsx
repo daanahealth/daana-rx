@@ -14,7 +14,9 @@ interface AppInitializerProps {
 
 export function AppInitializer({ children }: AppInitializerProps) {
   const dispatch = useDispatch();
-  const { isAuthenticated, hasHydrated, user, clinic } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, hasHydrated, user, clinic } = useSelector(
+    (state: RootState) => state.auth
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('Initializing...');
@@ -42,7 +44,9 @@ export function AppInitializer({ children }: AppInitializerProps) {
         setLoadingProgress(100);
         setLoadingMessage('Ready!');
         if (user && clinic) {
-          dispatch(setAuth({ user, clinic, token: localStorage.getItem('authToken') || '', clinics }));
+          dispatch(
+            setAuth({ user, clinic, token: localStorage.getItem('authToken') || '', clinics })
+          );
         }
         setTimeout(() => setIsInitialized(true), 300);
       } catch {

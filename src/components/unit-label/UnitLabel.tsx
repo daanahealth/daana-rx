@@ -113,7 +113,9 @@ export function UnitLabel({
 
         {(strength || form) && (
           <div style={{ fontSize: '10px', fontWeight: 600, marginBottom: '3px' }}>
-            {strength && strengthUnit ? `${strength} ${strengthUnit}` : ''}{strength && form ? ' - ' : ''}{form || ''}
+            {strength && strengthUnit ? `${strength} ${strengthUnit}` : ''}
+            {strength && form ? ' - ' : ''}
+            {form || ''}
           </div>
         )}
 
@@ -145,9 +147,7 @@ export function UnitLabel({
         </div>
 
         {locationName && (
-          <div style={{ fontSize: '7px', color: '#666' }}>
-            Store: {locationName}
-          </div>
+          <div style={{ fontSize: '7px', color: '#666' }}>Store: {locationName}</div>
         )}
 
         <div
@@ -165,4 +165,3 @@ export function UnitLabel({
     </div>
   );
 }
-

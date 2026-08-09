@@ -52,7 +52,7 @@ export class ConcurrentConflictError extends Error {
   constructor(itemId: string, message?: string) {
     super(
       message ??
-        'This medication has just been checked out. Please refresh and select another unit.',
+        'This medication has just been checked out. Please refresh and select another unit.'
     );
     this.name = 'ConcurrentConflictError';
     this.itemId = itemId;
@@ -67,7 +67,7 @@ export class ExpiredOverrideRequiredError extends Error {
     super(
       needsNote
         ? 'A mandatory note is required to override an expired medication.'
-        : 'This medication is expired. Superadmin override required.',
+        : 'This medication is expired. Superadmin override required.'
     );
     this.name = 'ExpiredOverrideRequiredError';
     this.itemId = itemId;
@@ -117,7 +117,7 @@ export async function searchItems(params: SearchItemsParams): Promise<PlatformIt
     throw new Error(body.error || `Search failed: ${res.status}`);
   }
   const body = (await res.json()) as { items?: PlatformItemDTO[] } | PlatformItemDTO[];
-  return Array.isArray(body) ? body : body.items ?? [];
+  return Array.isArray(body) ? body : (body.items ?? []);
 }
 
 // -----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ export interface AddToCartOpts {
 export async function addItemToCart(
   cartId: string,
   itemId: string,
-  opts: AddToCartOpts = {},
+  opts: AddToCartOpts = {}
 ): Promise<{ status: ItemStatus; addedAt: string }> {
   const qs = new URLSearchParams();
   if (opts.override) {
@@ -306,7 +306,7 @@ export async function listPendingCarts(): Promise<ServerCart[]> {
     throw new Error(body.error || `List pending carts failed: ${res.status}`);
   }
   const body = (await res.json()) as { carts?: CartDTO[] } | CartDTO[];
-  const arr = Array.isArray(body) ? body : body.carts ?? [];
+  const arr = Array.isArray(body) ? body : (body.carts ?? []);
   return arr.map(toServerCart);
 }
 
@@ -315,7 +315,7 @@ export async function listPendingCarts(): Promise<ServerCart[]> {
 export function platformItemToCartItem(
   item: PlatformItemDTO,
   addedAt: string,
-  addedBy: string | null,
+  addedBy: string | null
 ): CartItemView {
   return toItemView({ item_id: item.id, added_at: addedAt, added_by_name: addedBy, item });
 }

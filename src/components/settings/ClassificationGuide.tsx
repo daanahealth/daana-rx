@@ -138,7 +138,7 @@ export function ClassificationGuide() {
       }
       if (!res.ok) throw new Error(`Failed to load classification (${res.status})`);
       const body = await res.json();
-      const data = Array.isArray(body) ? body : body?.entries ?? [];
+      const data = Array.isArray(body) ? body : (body?.entries ?? []);
       setUsingLocalFallback(false);
       setRows(data);
     } catch {
@@ -244,9 +244,7 @@ export function ClassificationGuide() {
   async function handleDeactivate(row: MutableClassificationEntry) {
     if (!confirm(`Deactivate the ${row.class_name} classification entry?`)) return;
     const next = rows.map((r) =>
-      r.class_name === row.class_name
-        ? { ...r, deactivated_at: new Date().toISOString() }
-        : r,
+      r.class_name === row.class_name ? { ...r, deactivated_at: new Date().toISOString() } : r
     );
     await persist(next);
     toast({ title: 'Entry deactivated' });
@@ -254,14 +252,15 @@ export function ClassificationGuide() {
 
   async function handleReactivate(row: MutableClassificationEntry) {
     const next = rows.map((r) =>
-      r.class_name === row.class_name ? { ...r, deactivated_at: null } : r,
+      r.class_name === row.class_name ? { ...r, deactivated_at: null } : r
     );
     await persist(next);
     toast({ title: 'Entry reactivated' });
   }
 
   async function handleResetToDefaults() {
-    if (!confirm('Reset the classification guide to MASS defaults? Local edits will be lost.')) return;
+    if (!confirm('Reset the classification guide to MASS defaults? Local edits will be lost.'))
+      return;
     const next = seedFromGuide();
     await persist(next);
     toast({ title: 'Reset to defaults' });
@@ -274,7 +273,8 @@ export function ClassificationGuide() {
           <div>
             <CardTitle className="text-2xl">Classification Guide</CardTitle>
             <CardDescription>
-              Maps medication classes to bin locations. Edits apply immediately to Check In suggestions.
+              Maps medication classes to bin locations. Edits apply immediately to Check In
+              suggestions.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -294,7 +294,8 @@ export function ClassificationGuide() {
             <div>
               <p className="font-medium">Local persistence active</p>
               <p className="text-xs">
-                <code>PATCH /api/settings/classification</code> isn’t live yet. Changes are saved to this device only and will sync to the server once the endpoint is deployed.
+                <code>PATCH /api/settings/classification</code> isn’t live yet. Changes are saved to
+                this device only and will sync to the server once the endpoint is deployed.
               </p>
             </div>
           </div>
@@ -343,15 +344,16 @@ export function ClassificationGuide() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(row)} aria-label="Edit entry">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(row)}
+                          aria-label="Edit entry"
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         {row.deactivated_at ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleReactivate(row)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleReactivate(row)}>
                             Reactivate
                           </Button>
                         ) : (
@@ -377,7 +379,9 @@ export function ClassificationGuide() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[560px]">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit classification entry' : 'Add classification entry'}</DialogTitle>
+            <DialogTitle>
+              {editing ? 'Edit classification entry' : 'Add classification entry'}
+            </DialogTitle>
             <DialogDescription>
               Changes apply immediately to Check In location suggestions.
             </DialogDescription>
@@ -393,7 +397,9 @@ export function ClassificationGuide() {
                 disabled={!!editing}
               />
               {editing && (
-                <p className="text-xs text-muted-foreground">Class name is the identifier and cannot be changed.</p>
+                <p className="text-xs text-muted-foreground">
+                  Class name is the identifier and cannot be changed.
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -435,7 +441,11 @@ export function ClassificationGuide() {
                   When on, Check In flags this class for superadmin review.
                 </p>
               </div>
-              <Switch id="cls-supervisor" checked={supervisorReview} onCheckedChange={setSupervisorReview} />
+              <Switch
+                id="cls-supervisor"
+                checked={supervisorReview}
+                onCheckedChange={setSupervisorReview}
+              />
             </div>
           </div>
           <DialogFooter>

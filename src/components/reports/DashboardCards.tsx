@@ -27,8 +27,7 @@ export function DashboardCards() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const safe = <T,>(p: Promise<T>): Promise<T | null> =>
-        p.catch(() => null);
+      const safe = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
 
       const [exp, cap, hu, rem] = await Promise.all([
         safe(reports.expiring(30)),
@@ -45,7 +44,9 @@ export function DashboardCards() {
         removedCount: rem?.rows?.length ?? 0,
       });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -82,7 +83,9 @@ export function DashboardCards() {
             <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
               {summary.highUse.map((h, i) => (
                 <li key={h.drugId} className="flex justify-between">
-                  <span className="truncate">{i + 1}. {h.medicationName}</span>
+                  <span className="truncate">
+                    {i + 1}. {h.medicationName}
+                  </span>
                   <span className="font-mono tabular-nums">{h.checkoutCount}</span>
                 </li>
               ))}

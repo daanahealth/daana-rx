@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { inventory as inventoryApi } from '@/lib/api';
-import { Calendar as CalendarIcon, X, Filter, Download, Search, Sparkles, HelpCircle } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  X,
+  Filter,
+  Download,
+  Search,
+  Sparkles,
+  HelpCircle,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -23,11 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import {
   InventoryFiltersState,
@@ -38,12 +38,7 @@ import {
   SORT_FIELDS,
 } from '@/types/inventory';
 import { parseSmartSearch, getExampleQueries } from '@/utils/smartSearch';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RelatedMedications } from './RelatedMedications';
 
 interface AdvancedInventoryFiltersProps {
@@ -64,40 +59,47 @@ export function AdvancedInventoryFilters({
   const [locations, setLocations] = useState<any[]>([]);
 
   useEffect(() => {
-    inventoryApi.getLocations().then(setLocations).catch(() => {});
+    inventoryApi
+      .getLocations()
+      .then(setLocations)
+      .catch(() => {});
   }, []);
 
   // Handle smart search with debounce
-  const handleSmartSearch = useCallback((query: string) => {
-    if (!query.trim()) {
-      // If search is cleared, don't reset all filters, just clear search-related ones
-      return;
-    }
+  const handleSmartSearch = useCallback(
+    (query: string) => {
+      if (!query.trim()) {
+        // If search is cleared, don't reset all filters, just clear search-related ones
+        return;
+      }
 
-    const { filters: parsedFilters } = parseSmartSearch(query);
-    
-    // If we have location keywords, match them against actual locations
-    if (locations.length > 0 && parsedFilters.medicationName) {
-      const locationKeywordMatch = query.toLowerCase().match(/location[:\s]+(fridge|room temp)/i);
-      if (locationKeywordMatch) {
-        const keyword = locationKeywordMatch[1].toLowerCase();
-        const matchedLocation = locations.find(
-          (loc) => loc.temp.toLowerCase().includes(keyword) || loc.name.toLowerCase().includes(keyword)
-        );
-        if (matchedLocation) {
-          parsedFilters.locationIds = [matchedLocation.locationId];
+      const { filters: parsedFilters } = parseSmartSearch(query);
+
+      // If we have location keywords, match them against actual locations
+      if (locations.length > 0 && parsedFilters.medicationName) {
+        const locationKeywordMatch = query.toLowerCase().match(/location[:\s]+(fridge|room temp)/i);
+        if (locationKeywordMatch) {
+          const keyword = locationKeywordMatch[1].toLowerCase();
+          const matchedLocation = locations.find(
+            (loc) =>
+              loc.temp.toLowerCase().includes(keyword) || loc.name.toLowerCase().includes(keyword)
+          );
+          if (matchedLocation) {
+            parsedFilters.locationIds = [matchedLocation.locationId];
+          }
         }
       }
-    }
-    
-    // Merge with existing filters (don't overwrite everything)
-    onFiltersChange({ ...filters, ...parsedFilters });
-  }, [locations, filters, onFiltersChange]);
+
+      // Merge with existing filters (don't overwrite everything)
+      onFiltersChange({ ...filters, ...parsedFilters });
+    },
+    [locations, filters, onFiltersChange]
+  );
 
   // Debounce the search
   useEffect(() => {
     if (!searchQuery) return;
-    
+
     const timeoutId = setTimeout(() => {
       handleSmartSearch(searchQuery);
     }, 500);
@@ -173,15 +175,17 @@ export function AdvancedInventoryFilters({
               <TooltipContent side="right" className="max-w-sm">
                 <p className="font-medium mb-2">Try natural language queries:</p>
                 <ul className="text-xs space-y-1">
-                  {getExampleQueries().slice(0, 5).map((example) => (
-                    <li key={example}>• {example}</li>
-                  ))}
+                  {getExampleQueries()
+                    .slice(0, 5)
+                    .map((example) => (
+                      <li key={example}>• {example}</li>
+                    ))}
                 </ul>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -248,10 +252,12 @@ export function AdvancedInventoryFilters({
       {/* Active Filters Display */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs sm:text-sm text-muted-foreground">{activeFilterCount} filter(s) active:</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">
+            {activeFilterCount} filter(s) active:
+          </span>
           {filters.expirationWindow && filters.expirationWindow !== 'ALL' && (
             <Badge variant="secondary" className="gap-1">
-              {EXPIRATION_WINDOWS.find(w => w.value === filters.expirationWindow)?.label}
+              {EXPIRATION_WINDOWS.find((w) => w.value === filters.expirationWindow)?.label}
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => updateFilter('expirationWindow', undefined)}
@@ -290,7 +296,9 @@ export function AdvancedInventoryFilters({
               <Filter className="h-4 w-4" />
               Advanced Filters
               {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="ml-1">{activeFilterCount}</Badge>
+                <Badge variant="secondary" className="ml-1">
+                  {activeFilterCount}
+                </Badge>
               )}
             </Button>
           </CollapsibleTrigger>
@@ -322,7 +330,9 @@ export function AdvancedInventoryFilters({
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.expiryDateFrom ? format(filters.expiryDateFrom, 'PPP') : 'Pick a date'}
+                        {filters.expiryDateFrom
+                          ? format(filters.expiryDateFrom, 'PPP')
+                          : 'Pick a date'}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -444,7 +454,12 @@ export function AdvancedInventoryFilters({
                     <span>{strengthRange[1]} mg</span>
                   </div>
                 </div>
-                <Button onClick={applyStrengthFilter} variant="outline" size="sm" className="w-full">
+                <Button
+                  onClick={applyStrengthFilter}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
                   Apply Strength Filter
                 </Button>
               </div>

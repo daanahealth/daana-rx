@@ -22,9 +22,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <AuthInitializer>
-        {children}
-      </AuthInitializer>
+      <AuthInitializer>{children}</AuthInitializer>
       <FeedbackButton />
       <Toaster />
     </Provider>

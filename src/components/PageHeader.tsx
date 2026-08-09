@@ -11,24 +11,14 @@ interface PageHeaderProps {
   action?: React.ReactNode;
 }
 
-export function PageHeader({ 
-  title, 
-  description, 
-  showBackButton = true, 
-  action 
-}: PageHeaderProps) {
+export function PageHeader({ title, description, showBackButton = true, action }: PageHeaderProps) {
   const router = useRouter();
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-start gap-4">
         {showBackButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Go back</span>
           </Button>

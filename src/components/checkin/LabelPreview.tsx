@@ -78,7 +78,9 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
             availableQuantity={qty}
             totalQuantity={qty}
             expiryDate={item.expiryDate ?? null}
-            locationName={(item as unknown as { locationCode?: string | null }).locationCode ?? null}
+            locationName={
+              (item as unknown as { locationCode?: string | null }).locationCode ?? null
+            }
           />
         </div>
       </div>

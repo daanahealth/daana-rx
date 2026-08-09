@@ -52,7 +52,7 @@ export function ResultCard({ item }: ResultCardProps) {
       className={cn(
         'rounded-xl border border-border/60 bg-card/80 backdrop-blur-md',
         'shadow-soft hover:shadow-md transition-shadow duration-200',
-        'p-4 sm:p-5',
+        'p-4 sm:p-5'
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

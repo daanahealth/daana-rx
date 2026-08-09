@@ -113,7 +113,9 @@ export function RemoveItemModal({ item, open, onOpenChange, onRemoved }: RemoveI
       });
       if (!res.ok) {
         const bodyErr = await res.json().catch(() => ({}));
-        throw new Error(bodyErr.error || `POST /inventory/items/${item.id}/remove failed: ${res.status}`);
+        throw new Error(
+          bodyErr.error || `POST /inventory/items/${item.id}/remove failed: ${res.status}`
+        );
       }
       toast({
         title: 'Item removed',
@@ -144,9 +146,7 @@ export function RemoveItemModal({ item, open, onOpenChange, onRemoved }: RemoveI
 
         {item ? (
           <div className="rounded-md border bg-muted/40 p-3 text-sm">
-            <p className="font-medium">
-              {readAttr(item.attributes, 'medication_name') || '—'}
-            </p>
+            <p className="font-medium">{readAttr(item.attributes, 'medication_name') || '—'}</p>
             <p className="text-xs text-muted-foreground">
               {readAttr(item.attributes, 'dosage')} {readAttr(item.attributes, 'unit')} ·{' '}
               <span className="font-mono">{item.unitCode}</span>

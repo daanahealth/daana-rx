@@ -2,7 +2,7 @@
 
 /**
  * Drug API Integration Test Script
- * 
+ *
  * This script tests the drug API service to ensure all endpoints are working correctly.
  * Run with: node scripts/test-drug-api.js
  * Or: npm run test:drug-api
@@ -27,7 +27,7 @@ function log(message, color = 'reset') {
 
 async function testDrugSearch() {
   log('\n📋 Testing Drug Search API...', 'blue');
-  
+
   const testCases = [
     { query: 'ibuprofen', expectedResults: true },
     { query: 'acetaminophen', expectedResults: true },
@@ -43,13 +43,16 @@ async function testDrugSearch() {
 
       if (response.data.success) {
         const hasResults = response.data.count > 0;
-        
+
         if (hasResults === testCase.expectedResults) {
           log(`  ✓ "${testCase.query}": Found ${response.data.count} result(s)`, 'green');
-          
+
           if (hasResults && response.data.results[0]) {
             const firstResult = response.data.results[0];
-            log(`    → ${firstResult.medicationName} (${firstResult.strength}${firstResult.strengthUnit} ${firstResult.form})`, 'reset');
+            log(
+              `    → ${firstResult.medicationName} (${firstResult.strength}${firstResult.strengthUnit} ${firstResult.form})`,
+              'reset'
+            );
             log(`    → Source: ${firstResult.source}, NDC: ${firstResult.ndcId || 'N/A'}`, 'reset');
           }
         } else {
@@ -66,7 +69,7 @@ async function testDrugSearch() {
 
 async function testNDCLookup() {
   log('\n🔍 Testing NDC Lookup API...', 'blue');
-  
+
   const testCases = [
     { ndc: '0573-0164-70', description: 'Advil/Ibuprofen' },
     { ndc: '0093-7214-01', description: 'Lisinopril 10mg' },
@@ -98,7 +101,7 @@ async function testNDCLookup() {
 
 async function testRelatedMedications() {
   log('\n🔗 Testing Related Medications API...', 'blue');
-  
+
   const testCases = [
     { drug: 'lisinopril', description: 'ACE inhibitor' },
     { drug: 'atorvastatin', description: 'Statin' },
@@ -113,11 +116,11 @@ async function testRelatedMedications() {
 
       if (response.data.success) {
         const count = response.data.count || 0;
-        
+
         if (count > 0) {
           log(`  ✓ "${testCase.drug}": Found ${count} related medication(s)`, 'green');
-          
-          response.data.related.slice(0, 3).forEach(med => {
+
+          response.data.related.slice(0, 3).forEach((med) => {
             log(`    → ${med.name} (${med.relationship})`, 'reset');
             if (med.description) {
               log(`      ${med.description}`, 'reset');
@@ -148,7 +151,7 @@ async function runTests() {
     await testDrugSearch();
     await testNDCLookup();
     await testRelatedMedications();
-    
+
     log('\n═══════════════════════════════════════════════════', 'blue');
     log('  Tests Complete! ✓', 'green');
     log('═══════════════════════════════════════════════════', 'blue');
@@ -157,7 +160,6 @@ async function runTests() {
     log('2. Test the UI in the browser at /checkin and /inventory');
     log('3. Try searching for drugs and using the barcode scanner');
     log('4. Test the Related Medications feature in inventory filters\n');
-    
   } catch (error) {
     log('\n✗ Test suite failed with error:', 'red');
     log(error.message, 'red');
@@ -166,9 +168,8 @@ async function runTests() {
 }
 
 // Run tests
-runTests().catch(error => {
+runTests().catch((error) => {
   log('\n✗ Unexpected error:', 'red');
   console.error(error);
   process.exit(1);
 });
-
