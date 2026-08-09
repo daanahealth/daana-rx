@@ -80,6 +80,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { canModifyStock } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -171,6 +172,9 @@ export default function InventoryPage() {
   const { toast } = useToast();
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const isSuperadmin = currentUser?.userRole === 'superadmin';
+  // Providers browse and request only; the backend 403s their edits, so don't
+  // offer the actions at all.
+  const mayModify = canModifyStock(currentUser?.userRole);
 
   // Filters / search
   const [q, setQ] = useState('');
@@ -523,6 +527,7 @@ export default function InventoryPage() {
                   key={item.id}
                   item={item}
                   isSuperadmin={isSuperadmin}
+                  mayModify={mayModify}
                   onDetails={() => setDetailsTarget(item)}
                   onEdit={() => setEditTarget(item)}
                   onCheckout={() => setCheckoutTarget(item)}
@@ -601,6 +606,7 @@ export default function InventoryPage() {
                               <RowActions
                                 item={item}
                                 isSuperadmin={isSuperadmin}
+                                mayModify={mayModify}
                                 onDetails={() => setDetailsTarget(item)}
                                 onEdit={() => setEditTarget(item)}
                                 onCheckout={() => setCheckoutTarget(item)}
@@ -780,6 +786,7 @@ export default function InventoryPage() {
 function RowActions({
   item,
   isSuperadmin,
+  mayModify,
   onDetails,
   onEdit,
   onCheckout,
@@ -788,6 +795,7 @@ function RowActions({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  mayModify: boolean;
   onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
@@ -809,21 +817,25 @@ function RowActions({
           <Eye className="mr-2 h-4 w-4" />
           View details
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onEdit} disabled={terminal}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit
-        </DropdownMenuItem>
-        {isSuperadmin ? (
-          <DropdownMenuItem onClick={onCheckout} disabled={terminal}>
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Check out directly
-          </DropdownMenuItem>
+        {mayModify ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onEdit} disabled={terminal}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            {isSuperadmin ? (
+              <DropdownMenuItem onClick={onCheckout} disabled={terminal}>
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Check out directly
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem onClick={onRemove} disabled={terminal} className="text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove
+            </DropdownMenuItem>
+          </>
         ) : null}
-        <DropdownMenuItem onClick={onRemove} disabled={terminal} className="text-destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Remove
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onHistory}>
           <History className="mr-2 h-4 w-4" />
@@ -839,6 +851,7 @@ function RowActions({
 function InventoryCard({
   item,
   isSuperadmin,
+  mayModify,
   onDetails,
   onEdit,
   onCheckout,
@@ -847,6 +860,7 @@ function InventoryCard({
 }: {
   item: InventoryRow;
   isSuperadmin: boolean;
+  mayModify: boolean;
   onDetails: () => void;
   onEdit: () => void;
   onCheckout: () => void;
@@ -874,6 +888,7 @@ function InventoryCard({
           <RowActions
             item={item}
             isSuperadmin={isSuperadmin}
+            mayModify={mayModify}
             onDetails={onDetails}
             onEdit={onEdit}
             onCheckout={onCheckout}

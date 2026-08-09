@@ -26,13 +26,14 @@ import { ExpiredOverrideModal } from '@/components/checkout/ExpiredOverrideModal
 import { CartProvider, useCart } from '@/components/cart/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
 import {
-  createCart,
+  getCurrentCart,
   getCart,
   listPendingCarts,
   searchItems,
   type PlatformItemDTO,
 } from '@/lib/cartApi';
 import { cn } from '@/lib/utils';
+import { isReadOnlyRole } from '@/lib/roles';
 
 const DEBOUNCE_MS = 300;
 const MIN_CHARS_FAST_PATH = 2;
@@ -56,6 +57,9 @@ function deriveFirstName(username?: string | null, email?: string | null): strin
 function CheckOutInner() {
   const user = useSelector((s: RootState) => s.auth.user);
   const isSuperadmin = user?.userRole === 'superadmin';
+  // For providers this page is a request desk: their adds land in
+  // pending_approval for a superadmin to decide on, so the copy says so.
+  const isProvider = isReadOnlyRole(user?.userRole);
   const firstName = React.useMemo(
     () => deriveFirstName(user?.username, user?.email),
     [user?.username, user?.email]
@@ -69,18 +73,30 @@ function CheckOutInner() {
   const [expiredOverride, setExpiredOverride] = React.useState<PlatformItemDTO | null>(null);
   const [cartId, setCartId] = React.useState<string | null>(null);
 
-  // Initialize: create (or reuse) cart, and for superadmins poll pending list.
+  // Initialize: resolve the caller's open cart (created only if none exists),
+  // and for superadmins poll the pending list.
+  const [cartError, setCartError] = React.useState<string | null>(null);
   React.useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const created = await createCart();
+        // getCurrentCart, not createCart: minting a fresh cart on every mount
+        // diverged from the cart the server treats as "current", so items added
+        // elsewhere landed in a different cart and abandoned carts accumulated.
+        const current = await getCurrentCart();
         if (!mounted) return;
-        setCartId(created.id);
-        cart.setMyCart(created);
-      } catch {
-        // Without a server cart, the UI is read-only — show a banner instead.
+        setCartId(current.id);
+        setCartError(null);
+        cart.setMyCart(current);
+      } catch (err) {
+        // Without a server cart the Add buttons stay disabled, which reads as
+        // "can't put medicines in cart" — so say why instead of failing silently.
         if (!mounted) return;
+        setCartError(
+          err instanceof Error
+            ? `Cart unavailable: ${err.message}`
+            : 'Cart unavailable — refresh to try again.'
+        );
         cart.setMyCart({
           id: '',
           ownerId: user?.userId ?? '',
@@ -172,12 +188,25 @@ function CheckOutInner() {
         {/* Centered search + prompt */}
         <div className="text-center space-y-3 pt-4 sm:pt-6">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            What medication would you like, {firstName}?
+            {isProvider
+              ? `What medication would you like to request, ${firstName}?`
+              : `What medication would you like, ${firstName}?`}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Results are sorted First-Expiry-First-Out. Adding to cart reserves the unit.
+            {isProvider
+              ? 'Results are sorted First-Expiry-First-Out. Your request is held for pharmacy approval.'
+              : 'Results are sorted First-Expiry-First-Out. Adding to cart reserves the unit.'}
           </p>
         </div>
+
+        {/* A missing cart disables every Add button, which staff experience as
+            "can't put medicines in cart". Say so explicitly. */}
+        {cartError && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{cartError} Items cannot be added until the cart loads.</span>
+          </div>
+        )}
 
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />

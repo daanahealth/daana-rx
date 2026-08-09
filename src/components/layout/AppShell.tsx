@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { isReadOnlyRole } from '@/lib/roles';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,6 +232,18 @@ export function AppShell({ children }: AppShellProps) {
   // Spec order: Home, Check In, Check Out, Inventory, Reports, Settings.
   // Settings is only shown to admins/superadmins.
   const navItems: NavItem[] = useMemo(() => {
+    // Providers get a browse-and-request view only: they can see what's in
+    // stock and raise a request for it, but never check in, edit, or remove.
+    // Their "Check Out" is really a request — a non-superadmin add puts the
+    // unit in pending_approval for a superadmin to decide on.
+    if (isReadOnlyRole(user?.userRole)) {
+      return [
+        { icon: Home, label: 'Home', href: '/' },
+        { icon: Package, label: 'Inventory', href: '/inventory' },
+        { icon: PackageMinus, label: 'Request', href: '/checkout' },
+      ];
+    }
+
     const base: NavItem[] = [
       { icon: Home, label: 'Home', href: '/' },
       { icon: PackageCheck, label: 'Check In', href: '/checkin' },
