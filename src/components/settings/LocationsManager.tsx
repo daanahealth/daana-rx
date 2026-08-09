@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -46,15 +52,7 @@ interface LocationRow {
 
 const DEFAULT_CAPACITY = 50;
 
-const FORM_TYPES = [
-  'Bottle',
-  'Card',
-  'Cream',
-  'Nasal Spray',
-  'Insulin Pen',
-  'Injection',
-  'Other',
-];
+const FORM_TYPES = ['Bottle', 'Card', 'Cream', 'Nasal Spray', 'Insulin Pen', 'Injection', 'Other'];
 
 // API base picks up the same NEXT_PUBLIC_API_URL as src/lib/apiClient.ts.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -83,7 +81,8 @@ function normaliseLocation(raw: any): LocationRow {
     locationId: raw.locationId || raw.id || raw.code,
     code: raw.code || raw.name || raw.locationCode || '',
     specialty: raw.specialty || raw.specialty_class || raw.class_name || '',
-    capacity: typeof raw.capacity === 'number' ? raw.capacity : (raw.maxCapacity ?? DEFAULT_CAPACITY),
+    capacity:
+      typeof raw.capacity === 'number' ? raw.capacity : (raw.maxCapacity ?? DEFAULT_CAPACITY),
     item_type: raw.item_type || raw.itemType || raw.temp || 'Other',
     deactivated_at: raw.deactivated_at || raw.deactivatedAt || null,
     name: raw.name,
@@ -116,7 +115,7 @@ export function LocationsManager() {
       }
       if (!res.ok) throw new Error(`Failed to load locations (${res.status})`);
       const body = await res.json();
-      const rows = Array.isArray(body) ? body : body?.locations ?? [];
+      const rows = Array.isArray(body) ? body : (body?.locations ?? []);
       setLocations(rows.map(normaliseLocation));
       setEndpointPending(false);
     } catch (err: any) {
@@ -154,11 +153,19 @@ export function LocationsManager() {
 
   async function handleSave() {
     if (!code.trim()) {
-      toast({ title: 'Code required', description: 'Location code is required.', variant: 'destructive' });
+      toast({
+        title: 'Code required',
+        description: 'Location code is required.',
+        variant: 'destructive',
+      });
       return;
     }
     if (!Number.isFinite(capacity) || capacity <= 0) {
-      toast({ title: 'Invalid capacity', description: 'Capacity must be a positive number.', variant: 'destructive' });
+      toast({
+        title: 'Invalid capacity',
+        description: 'Capacity must be a positive number.',
+        variant: 'destructive',
+      });
       return;
     }
     setSaving(true);
@@ -193,7 +200,11 @@ export function LocationsManager() {
       }
       setDialogOpen(false);
     } catch (err: any) {
-      toast({ title: 'Save failed', description: err?.message ?? 'Unknown error', variant: 'destructive' });
+      toast({
+        title: 'Save failed',
+        description: err?.message ?? 'Unknown error',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -215,7 +226,11 @@ export function LocationsManager() {
       toast({ title: 'Location deactivated' });
       await refetch();
     } catch (err: any) {
-      toast({ title: 'Deactivate failed', description: err?.message ?? 'Unknown', variant: 'destructive' });
+      toast({
+        title: 'Deactivate failed',
+        description: err?.message ?? 'Unknown',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -245,7 +260,8 @@ export function LocationsManager() {
             <div>
               <p className="font-medium">Backend endpoint pending</p>
               <p className="text-xs">
-                <code>GET /api/locations</code> isn’t live yet. You can still configure values here once it’s deployed.
+                <code>GET /api/locations</code> isn’t live yet. You can still configure values here
+                once it’s deployed.
               </p>
             </div>
           </div>

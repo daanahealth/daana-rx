@@ -1,7 +1,6 @@
 import { test, expect, request } from '@playwright/test';
 
-const GATEWAY_URL =
-  process.env.E2E_GATEWAY_URL ?? 'https://daanahealth-gateway.onrender.com';
+const GATEWAY_URL = process.env.E2E_GATEWAY_URL ?? 'https://daanahealth-gateway.onrender.com';
 
 test.describe('DaanaRX smoke', () => {
   test('t1 home page or auth redirect', async ({ page }) => {
@@ -12,31 +11,25 @@ test.describe('DaanaRX smoke', () => {
     await expect(page).toHaveTitle(/DaanaRX/i);
     // Either branch must surface within 15s of hydration.
     const anyInput = page.locator(
-      'input[inputmode="search"], input[type="email"], input[name="email"]',
+      'input[inputmode="search"], input[type="email"], input[name="email"]'
     );
     await expect(anyInput.first()).toBeVisible({ timeout: 15_000 });
   });
 
   test('t2 signin loads', async ({ page }) => {
     await page.goto('/auth/signin');
+    await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
     await expect(
-      page.locator('input[type="email"], input[name="email"]').first(),
-    ).toBeVisible();
-    await expect(
-      page.locator('input[type="password"], input[name="password"]').first(),
+      page.locator('input[type="password"], input[name="password"]').first()
     ).toBeVisible();
   });
 
   test('t3 forgot password loads', async ({ page }) => {
     await page.goto('/auth/forgot-password');
-    await expect(
-      page.locator('input[type="email"], input[name="email"]').first(),
-    ).toBeVisible();
+    await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
   });
 
-  test('t4 inventory route either redirects to signin or renders', async ({
-    page,
-  }) => {
+  test('t4 inventory route either redirects to signin or renders', async ({ page }) => {
     await page.goto('/inventory');
     await page.waitForLoadState('networkidle').catch(() => {});
     const url = page.url();

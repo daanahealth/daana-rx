@@ -36,22 +36,22 @@ export function RelatedMedications({ drugName, onSelectMedication }: RelatedMedi
     setRelatedMeds([]);
 
     try {
-      const response = await fetch(
-        `/api/drugs/related?drug=${encodeURIComponent(drugName)}`
-      );
+      const response = await fetch(`/api/drugs/related?drug=${encodeURIComponent(drugName)}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch related medications');
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.related) {
         setRelatedMeds(data.related);
         setHasSearched(true);
-        
+
         if (data.related.length === 0) {
-          setError('No related medications found. This may be due to limited data in RxNorm for this drug.');
+          setError(
+            'No related medications found. This may be due to limited data in RxNorm for this drug.'
+          );
         }
       } else {
         setError(data.error || 'Failed to load related medications');
@@ -65,14 +65,21 @@ export function RelatedMedications({ drugName, onSelectMedication }: RelatedMedi
   };
 
   const getRelationshipBadge = (relationship: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
+    const variants: Record<
+      string,
+      { variant: 'default' | 'secondary' | 'outline'; label: string }
+    > = {
       same_class: { variant: 'default', label: 'Same Class' },
       alternative: { variant: 'secondary', label: 'Alternative' },
       contains_ingredient: { variant: 'outline', label: 'Related Ingredient' },
     };
 
     const config = variants[relationship] || { variant: 'outline' as const, label: relationship };
-    return <Badge variant={config.variant} className="text-xs">{config.label}</Badge>;
+    return (
+      <Badge variant={config.variant} className="text-xs">
+        {config.label}
+      </Badge>
+    );
   };
 
   return (
@@ -105,7 +112,8 @@ export function RelatedMedications({ drugName, onSelectMedication }: RelatedMedi
         {hasSearched && relatedMeds.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Found {relatedMeds.length} related medication(s) for <span className="font-semibold">{drugName}</span>:
+              Found {relatedMeds.length} related medication(s) for{' '}
+              <span className="font-semibold">{drugName}</span>:
             </p>
             <div className="space-y-2 max-h-[300px] overflow-y-auto">
               {relatedMeds.map((med) => (
@@ -140,4 +148,3 @@ export function RelatedMedications({ drugName, onSelectMedication }: RelatedMedi
     </Card>
   );
 }
-

@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Eye, EyeOff, Loader2, ShieldCheck, Users as UsersIcon, Check, X, AlertTriangle } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  Users as UsersIcon,
+  Check,
+  X,
+  AlertTriangle,
+} from 'lucide-react';
 import { RootState } from '../../store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -85,13 +94,20 @@ export function AccountPanel({ onJumpToUsers }: AccountPanelProps) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `Request failed (${res.status})`);
       } else {
-        toast({ title: 'Password updated', description: 'Use your new password the next time you sign in.' });
+        toast({
+          title: 'Password updated',
+          description: 'Use your new password the next time you sign in.',
+        });
         setCurrent('');
         setNext('');
         setConfirm('');
       }
     } catch (err: any) {
-      toast({ title: 'Update failed', description: err?.message ?? 'Unknown error', variant: 'destructive' });
+      toast({
+        title: 'Update failed',
+        description: err?.message ?? 'Unknown error',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -194,7 +210,9 @@ export function AccountPanel({ onJumpToUsers }: AccountPanelProps) {
                   ) : (
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <span className={r.passed ? 'text-foreground' : 'text-muted-foreground'}>{r.label}</span>
+                  <span className={r.passed ? 'text-foreground' : 'text-muted-foreground'}>
+                    {r.label}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -234,11 +252,11 @@ export function AccountPanel({ onJumpToUsers }: AccountPanelProps) {
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            User and location management is restricted to superadmins. Ask an upstairs staff member if you need elevated access.
+            User and location management is restricted to superadmins. Ask an upstairs staff member
+            if you need elevated access.
           </p>
         </div>
       )}
-
     </div>
   );
 }

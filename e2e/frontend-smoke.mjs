@@ -25,14 +25,11 @@ async function getPage(path) {
       // Cheap markers
       hasTitle: /<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1] ?? null,
       hasSearchInput:
-        /input[^>]+type=["']?search["']?/i.test(html) ||
-        /placeholder=["'][^"']*search/i.test(html),
+        /input[^>]+type=["']?search["']?/i.test(html) || /placeholder=["'][^"']*search/i.test(html),
       hasEmailInput:
-        /input[^>]+type=["']?email["']?/i.test(html) ||
-        /name=["']email["']/i.test(html),
+        /input[^>]+type=["']?email["']?/i.test(html) || /name=["']email["']/i.test(html),
       hasPasswordInput:
-        /input[^>]+type=["']?password["']?/i.test(html) ||
-        /name=["']password["']/i.test(html),
+        /input[^>]+type=["']?password["']?/i.test(html) || /name=["']password["']/i.test(html),
     };
   } finally {
     clearTimeout(tm);
@@ -47,9 +44,7 @@ async function follow(path) {
     const r = await getPage(cur);
     chain.push({ path: cur, status: r.status, location: r.location });
     if (r.status >= 300 && r.status < 400 && r.location) {
-      const next = r.location.startsWith('http')
-        ? r.location.replace(FE, '')
-        : r.location;
+      const next = r.location.startsWith('http') ? r.location.replace(FE, '') : r.location;
       cur = next;
       continue;
     }

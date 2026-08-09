@@ -6,7 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { reports, type TransactionLogRow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +28,11 @@ const ACTION_TYPES: { value: string; label: string }[] = [
 ];
 
 function formatTs(iso: string): string {
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
 }
 
 interface FilterState {
@@ -116,7 +127,9 @@ export function TransactionLogTable() {
             <ClipboardList className="h-5 w-5 text-primary" />
             Transaction Log
           </CardTitle>
-          <p className="text-sm text-muted-foreground">Full audit trail across check-ins, checkouts, edits, and removals</p>
+          <p className="text-sm text-muted-foreground">
+            Full audit trail across check-ins, checkouts, edits, and removals
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filter chips */}
@@ -210,7 +223,10 @@ export function TransactionLogTable() {
               {/* Mobile: card list */}
               <div className="space-y-3 lg:hidden">
                 {rows.map((r) => (
-                  <div key={r.transactionId} className="rounded-lg border bg-card p-3 shadow-sm text-sm">
+                  <div
+                    key={r.transactionId}
+                    className="rounded-lg border bg-card p-3 shadow-sm text-sm"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline" className="capitalize">
                         {r.actionType.replace(/_/g, ' ')}
@@ -219,7 +235,9 @@ export function TransactionLogTable() {
                     </div>
                     <p className="mt-2 font-semibold">
                       {r.medicationName ?? '—'}
-                      {r.dosage ? <span className="ml-1 text-xs text-muted-foreground">{r.dosage}</span> : null}
+                      {r.dosage ? (
+                        <span className="ml-1 text-xs text-muted-foreground">{r.dosage}</span>
+                      ) : null}
                     </p>
                     <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                       <dt className="text-muted-foreground">Form</dt>
@@ -293,16 +311,16 @@ export function TransactionLogTable() {
                 {cursor ? (
                   <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
                     {loadingMore ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…</>
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+                      </>
                     ) : (
                       'Load more'
                     )}
                   </Button>
-                ) : (
-                  rows.length > 0 ? (
-                    <span className="text-xs text-muted-foreground">End of log</span>
-                  ) : null
-                )}
+                ) : rows.length > 0 ? (
+                  <span className="text-xs text-muted-foreground">End of log</span>
+                ) : null}
               </div>
             </>
           )}

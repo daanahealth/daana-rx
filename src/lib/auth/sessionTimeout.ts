@@ -35,9 +35,7 @@ const WINDOW_ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'scroll',
 ];
 // `visibilitychange` lives on Document, not Window.
-const DOCUMENT_ACTIVITY_EVENTS: Array<keyof DocumentEventMap> = [
-  'visibilitychange',
-];
+const DOCUMENT_ACTIVITY_EVENTS: Array<keyof DocumentEventMap> = ['visibilitychange'];
 
 const WARNING_MS = 60 * 1000;
 const TICK_MS = 1000;

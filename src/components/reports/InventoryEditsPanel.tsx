@@ -3,11 +3,22 @@
 import { useEffect, useState } from 'react';
 import { Loader2, PenSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { reports, type InventoryEditRow } from '@/lib/api';
 
 function formatTs(iso: string): string {
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
 }
 
 function displayValue(v: string | null): string {
@@ -24,10 +35,18 @@ export function InventoryEditsPanel() {
     let cancelled = false;
     reports
       .inventoryEdits()
-      .then((res) => { if (!cancelled) setRows(res.rows || []); })
-      .catch((err) => { if (!cancelled) setError(err?.message || 'Failed to load inventory edits'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setRows(res.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || 'Failed to load inventory edits');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -38,7 +57,9 @@ export function InventoryEditsPanel() {
             <PenSquare className="h-5 w-5 text-blue-500" />
             Inventory Edits
           </CardTitle>
-          <p className="text-sm text-muted-foreground">Field-level audit of recent inventory changes</p>
+          <p className="text-sm text-muted-foreground">
+            Field-level audit of recent inventory changes
+          </p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -55,12 +76,17 @@ export function InventoryEditsPanel() {
             <>
               <div className="space-y-3 lg:hidden">
                 {rows.map((r) => (
-                  <div key={r.transactionId} className="rounded-lg border bg-card p-3 shadow-sm text-sm">
+                  <div
+                    key={r.transactionId}
+                    className="rounded-lg border bg-card p-3 shadow-sm text-sm"
+                  >
                     <p className="font-semibold">{r.medicationName}</p>
                     <p className="text-xs text-muted-foreground">{formatTs(r.timestamp)}</p>
                     <p className="mt-2">
                       <span className="text-xs font-medium text-muted-foreground">{r.field}: </span>
-                      <span className="line-through text-muted-foreground">{displayValue(r.oldValue)}</span>
+                      <span className="line-through text-muted-foreground">
+                        {displayValue(r.oldValue)}
+                      </span>
                       <span className="mx-1">→</span>
                       <span>{displayValue(r.newValue)}</span>
                     </p>
@@ -87,7 +113,9 @@ export function InventoryEditsPanel() {
                         <TableCell className="font-medium">{r.medicationName}</TableCell>
                         <TableCell className="text-sm">{r.field}</TableCell>
                         <TableCell className="text-sm">
-                          <span className="line-through text-muted-foreground">{displayValue(r.oldValue)}</span>
+                          <span className="line-through text-muted-foreground">
+                            {displayValue(r.oldValue)}
+                          </span>
                           <span className="mx-1">→</span>
                           <span>{displayValue(r.newValue)}</span>
                         </TableCell>

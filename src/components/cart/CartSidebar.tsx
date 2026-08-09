@@ -36,12 +36,7 @@ import { Label } from '@/components/ui/label';
 import { StatusChip } from '@/components/ui/status-chip';
 import { useToast } from '@/hooks/use-toast';
 import { useCart, type CartItemView, type ServerCart } from './CartContext';
-import {
-  approveCart,
-  rejectCart,
-  removeItemFromCart,
-  submitCart,
-} from '@/lib/cartApi';
+import { approveCart, rejectCart, removeItemFromCart, submitCart } from '@/lib/cartApi';
 import { cn } from '@/lib/utils';
 
 interface CartSidebarProps {
@@ -98,9 +93,7 @@ function ItemRow({ item, cartId, canRemove, onRemoved }: ItemRowProps) {
     <li className="rounded-lg border bg-card p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">
-          <p className="font-semibold text-sm leading-tight break-words">
-            {item.medicationName}
-          </p>
+          <p className="font-semibold text-sm leading-tight break-words">{item.medicationName}</p>
           <p className="text-xs text-muted-foreground">
             {[
               item.dose ? `${item.dose}${item.unit ? ` ${item.unit}` : ''}` : null,
@@ -131,7 +124,8 @@ function ItemRow({ item, cartId, canRemove, onRemoved }: ItemRowProps) {
         <div className="flex items-center gap-1 min-w-0">
           <Clock className="h-3 w-3 shrink-0" />
           <span className="truncate">
-            {item.addedBy ? `${item.addedBy} • ` : ''}{formatTime(item.addedAt)}
+            {item.addedBy ? `${item.addedBy} • ` : ''}
+            {formatTime(item.addedAt)}
           </span>
         </div>
         {canRemove && (
@@ -175,7 +169,8 @@ function MyCartPanel({ isSuperadmin }: { isSuperadmin: boolean }) {
   const empty = items.length === 0;
   const submitted = myCart.status === 'pending_approval';
   const canSubmit = !isSuperadmin && myCart.status === 'active' && !empty;
-  const canCheckout = isSuperadmin && (myCart.status === 'active' || myCart.status === 'pending_approval') && !empty;
+  const canCheckout =
+    isSuperadmin && (myCart.status === 'active' || myCart.status === 'pending_approval') && !empty;
 
   const handleSubmit = async () => {
     setBusy('submit');
@@ -231,9 +226,7 @@ function MyCartPanel({ isSuperadmin }: { isSuperadmin: boolean }) {
           <div className="py-16 text-center space-y-1">
             <ShoppingCart className="mx-auto h-10 w-10 text-muted-foreground/40" />
             <p className="text-sm font-medium">Your cart is empty.</p>
-            <p className="text-xs text-muted-foreground">
-              Search above to add medications.
-            </p>
+            <p className="text-xs text-muted-foreground">Search above to add medications.</p>
           </div>
         ) : (
           <ul className="space-y-2">
@@ -323,9 +316,7 @@ function PendingCartCard({ cart, onDecided }: PendingCartCardProps) {
     <li className="rounded-lg border bg-card p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold truncate">
-            {cart.ownerName ?? cart.ownerId}
-          </p>
+          <p className="text-sm font-semibold truncate">{cart.ownerName ?? cart.ownerId}</p>
           <p className="text-xs text-muted-foreground">
             {cart.items.length} item{cart.items.length === 1 ? '' : 's'} • submitted{' '}
             {cart.submittedAt ? formatTime(cart.submittedAt) : '—'}
@@ -365,7 +356,12 @@ function PendingCartCard({ cart, onDecided }: PendingCartCardProps) {
               {busy === 'reject' && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
               Confirm Reject
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowReject(false)} disabled={busy !== null}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowReject(false)}
+              disabled={busy !== null}
+            >
               Cancel
             </Button>
           </div>
@@ -397,7 +393,7 @@ function ApprovalsPanel() {
     (cartId: string) => {
       setPendingCarts(pendingCarts.filter((c) => c.id !== cartId));
     },
-    [pendingCarts, setPendingCarts],
+    [pendingCarts, setPendingCarts]
   );
 
   if (pendingCarts.length === 0) {
@@ -405,9 +401,7 @@ function ApprovalsPanel() {
       <div className="py-16 text-center space-y-1">
         <ShoppingCart className="mx-auto h-10 w-10 text-muted-foreground/40" />
         <p className="text-sm font-medium">No carts awaiting approval.</p>
-        <p className="text-xs text-muted-foreground">
-          Restricted-user submissions appear here.
-        </p>
+        <p className="text-xs text-muted-foreground">Restricted-user submissions appear here.</p>
       </div>
     );
   }
@@ -432,14 +426,12 @@ export function CartSidebar({ isSuperadmin }: CartSidebarProps) {
         side="right"
         className={cn(
           // Mobile: full screen. Desktop: 28rem (max-w-md upper bound).
-          'w-full max-w-full sm:max-w-md p-0 flex flex-col',
+          'w-full max-w-full sm:max-w-md p-0 flex flex-col'
         )}
       >
         <SheetHeader className="px-6 pt-6 pb-3 text-left">
           <SheetTitle>Cart</SheetTitle>
-          <SheetDescription>
-            Items added here are reserved while in your cart.
-          </SheetDescription>
+          <SheetDescription>Items added here are reserved while in your cart.</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 flex flex-col px-6 pb-6 min-h-0">

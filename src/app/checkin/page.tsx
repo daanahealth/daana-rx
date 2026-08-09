@@ -47,7 +47,22 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, ChevronRight, AlertCircle, Loader2, ShieldCheck, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { suggestLocationForClass } from '@daana-health/domain-mass';
+import { suggestLocationForClass, MASS_CLASSIFICATION_GUIDE } from '@daana-health/domain-mass';
+
+/**
+ * Inverse of `suggestLocationForClass`: the specialty class implied by a bin.
+ *
+ * Bins carry a trailing index (PSYCH1, CARDIO1, NSAID2), so match on the base
+ * word. Returns null when the bin has no entry in the classification guide —
+ * callers must then ask rather than guess, since specialty_class is required
+ * on write and a wrong value is worse than an explicit prompt.
+ */
+function specialtyClassForLocation(bin: string): string | null {
+  const base = (bin ?? '').trim().toUpperCase().replace(/\d+$/, '');
+  if (!base) return null;
+  const entry = MASS_CLASSIFICATION_GUIDE.find((e) => e.location_code.toUpperCase() === base);
+  return entry?.class_name ?? null;
+}
 
 // Flow phases. Spec steps 1-9 are condensed into 4 user-visible screens; step
 // 10 is the success state.
@@ -76,6 +91,9 @@ export default function CheckInPage() {
   const [counter, setCounter] = useState<number | null>(null);
   const [counterLoading, setCounterLoading] = useState(false);
   const [counterError, setCounterError] = useState<string | null>(null);
+  // The exact code the server will assign. Rendered on the label/sticker so it
+  // always matches the stored unit_code.
+  const [serverUnitCode, setServerUnitCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [createdUnit, setCreatedUnit] = useState<{
@@ -97,39 +115,48 @@ export default function CheckInPage() {
     setLocationCode(suggestion.location_code);
   }, [specialtyClass, locationCode]);
 
-  // Whenever the location changes (after the user is at step 5+), fetch a
-  // new counter value.
-  const fetchNextCounter = useCallback(async (loc: string) => {
-    if (!loc) return;
-    setCounterLoading(true);
-    setCounterError(null);
-    try {
-      const url = `${API_BASE}/inventory/items/next-code?location=${encodeURIComponent(loc)}`;
-      const res = await fetch(url, { cache: 'no-store', headers: authHeaders() });
-      if (!res.ok) {
-        throw new Error(`Counter API returned ${res.status}`);
+  // Whenever the location changes (after the user is at step 5+), fetch the
+  // code the server will actually assign.
+  //
+  // The DRX code is specialty-based, so the server needs the medication name
+  // and dosage to render it. We send them and use the returned `unit_code`
+  // verbatim — never a locally-built one. A locally-built code was the reason
+  // stickers did not match what ended up in the system.
+  const fetchNextCounter = useCallback(
+    async (loc: string) => {
+      if (!loc) return;
+      setCounterLoading(true);
+      setCounterError(null);
+      try {
+        const values = getValues();
+        const params = new URLSearchParams({ location: loc });
+        if (values.medication_name) params.set('medication_name', values.medication_name);
+        if (values.dosage) params.set('dosage', String(values.dosage));
+        const url = `${API_BASE}/inventory/items/next-code?${params.toString()}`;
+        const res = await fetch(url, { cache: 'no-store', headers: authHeaders() });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error || `Code preview failed (${res.status})`);
+        }
+        const json = (await res.json()) as { unit_code?: string; counter?: number };
+        if (typeof json.counter !== 'number' || !Number.isFinite(json.counter)) {
+          throw new Error('Code preview returned no counter');
+        }
+        setCounter(json.counter);
+        setServerUnitCode(json.unit_code ?? null);
+      } catch (err) {
+        // No mock fallback: inventing a code here is what produced stickers
+        // that did not match the stored unit. Surface the failure and let the
+        // label step block until a real code can be issued.
+        setCounter(null);
+        setServerUnitCode(null);
+        setCounterError(err instanceof Error ? err.message : 'Could not reach the code service');
+      } finally {
+        setCounterLoading(false);
       }
-      const json = (await res.json()) as { counter?: number; next?: number };
-      const value = typeof json.counter === 'number' ? json.counter : json.next;
-      if (typeof value !== 'number' || !Number.isFinite(value)) {
-        throw new Error('Counter API returned no numeric value');
-      }
-      setCounter(value);
-    } catch (err) {
-      // Backend not yet wired — fall back to a mock counter so the agent's
-      // intake flow can still be exercised end-to-end. The error message is
-      // still surfaced so we know the wire-up is pending.
-      const mock = Math.floor(Math.random() * 99999) + 1;
-      setCounter(mock);
-      setCounterError(
-        err instanceof Error
-          ? `Using mock counter (${err.message})`
-          : 'Using mock counter (backend not wired yet)'
-      );
-    } finally {
-      setCounterLoading(false);
-    }
-  }, []);
+    },
+    [getValues]
+  );
 
   // ---------------------------------------------------------------------
   // Preview Item assembled for label rendering + validation
@@ -149,8 +176,10 @@ export default function CheckInPage() {
       notes: values.notes,
       supervisor_acknowledged: values.supervisor_acknowledged,
     };
-    // Build unit code from the same generator used in DrxCodePreview.
-    const unitCode = buildPreviewUnitCode(locationCode, counter);
+    // Always the server-issued code. Building one client-side produced labels
+    // in the retired DRX-MASS-{LOCATION}-{counter:05d} shape that did not match
+    // the specialty-based code actually stored.
+    const unitCode = serverUnitCode ?? '';
     const item: Item = {
       id: 'preview',
       typeId: 'preview',
@@ -171,6 +200,7 @@ export default function CheckInPage() {
   }, [
     counter,
     locationCode,
+    serverUnitCode,
     getValues,
     watch('medication_name'),
     watch('dosage'),
@@ -187,14 +217,11 @@ export default function CheckInPage() {
   // Navigation handlers
   // ---------------------------------------------------------------------
   const goToLocation = async () => {
-    const ok = await trigger([
-      'medication_name',
-      'dosage',
-      'unit',
-      'form',
-      'specialty_class',
-      'date_received',
-    ]);
+    // specialty_class is intentionally NOT gated here. The bin chosen on the
+    // location step is the authoritative placement, and staff often know the
+    // shelf before they know the specialty label. Specialty is backfilled from
+    // the chosen bin on the way to the label step.
+    const ok = await trigger(['medication_name', 'dosage', 'unit', 'form', 'date_received']);
     if (!ok) {
       toast({
         title: 'Fix the highlighted fields',
@@ -211,6 +238,22 @@ export default function CheckInPage() {
       toast({
         title: 'Pick a location bin',
         description: 'Confirm or override the suggested bin first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    // Location wins over specialty: whatever bin the user settled on defines
+    // the specialty recorded on the unit, so the two can no longer disagree.
+    const derived = specialtyClassForLocation(locationCode);
+    if (derived && derived !== getValues('specialty_class')) {
+      setValue('specialty_class', derived, { shouldValidate: true });
+    }
+    // specialty_class is required on write; if the bin isn't in the guide the
+    // inline picker below must be filled before we can mint a code.
+    if (!derived && !(getValues('specialty_class') ?? '').trim()) {
+      toast({
+        title: 'Pick a specialty class',
+        description: `Bin ${locationCode} isn't in the classification guide, so the class can't be inferred.`,
         variant: 'destructive',
       });
       return;
@@ -396,6 +439,39 @@ export default function CheckInPage() {
                 onChange={setLocationCode}
               />
 
+              {/* The bin is authoritative, so the class is normally backfilled
+                  from it. Bins that aren't in the classification guide are
+                  asked for here instead of sending staff back a step. */}
+              {locationCode && !specialtyClassForLocation(locationCode) && (
+                <div className="space-y-1.5">
+                  <label htmlFor="chk-specialty-class" className="text-sm font-medium leading-none">
+                    Specialty class
+                  </label>
+                  <select
+                    id="chk-specialty-class"
+                    value={specialtyClass ?? ''}
+                    onChange={(e) =>
+                      setValue('specialty_class', e.target.value, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Select a class…</option>
+                    {MASS_CLASSIFICATION_GUIDE.map((entry) => (
+                      <option key={entry.class_name} value={entry.class_name}>
+                        {entry.class_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Bin <span className="font-mono">{locationCode}</span> isn&apos;t in the
+                    classification guide, so the class can&apos;t be inferred from it.
+                  </p>
+                </div>
+              )}
+
               {/* Supervisor acknowledgement (when required) */}
               {needsSupervisorReview && (
                 <label className="flex items-start gap-3 p-4 rounded-md border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 cursor-pointer">
@@ -559,11 +635,11 @@ function FlowFooter({
 // Helpers
 // -----------------------------------------------------------------------------
 
-/** Local preview code builder. Mirrors createDrxCodeGenerator's template. */
-function buildPreviewUnitCode(locationCode: string, counter: number): string {
-  const padded = counter.toString().padStart(5, '0');
-  return `DRX-MASS-${locationCode}-${padded}`;
-}
+// NOTE: there is deliberately no local code builder here. The DRX code is
+// specialty-based and allocated server-side; the only trustworthy source is
+// GET /inventory/items/next-code. A local builder previously emitted the
+// retired DRX-MASS-{LOCATION}-{counter:05d} shape, so printed stickers did not
+// match the stored unit_code.
 
 // -----------------------------------------------------------------------------
 // FlowProgress — inline 3-step progress indicator.

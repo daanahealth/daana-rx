@@ -28,13 +28,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Drug search API error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to search drugs',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
 }
-

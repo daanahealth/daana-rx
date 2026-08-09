@@ -30,9 +30,7 @@ function DaanaLogo() {
         <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
           DaanaRX
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Reset your password
-        </p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Reset your password</p>
       </div>
     </div>
   );
@@ -51,9 +49,7 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createClient();
       const redirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/reset-password`
-          : undefined;
+        typeof window !== 'undefined' ? `${window.location.origin}/auth/reset-password` : undefined;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,
       });
@@ -64,10 +60,7 @@ export default function ForgotPasswordPage() {
       }
       setSubmitted(true);
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setErrorMessage(msg);
     } finally {
       setSubmitting(false);
@@ -104,12 +97,9 @@ export default function ForgotPasswordPage() {
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 If an account exists for{' '}
-                <span className="font-medium text-slate-900 dark:text-slate-100">
-                  {email}
-                </span>
-                , we&apos;ve sent a reset link. The link is time-limited — open
-                it on the same device when you&apos;re ready to set a new
-                password.
+                <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>,
+                we&apos;ve sent a reset link. The link is time-limited — open it on the same device
+                when you&apos;re ready to set a new password.
               </p>
               <div className="pt-2">
                 <Link
@@ -131,8 +121,8 @@ export default function ForgotPasswordPage() {
                   Forgot your password?
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Enter the email associated with your DaanaRX account and
-                  we&apos;ll send you a reset link.
+                  Enter the email associated with your DaanaRX account and we&apos;ll send you a
+                  reset link.
                 </p>
               </header>
 
@@ -147,10 +137,7 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="email"
-                    className="text-slate-700 dark:text-slate-200"
-                  >
+                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">
                     Email
                   </Label>
                   <Input

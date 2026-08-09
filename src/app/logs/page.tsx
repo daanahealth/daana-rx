@@ -32,11 +32,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 export default function LogsPage() {
@@ -47,25 +43,33 @@ export default function LogsPage() {
   const [endDate, setEndDate] = useState<string>('');
   const [medicationFilter, setMedicationFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [data, setData] = useState<{ transactions: any[]; total: number; page: number; pageSize: number } | null>(null);
+  const [data, setData] = useState<{
+    transactions: any[];
+    total: number;
+    page: number;
+    pageSize: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(() => {
     setLoading(true);
-    txApi.getAllTransactions({
-      page,
-      pageSize,
-      type: typeFilter || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      medicationName: medicationFilter || undefined,
-    })
+    txApi
+      .getAllTransactions({
+        page,
+        pageSize,
+        type: typeFilter || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        medicationName: medicationFilter || undefined,
+      })
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [page, pageSize, typeFilter, startDate, endDate, medicationFilter]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const transactions = data?.transactions || [];
   const total = data?.total || 0;
@@ -127,9 +131,7 @@ export default function LogsPage() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="text-xl">Transaction History</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {total} total transactions
-              </p>
+              <p className="text-sm text-muted-foreground">{total} total transactions</p>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -150,7 +152,13 @@ export default function LogsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="type-filter">Transaction Type</Label>
-                    <Select value={typeFilter} onValueChange={(val) => { setTypeFilter(val); setPage(1); }}>
+                    <Select
+                      value={typeFilter}
+                      onValueChange={(val) => {
+                        setTypeFilter(val);
+                        setPage(1);
+                      }}
+                    >
                       <SelectTrigger id="type-filter">
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
@@ -169,7 +177,10 @@ export default function LogsPage() {
                       id="start-date"
                       type="date"
                       value={startDate}
-                      onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setPage(1);
+                      }}
                     />
                   </div>
 
@@ -179,7 +190,10 @@ export default function LogsPage() {
                       id="end-date"
                       type="date"
                       value={endDate}
-                      onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setPage(1);
+                      }}
                     />
                   </div>
 
@@ -189,7 +203,10 @@ export default function LogsPage() {
                       id="medication-filter"
                       placeholder="Search by medication..."
                       value={medicationFilter}
-                      onChange={(e) => { setMedicationFilter(e.target.value); setPage(1); }}
+                      onChange={(e) => {
+                        setMedicationFilter(e.target.value);
+                        setPage(1);
+                      }}
                     />
                   </div>
                 </div>
@@ -221,7 +238,8 @@ export default function LogsPage() {
                             </p>
                             {tx.unit?.drug && (
                               <p className="text-xs text-muted-foreground">
-                                {tx.unit.drug.strength}{tx.unit.drug.strengthUnit}
+                                {tx.unit.drug.strength}
+                                {tx.unit.drug.strengthUnit}
                               </p>
                             )}
                           </div>
@@ -273,13 +291,14 @@ export default function LogsPage() {
                             {new Date(tx.timestamp).toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getTypeBadgeVariant(tx.type) as any} className="text-xs">
+                            <Badge
+                              variant={getTypeBadgeVariant(tx.type) as any}
+                              className="text-xs"
+                            >
                               {getTypeLabel(tx.type)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">
-                            {tx.user?.username || 'System'}
-                          </TableCell>
+                          <TableCell className="text-sm">{tx.user?.username || 'System'}</TableCell>
                           <TableCell>
                             <div className="space-y-1">
                               <p className="font-semibold text-sm">
@@ -287,13 +306,17 @@ export default function LogsPage() {
                               </p>
                               {tx.unit?.drug && (
                                 <p className="text-xs text-muted-foreground">
-                                  {tx.unit.drug.strength}{tx.unit.drug.strengthUnit}
+                                  {tx.unit.drug.strength}
+                                  {tx.unit.drug.strengthUnit}
                                 </p>
                               )}
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">{tx.quantity}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate" title={tx.notes || ''}>
+                          <TableCell
+                            className="text-sm text-muted-foreground max-w-[200px] truncate"
+                            title={tx.notes || ''}
+                          >
                             {tx.notes || '-'}
                           </TableCell>
                         </TableRow>

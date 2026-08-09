@@ -45,12 +45,14 @@ export function ClinicSwitcher() {
 
     try {
       const data = await authApi.switchClinic(selectedClinic.clinicId);
-      dispatch(setAuth({
-        user: data.user,
-        clinic: data.clinic,
-        token: data.token,
-        clinics: clinics,
-      }));
+      dispatch(
+        setAuth({
+          user: data.user,
+          clinic: data.clinic,
+          token: data.token,
+          clinics: clinics,
+        })
+      );
       toast({ title: 'Success', description: `Switched to "${data.clinic.name}"` });
       window.location.reload();
     } catch (error: any) {
@@ -84,10 +86,7 @@ export function ClinicSwitcher() {
             key={c.clinicId}
             onClick={() => handleClinicSwitch(c)}
             disabled={c.clinicId === clinic?.clinicId || isSwitching}
-            className={cn(
-              'cursor-pointer',
-              c.clinicId === clinic?.clinicId && 'bg-accent'
-            )}
+            className={cn('cursor-pointer', c.clinicId === clinic?.clinicId && 'bg-accent')}
           >
             <Avatar className="mr-2 h-6 w-6">
               <AvatarImage src={c.logoUrl} alt={c.name} />
@@ -97,9 +96,7 @@ export function ClinicSwitcher() {
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-medium">{c.name}</span>
-              {c.userRole && (
-                <span className="text-xs text-muted-foreground">{c.userRole}</span>
-              )}
+              {c.userRole && <span className="text-xs text-muted-foreground">{c.userRole}</span>}
             </div>
             {c.clinicId === clinic?.clinicId && (
               <span className="ml-auto text-xs text-primary">Active</span>

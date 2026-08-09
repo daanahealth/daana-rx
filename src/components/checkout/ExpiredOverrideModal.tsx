@@ -68,11 +68,7 @@ export function ExpiredOverrideModal({
     if (!item || !cartId || !valid) return;
     setSubmitting(true);
 
-    const optimistic = platformItemToCartItem(
-      item,
-      new Date().toISOString(),
-      addedByName ?? null,
-    );
+    const optimistic = platformItemToCartItem(item, new Date().toISOString(), addedByName ?? null);
     if (cart.myCart) {
       cart.setMyCart({
         ...cart.myCart,
@@ -110,7 +106,12 @@ export function ExpiredOverrideModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -118,15 +119,17 @@ export function ExpiredOverrideModal({
             Override Expired Medication
           </DialogTitle>
           <DialogDescription>
-            This medication is flagged Expired. Overriding and checking it out
-            will be recorded in the transaction log alongside your note.
+            This medication is flagged Expired. Overriding and checking it out will be recorded in
+            the transaction log alongside your note.
           </DialogDescription>
         </DialogHeader>
 
         {item && (
           <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-1">
             <div className="font-semibold break-words">
-              {String(item.attributes?.medication_name ?? item.attributes?.medicationName ?? 'Medication')}
+              {String(
+                item.attributes?.medication_name ?? item.attributes?.medicationName ?? 'Medication'
+              )}
             </div>
             <div className="font-mono text-xs text-muted-foreground break-all">
               {item.unit_code}
@@ -157,11 +160,7 @@ export function ExpiredOverrideModal({
           <Button variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleSubmit}
-            disabled={!valid || submitting}
-          >
+          <Button variant="destructive" onClick={handleSubmit} disabled={!valid || submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Override and Check Out
           </Button>

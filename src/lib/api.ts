@@ -8,12 +8,18 @@ export const auth = {
     apiPost<{ token: string; user: any; clinic: any }>('/auth/signin', { email, password }),
 
   signUp: (email: string, password: string, clinicName: string) =>
-    apiPost<{ token: string; user: any; clinic: any }>('/auth/signup', { email, password, clinicName }),
+    apiPost<{ token: string; user: any; clinic: any }>('/auth/signup', {
+      email,
+      password,
+      clinicName,
+    }),
 
   me: () => apiGet<{ user: any; clinic: any }>('/auth/me'),
 
   checkEmail: (email: string) =>
-    apiGet<{ exists: boolean; message: string }>(`/auth/check-email?email=${encodeURIComponent(email)}`),
+    apiGet<{ exists: boolean; message: string }>(
+      `/auth/check-email?email=${encodeURIComponent(email)}`
+    ),
 
   getUsers: () => apiGet<any[]>('/auth/users'),
 
@@ -33,8 +39,7 @@ export const auth = {
 
   getInvitations: () => apiGet<any[]>('/auth/invitations'),
 
-  getInvitationByToken: (token: string) =>
-    apiGet<any>(`/auth/invitations/token/${token}`),
+  getInvitationByToken: (token: string) => apiGet<any>(`/auth/invitations/token/${token}`),
 
   sendInvitation: (email: string, userRole: string) =>
     apiPost<any>('/auth/invitations', { email, userRole }),
@@ -42,11 +47,13 @@ export const auth = {
   resendInvitation: (invitationId: string) =>
     apiPost<any>(`/auth/invitations/${invitationId}/resend`),
 
-  cancelInvitation: (invitationId: string) =>
-    apiDelete<any>(`/auth/invitations/${invitationId}`),
+  cancelInvitation: (invitationId: string) => apiDelete<any>(`/auth/invitations/${invitationId}`),
 
   acceptInvitation: (invitationToken: string, password: string) =>
-    apiPost<{ token: string; user: any; clinic: any }>('/auth/invitations/accept', { invitationToken, password }),
+    apiPost<{ token: string; user: any; clinic: any }>('/auth/invitations/accept', {
+      invitationToken,
+      password,
+    }),
 };
 
 // ─── Inventory ──────────────────────────────────────────────────────────────
@@ -60,7 +67,7 @@ function filtersToParams(filters: InventoryFiltersInput, page: number, pageSize:
   if (filters.ndcId) params.set('ndcId', filters.ndcId);
   if (filters.expiryDateFrom) params.set('expiryDateFrom', filters.expiryDateFrom);
   if (filters.expiryDateTo) params.set('expiryDateTo', filters.expiryDateTo);
-  if (filters.locationIds) filters.locationIds.forEach(id => params.append('locationId', id));
+  if (filters.locationIds) filters.locationIds.forEach((id) => params.append('locationId', id));
   if (filters.strengthUnit) params.set('strengthUnit', filters.strengthUnit);
   if (filters.minStrength !== undefined) params.set('minStrength', String(filters.minStrength));
   if (filters.maxStrength !== undefined) params.set('maxStrength', String(filters.maxStrength));
@@ -72,10 +79,15 @@ function filtersToParams(filters: InventoryFiltersInput, page: number, pageSize:
 
 export const inventory = {
   getStats: () =>
-    apiGet<{ totalUnits: number; unitsExpiringSoon: number; recentCheckIns: number; recentCheckOuts: number; lowStockAlerts: number }>('/inventory/stats'),
+    apiGet<{
+      totalUnits: number;
+      unitsExpiringSoon: number;
+      recentCheckIns: number;
+      recentCheckOuts: number;
+      lowStockAlerts: number;
+    }>('/inventory/stats'),
 
-  searchDrugs: (q: string) =>
-    apiGet<any[]>(`/inventory/drugs/search?q=${encodeURIComponent(q)}`),
+  searchDrugs: (q: string) => apiGet<any[]>(`/inventory/drugs/search?q=${encodeURIComponent(q)}`),
 
   searchMedications: (q: string) =>
     apiGet<any[]>(`/inventory/drugs/medications?q=${encodeURIComponent(q)}`),
@@ -88,8 +100,7 @@ export const inventory = {
   updateLocation: (locationId: string, name: string, temp: string) =>
     apiPut<any>(`/inventory/locations/${locationId}`, { name, temp }),
 
-  deleteLocation: (locationId: string) =>
-    apiDelete<any>(`/inventory/locations/${locationId}`),
+  deleteLocation: (locationId: string) => apiDelete<any>(`/inventory/locations/${locationId}`),
 
   getLots: () => apiGet<any[]>('/inventory/lots'),
 
@@ -104,35 +115,53 @@ export const inventory = {
   searchUnits: (query: string) =>
     apiGet<any[]>(`/inventory/units/search?q=${encodeURIComponent(query)}`),
 
-  getUnit: (unitId: string) =>
-    apiGet<any>(`/inventory/units/${unitId}`),
+  getUnit: (unitId: string) => apiGet<any>(`/inventory/units/${unitId}`),
 
   updateUnit: (unitId: string, data: Record<string, any>) =>
     apiPut<any>(`/inventory/units/${unitId}`, data),
 
-  batchCreateUnits: (input: { lotId: string; medicationName: string; dosage: string; quantity: number; expiryDate?: string; manufacturerLotNumber?: string }) =>
-    apiPost<any[]>('/inventory/units/batch', input),
+  batchCreateUnits: (input: {
+    lotId: string;
+    medicationName: string;
+    dosage: string;
+    quantity: number;
+    expiryDate?: string;
+    manufacturerLotNumber?: string;
+  }) => apiPost<any[]>('/inventory/units/batch', input),
 
   getExpiryMedications: (days: number) =>
     apiGet<any[]>(`/inventory/expiry/medications?days=${days}`),
 
-  getExpiryReport: () =>
-    apiGet<{ summary: any; medications: any[] }>('/inventory/expiry/report'),
+  getExpiryReport: () => apiGet<{ summary: any; medications: any[] }>('/inventory/expiry/report'),
 };
 
 // ─── Transactions ────────────────────────────────────────────────────────────
 
 export const transactions = {
-  getTransactions: (params: { page?: number; pageSize?: number; search?: string; unitId?: string }) => {
+  getTransactions: (params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    unitId?: string;
+  }) => {
     const p = new URLSearchParams();
     if (params.page) p.set('page', String(params.page));
     if (params.pageSize) p.set('pageSize', String(params.pageSize));
     if (params.search) p.set('search', params.search);
     if (params.unitId) p.set('unitId', params.unitId);
-    return apiGet<{ transactions: any[]; total: number; page: number; pageSize: number }>(`/transactions?${p}`);
+    return apiGet<{ transactions: any[]; total: number; page: number; pageSize: number }>(
+      `/transactions?${p}`
+    );
   },
 
-  getAllTransactions: (params: { page?: number; pageSize?: number; type?: string; startDate?: string; endDate?: string; medicationName?: string }) => {
+  getAllTransactions: (params: {
+    page?: number;
+    pageSize?: number;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    medicationName?: string;
+  }) => {
     const p = new URLSearchParams();
     if (params.page) p.set('page', String(params.page));
     if (params.pageSize) p.set('pageSize', String(params.pageSize));
@@ -140,7 +169,9 @@ export const transactions = {
     if (params.startDate) p.set('startDate', params.startDate);
     if (params.endDate) p.set('endDate', params.endDate);
     if (params.medicationName) p.set('medicationName', params.medicationName);
-    return apiGet<{ transactions: any[]; total: number; page: number; pageSize: number }>(`/transactions/all?${p}`);
+    return apiGet<{ transactions: any[]; total: number; page: number; pageSize: number }>(
+      `/transactions/all?${p}`
+    );
   },
 
   checkout: (unitId: string, quantity: number, notes?: string) =>
@@ -148,7 +179,8 @@ export const transactions = {
 
   batchCheckout: (items: { unitId: string; quantity: number }[], notes?: string) =>
     apiPost<{ transactions: any[]; totalItems: number; totalQuantity: number }>(
-      '/transactions/checkout/batch', { items, notes }
+      '/transactions/checkout/batch',
+      { items, notes }
     ),
 };
 
@@ -237,15 +269,19 @@ export interface TransactionFilters {
 
 export const reports = {
   expiring: (window: 30 | 60 | 90 = 30) =>
-    apiGet<{ window: number; rows: ExpiringItem[] }>(`/transactions/reports/expiring?window=${window}`),
+    apiGet<{ window: number; rows: ExpiringItem[] }>(
+      `/transactions/reports/expiring?window=${window}`
+    ),
 
   capacity: () => apiGet<{ rows: CapacityBin[] }>('/transactions/reports/capacity'),
 
   highUse: () => apiGet<{ rows: HighUseRow[] }>('/transactions/reports/high-use'),
 
-  recentlyRemoved: () => apiGet<{ rows: RecentlyRemovedRow[] }>('/transactions/reports/recently-removed'),
+  recentlyRemoved: () =>
+    apiGet<{ rows: RecentlyRemovedRow[] }>('/transactions/reports/recently-removed'),
 
-  inventoryEdits: () => apiGet<{ rows: InventoryEditRow[] }>('/transactions/reports/inventory-edits'),
+  inventoryEdits: () =>
+    apiGet<{ rows: InventoryEditRow[] }>('/transactions/reports/inventory-edits'),
 
   recentlyCheckedOut: () =>
     apiGet<{ rows: TransactionLogRow[] }>('/transactions/reports/recently-checked-out'),

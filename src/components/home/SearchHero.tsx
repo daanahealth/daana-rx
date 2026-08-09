@@ -30,7 +30,7 @@ export function SearchHero({ firstName, query, onChange, collapsed }: SearchHero
     <section
       className={cn(
         'flex w-full flex-col items-center transition-all duration-500 ease-out',
-        collapsed ? 'pt-2 sm:pt-4' : 'pt-12 sm:pt-24 lg:pt-32',
+        collapsed ? 'pt-2 sm:pt-4' : 'pt-12 sm:pt-24 lg:pt-32'
       )}
     >
       <h1
@@ -39,7 +39,7 @@ export function SearchHero({ firstName, query, onChange, collapsed }: SearchHero
           'transition-all duration-500 ease-out',
           collapsed
             ? 'text-xl sm:text-2xl mb-4 opacity-80'
-            : 'text-3xl sm:text-4xl lg:text-5xl mb-8 sm:mb-10',
+            : 'text-3xl sm:text-4xl lg:text-5xl mb-8 sm:mb-10'
         )}
       >
         What medication are you looking for today, {greetingName}?
@@ -53,7 +53,7 @@ export function SearchHero({ firstName, query, onChange, collapsed }: SearchHero
           'bg-white/70 dark:bg-card/60 backdrop-blur-xl',
           'shadow-soft hover:shadow-md focus-within:shadow-md',
           'transition-all duration-300',
-          'focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20',
+          'focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20'
         )}
       >
         <Search
@@ -75,7 +75,7 @@ export function SearchHero({ firstName, query, onChange, collapsed }: SearchHero
             'pl-12 pr-4 py-4 sm:py-5',
             'text-base sm:text-lg',
             'placeholder:text-muted-foreground/70 placeholder:font-normal',
-            'focus:outline-none',
+            'focus:outline-none'
           )}
         />
       </div>

@@ -4,20 +4,33 @@ import { useEffect, useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { reports, type RecentlyRemovedRow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 function reasonClass(reason: string): string {
   const r = reason.toLowerCase();
   if (r.includes('expired')) return 'border-destructive/60 text-destructive bg-destructive/10';
-  if (r.includes('damaged') || r.includes('disposed')) return 'border-amber-500/60 text-amber-600 bg-amber-500/10';
-  if (r.includes('lost') || r.includes('missing')) return 'border-orange-500/60 text-orange-600 bg-orange-500/10';
+  if (r.includes('damaged') || r.includes('disposed'))
+    return 'border-amber-500/60 text-amber-600 bg-amber-500/10';
+  if (r.includes('lost') || r.includes('missing'))
+    return 'border-orange-500/60 text-orange-600 bg-orange-500/10';
   return 'border-muted-foreground/40 text-muted-foreground bg-muted/40';
 }
 
 function formatTs(iso: string): string {
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
 }
 
 export function RecentlyRemovedPanel() {
@@ -29,10 +42,18 @@ export function RecentlyRemovedPanel() {
     let cancelled = false;
     reports
       .recentlyRemoved()
-      .then((res) => { if (!cancelled) setRows(res.rows || []); })
-      .catch((err) => { if (!cancelled) setError(err?.message || 'Failed to load recently removed'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setRows(res.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || 'Failed to load recently removed');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -66,7 +87,9 @@ export function RecentlyRemovedPanel() {
                         <p className="font-semibold truncate">{r.medicationName}</p>
                         <p className="text-xs text-muted-foreground">{r.dosage}</p>
                       </div>
-                      <Badge variant="outline" className={cn(reasonClass(r.reason))}>{r.reason}</Badge>
+                      <Badge variant="outline" className={cn(reasonClass(r.reason))}>
+                        {r.reason}
+                      </Badge>
                     </div>
                     <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                       <dt className="text-muted-foreground">Location</dt>
@@ -105,7 +128,9 @@ export function RecentlyRemovedPanel() {
                         <TableCell>{formatTs(r.removedAt)}</TableCell>
                         <TableCell>{r.removedBy ?? '—'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={cn(reasonClass(r.reason))}>{r.reason}</Badge>
+                          <Badge variant="outline" className={cn(reasonClass(r.reason))}>
+                            {r.reason}
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -7,11 +7,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  collectCoverageFrom: [
-    'server/**/*.ts',
-    '!server/**/*.d.ts',
-    '!server/**/index.ts',
-  ],
+  collectCoverageFrom: ['server/**/*.ts', '!server/**/*.d.ts', '!server/**/index.ts'],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
@@ -27,4 +23,3 @@ module.exports = {
     ],
   },
 };
-

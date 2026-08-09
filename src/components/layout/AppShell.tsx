@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store";
-import { logout } from "../../store/authSlice";
-import { useAuth } from "../../hooks/useAuth";
-import { ClinicSwitcher } from "../ClinicSwitcher";
-import { AppInitializer } from "../AppInitializer";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useCallback, useMemo, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { logout } from '../../store/authSlice';
+import { useAuth } from '../../hooks/useAuth';
+import { ClinicSwitcher } from '../ClinicSwitcher';
+import { AppInitializer } from '../AppInitializer';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Home,
   PackageCheck,
@@ -33,7 +33,7 @@ import {
   Loader2,
   ShoppingCart,
   User as UserIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -62,13 +62,13 @@ function NavLink({
     <button
       type="button"
       onClick={handleClick}
-      aria-current={isActive ? "page" : undefined}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
-        "group relative flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium",
-        "transition-all duration-200 ease-out",
+        'group relative flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium',
+        'transition-all duration-200 ease-out',
         isActive
-          ? "bg-primary text-primary-foreground shadow-soft"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          ? 'bg-primary text-primary-foreground shadow-soft'
+          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
       )}
     >
       {isActive && (
@@ -79,8 +79,8 @@ function NavLink({
       )}
       <item.icon
         className={cn(
-          "h-5 w-5 transition-transform duration-200",
-          isActive ? "scale-105" : "group-hover:scale-110"
+          'h-5 w-5 transition-transform duration-200',
+          isActive ? 'scale-105' : 'group-hover:scale-110'
         )}
       />
       <span className="flex-1 text-left">{item.label}</span>
@@ -105,9 +105,9 @@ function SidebarBody({
             key={item.href}
             item={item}
             isActive={
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(item.href + "/")
+              item.href === '/'
+                ? pathname === '/'
+                : pathname === item.href || pathname.startsWith(item.href + '/')
             }
             onNavigate={onNavigate}
           />
@@ -125,9 +125,7 @@ function BrandHeader() {
           <span className="text-base font-bold">D</span>
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-base font-semibold tracking-tight">
-            DaanaRX
-          </span>
+          <span className="text-base font-semibold tracking-tight">DaanaRX</span>
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
             Medication tracking
           </span>
@@ -138,7 +136,7 @@ function BrandHeader() {
 }
 
 function UserAvatar({ username }: { username: string | undefined }) {
-  const initials = (username || "U").trim().slice(0, 2).toUpperCase();
+  const initials = (username || 'U').trim().slice(0, 2).toUpperCase();
   return (
     <Avatar className="h-8 w-8">
       <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
@@ -166,26 +164,24 @@ function SidebarFooter({
           <button
             type="button"
             className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left",
-              "transition-colors duration-200 hover:bg-accent/60"
+              'flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left',
+              'transition-colors duration-200 hover:bg-accent/60'
             )}
           >
             <UserAvatar username={username} />
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-sm font-medium">
-                {username || "User"}
-              </span>
+              <span className="truncate text-sm font-medium">{username || 'User'}</span>
               <span className="truncate text-xs capitalize text-muted-foreground">
-                {role || "member"}
+                {role || 'member'}
               </span>
             </div>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-56">
           <DropdownMenuLabel className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">{username || "User"}</span>
+            <span className="text-sm font-semibold">{username || 'User'}</span>
             <span className="text-xs font-normal capitalize text-muted-foreground">
-              {role || "member"}
+              {role || 'member'}
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -208,14 +204,12 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const cartItemCount = useSelector(
-    (state: RootState) => state.cart.items.length
-  );
+  const cartItemCount = useSelector((state: RootState) => state.cart.items.length);
   const { isAuthenticated, hasHydrated } = useAuth();
 
   const handleLogout = useCallback(() => {
     dispatch(logout(undefined));
-    router.push("/auth/signin");
+    router.push('/auth/signin');
   }, [dispatch, router]);
 
   const handleNavigation = useCallback(
@@ -227,26 +221,26 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   const handleAccount = useCallback(() => {
-    router.push("/account");
+    router.push('/account');
   }, [router]);
 
   const handleViewCart = useCallback(() => {
-    router.push("/cart");
+    router.push('/cart');
   }, [router]);
 
   // Spec order: Home, Check In, Check Out, Inventory, Reports, Settings.
   // Settings is only shown to admins/superadmins.
   const navItems: NavItem[] = useMemo(() => {
     const base: NavItem[] = [
-      { icon: Home, label: "Home", href: "/" },
-      { icon: PackageCheck, label: "Check In", href: "/checkin" },
-      { icon: PackageMinus, label: "Check Out", href: "/checkout" },
-      { icon: Package, label: "Inventory", href: "/inventory" },
-      { icon: FileText, label: "Reports", href: "/reports" },
+      { icon: Home, label: 'Home', href: '/' },
+      { icon: PackageCheck, label: 'Check In', href: '/checkin' },
+      { icon: PackageMinus, label: 'Check Out', href: '/checkout' },
+      { icon: Package, label: 'Inventory', href: '/inventory' },
+      { icon: FileText, label: 'Reports', href: '/reports' },
     ];
 
-    if (user?.userRole === "admin" || user?.userRole === "superadmin") {
-      base.push({ icon: Settings, label: "Settings", href: "/settings" });
+    if (user?.userRole === 'admin' || user?.userRole === 'superadmin') {
+      base.push({ icon: Settings, label: 'Settings', href: '/settings' });
     }
 
     return base;
@@ -264,7 +258,7 @@ export function AppShell({ children }: AppShellProps) {
     return null;
   }
 
-  const isSuperadmin = user?.userRole === "superadmin";
+  const isSuperadmin = user?.userRole === 'superadmin';
 
   return (
     <AppInitializer>
@@ -272,17 +266,13 @@ export function AppShell({ children }: AppShellProps) {
         {/* Desktop sidebar */}
         <aside
           className={cn(
-            "hidden w-64 shrink-0 flex-col border-r border-border/60",
-            "bg-card/70 backdrop-blur-xl",
-            "md:flex"
+            'hidden w-64 shrink-0 flex-col border-r border-border/60',
+            'bg-card/70 backdrop-blur-xl',
+            'md:flex'
           )}
         >
           <BrandHeader />
-          <SidebarBody
-            navItems={navItems}
-            pathname={pathname}
-            onNavigate={handleNavigation}
-          />
+          <SidebarBody navItems={navItems} pathname={pathname} onNavigate={handleNavigation} />
           <SidebarFooter
             username={user?.username}
             role={user?.userRole}
@@ -296,10 +286,10 @@ export function AppShell({ children }: AppShellProps) {
           {/* Liquid-glass header */}
           <header
             className={cn(
-              "sticky top-0 z-40 flex h-16 items-center gap-3 px-4 lg:px-6",
-              "border-b border-border/50",
-              "bg-background/60 backdrop-blur-xl backdrop-saturate-150",
-              "shadow-soft"
+              'sticky top-0 z-40 flex h-16 items-center gap-3 px-4 lg:px-6',
+              'border-b border-border/50',
+              'bg-background/60 backdrop-blur-xl backdrop-saturate-150',
+              'shadow-soft'
             )}
           >
             {/* Mobile menu trigger */}
@@ -314,10 +304,7 @@ export function AppShell({ children }: AppShellProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent
-                side="left"
-                className="w-72 p-0 bg-card/95 backdrop-blur-xl"
-              >
+              <SheetContent side="left" className="w-72 p-0 bg-card/95 backdrop-blur-xl">
                 <div className="flex h-full flex-col">
                   <BrandHeader />
                   <SidebarBody
@@ -365,12 +352,12 @@ export function AppShell({ children }: AppShellProps) {
                 {cartItemCount > 0 && (
                   <span
                     className={cn(
-                      "absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center",
-                      "rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-soft"
+                      'absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center',
+                      'rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-soft'
                     )}
                     aria-label={`${cartItemCount} items in cart`}
                   >
-                    {cartItemCount > 99 ? "99+" : cartItemCount}
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
                   </span>
                 )}
               </Button>
@@ -389,11 +376,9 @@ export function AppShell({ children }: AppShellProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="flex flex-col gap-0.5">
-                    <span className="text-sm font-semibold">
-                      {user?.username || "User"}
-                    </span>
+                    <span className="text-sm font-semibold">{user?.username || 'User'}</span>
                     <span className="text-xs font-normal capitalize text-muted-foreground">
-                      {user?.userRole || "member"}
+                      {user?.userRole || 'member'}
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -401,9 +386,7 @@ export function AppShell({ children }: AppShellProps) {
                     <UserIcon className="h-4 w-4" /> My account
                   </DropdownMenuItem>
                   {isSuperadmin && (
-                    <DropdownMenuItem
-                      onSelect={() => router.push("/settings")}
-                    >
+                    <DropdownMenuItem onSelect={() => router.push('/settings')}>
                       <Settings className="h-4 w-4" /> Settings
                     </DropdownMenuItem>
                   )}
@@ -426,9 +409,7 @@ export function AppShell({ children }: AppShellProps) {
 
           {/* Page content */}
           <main className="flex-1 overflow-auto bg-background">
-            <div className="container-responsive pb-24 pt-6 sm:pt-8 lg:pt-10">
-              {children}
-            </div>
+            <div className="container-responsive pb-24 pt-6 sm:pt-8 lg:pt-10">{children}</div>
           </main>
         </div>
       </div>

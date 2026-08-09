@@ -6,11 +6,7 @@ export const metadata = {
   description: 'HIPAA-compliant medication tracking for non-profit clinics',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head />

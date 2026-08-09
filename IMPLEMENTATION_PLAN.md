@@ -3,6 +3,7 @@
 ## Current Status: Building Systematically
 
 ### ✅ Completed
+
 1. Project initialization with all dependencies
 2. TypeScript configuration (strict mode)
 3. Complete type definitions (`src/types/index.ts`)
@@ -13,6 +14,7 @@
 ### 🚧 In Progress
 
 #### Checkpoint 1: Database + Auth Backend (CURRENT)
+
 - [ ] GraphQL resolvers for authentication
 - [ ] Service layer for user management
 - [ ] Express.js server setup with Apollo
@@ -20,6 +22,7 @@
 - [ ] Drug lookup API integration (RxNorm, FDA)
 
 #### Checkpoint 2: Frontend Auth + Navigation
+
 - [ ] Next.js App Router setup
 - [ ] Mantine UI provider configuration
 - [ ] Redux store setup
@@ -29,6 +32,7 @@
 - [ ] Home page with dashboard
 
 #### Checkpoint 3: Check-In Flow (First Working Feature)
+
 - [ ] Location management (create/list)
 - [ ] Lot creation
 - [ ] Drug search (NDC barcode + manual)
@@ -37,6 +41,7 @@
 - [ ] Complete check-in workflow end-to-end
 
 #### Checkpoint 4: Check-Out Flow (Second Working Feature)
+
 - [ ] Unit lookup (QR scan + manual)
 - [ ] Quantity validation
 - [ ] Transaction creation
@@ -44,6 +49,7 @@
 - [ ] Complete check-out workflow end-to-end
 
 #### Checkpoint 5: Remaining Features
+
 - [ ] Scan/Lookup page
 - [ ] Inventory page with search, filter, export
 - [ ] Reports page with transaction logs
@@ -58,6 +64,7 @@
 ### 📋 Remaining Implementation Tasks
 
 #### Backend Files Needed
+
 1. **GraphQL Resolvers** (7 files)
    - `server/graphql/resolvers/authResolvers.ts`
    - `server/graphql/resolvers/locationResolvers.ts`
@@ -133,6 +140,7 @@
 ### 🎯 Implementation Strategy
 
 #### Phase 1: Backend Foundation
+
 1. Create all GraphQL resolvers
 2. Build service layer with Supabase integration
 3. Implement drug lookup APIs (RxNorm, FDA)
@@ -140,6 +148,7 @@
 5. Test auth flow with Postman/GraphQL Playground
 
 #### Phase 2: Frontend Foundation
+
 1. Set up Next.js app router structure
 2. Configure Mantine UI + Redux
 3. Build authentication pages
@@ -148,6 +157,7 @@
 6. Create home page dashboard
 
 #### Phase 3: Check-In Feature (End-to-End)
+
 1. Admin: Location creation page
 2. Check-in: Lot creation form
 3. Check-in: Drug search (NDC + manual)
@@ -156,6 +166,7 @@
 6. Complete flow testing
 
 #### Phase 4: Check-Out Feature (End-to-End)
+
 1. Check-out: Unit lookup (QR scan + manual search)
 2. Check-out: Dispense form with validation
 3. Transaction creation
@@ -163,6 +174,7 @@
 5. Complete flow testing
 
 #### Phase 5: Polish & Remaining Features
+
 1. Scan/Lookup page
 2. Inventory management page
 3. Reports and transaction logs
@@ -195,6 +207,7 @@
 ### 🔧 How to Implement Remaining Features
 
 #### Drug Lookup Integration
+
 ```typescript
 // server/services/drugService.ts implementation
 - Use axios to call RxNorm API: https://rxnav.nlm.nih.gov/REST/
@@ -206,6 +219,7 @@
 ```
 
 #### Barcode Scanning
+
 ```typescript
 // Use html5-qrcode library for camera access
 - Request camera permissions
@@ -217,6 +231,7 @@
 ```
 
 #### CSV Export
+
 ```typescript
 // Use Papa Parse or custom CSV generator
 - Convert JSON data to CSV format
@@ -226,6 +241,7 @@
 ```
 
 #### Role-Based Access Control
+
 ```typescript
 // Middleware approach:
 - Check user role from JWT token

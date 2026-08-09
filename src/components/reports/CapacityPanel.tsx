@@ -8,9 +8,23 @@ import { reports, type CapacityBin } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 function thresholdClass(pct: number) {
-  if (pct >= 95) return { bar: 'bg-destructive', badge: 'border-destructive/60 text-destructive bg-destructive/10', label: 'At capacity' };
-  if (pct >= 90) return { bar: 'bg-amber-500', badge: 'border-amber-500/60 text-amber-600 bg-amber-500/10', label: 'Approaching capacity' };
-  return { bar: 'bg-emerald-500', badge: 'border-emerald-500/60 text-emerald-600 bg-emerald-500/10', label: 'Normal' };
+  if (pct >= 95)
+    return {
+      bar: 'bg-destructive',
+      badge: 'border-destructive/60 text-destructive bg-destructive/10',
+      label: 'At capacity',
+    };
+  if (pct >= 90)
+    return {
+      bar: 'bg-amber-500',
+      badge: 'border-amber-500/60 text-amber-600 bg-amber-500/10',
+      label: 'Approaching capacity',
+    };
+  return {
+    bar: 'bg-emerald-500',
+    badge: 'border-emerald-500/60 text-emerald-600 bg-emerald-500/10',
+    label: 'Normal',
+  };
 }
 
 export function CapacityPanel() {
@@ -22,10 +36,18 @@ export function CapacityPanel() {
     let cancelled = false;
     reports
       .capacity()
-      .then((res) => { if (!cancelled) setRows(res.rows || []); })
-      .catch((err) => { if (!cancelled) setError(err?.message || 'Failed to load capacity'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setRows(res.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || 'Failed to load capacity');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

@@ -128,8 +128,7 @@ function SignInContent() {
       toast({ title: 'Welcome back', description: 'Signed in successfully.' });
       setTimeout(() => router.push('/'), 100);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Incorrect email or password';
+      const msg = err instanceof Error ? err.message : 'Incorrect email or password';
       toast({
         title: 'Sign-in failed',
         description: msg,
@@ -189,9 +188,7 @@ function SignInContent() {
               className={`mb-5 rounded-xl border px-4 py-3 text-sm ${toneClasses[expirationAlert.tone]}`}
             >
               <div className="font-medium">{expirationAlert.title}</div>
-              <div className="mt-0.5 text-xs opacity-90">
-                {expirationAlert.message}
-              </div>
+              <div className="mt-0.5 text-xs opacity-90">{expirationAlert.message}</div>
             </div>
           )}
 
@@ -213,10 +210,7 @@ function SignInContent() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label
-                htmlFor="password"
-                className="text-slate-700 dark:text-slate-200"
-              >
+              <Label htmlFor="password" className="text-slate-700 dark:text-slate-200">
                 Password
               </Label>
               <Input

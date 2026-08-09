@@ -88,15 +88,13 @@ export function HomeClient() {
         />
 
         {/* Insight cards (before-typing focal area) */}
-        {!hasInteracted && (
-          <InsightCards hidden={false} />
-        )}
+        {!hasInteracted && <InsightCards hidden={false} />}
 
         {/* Results region (after-typing focal area) */}
         <div
           className={cn(
             'transition-opacity duration-300',
-            hasInteracted ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden',
+            hasInteracted ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'
           )}
         >
           {hasInteracted && <ResultsList state={results} />}

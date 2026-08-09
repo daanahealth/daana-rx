@@ -35,31 +35,17 @@ import { cn } from '@/lib/utils';
 // ---------------------------------------------------------------------------
 
 export const medicationFormSchema = z.object({
-  medication_name: z
-    .string()
-    .min(1, 'Medication name is required')
-    .max(200, 'Too long'),
-  dosage: z
-    .string()
-    .min(1, 'Dosage is required (e.g. 10, 500, 0.5)')
-    .max(40, 'Too long'),
-  unit: z
-    .string()
-    .min(1, 'Unit is required (e.g. mg, mcg, mL, IU)')
-    .max(20, 'Too long'),
+  medication_name: z.string().min(1, 'Medication name is required').max(200, 'Too long'),
+  dosage: z.string().min(1, 'Dosage is required (e.g. 10, 500, 0.5)').max(40, 'Too long'),
+  unit: z.string().min(1, 'Unit is required (e.g. mg, mcg, mL, IU)').max(20, 'Too long'),
   form: z.enum(MEDICATION_FORMS as unknown as [string, ...string[]], {
     message: 'Select a form',
   }),
-  specialty_class: z
-    .string()
-    .min(1, 'Specialty class is required'),
+  specialty_class: z.string().min(1, 'Specialty class is required'),
   expiry_date: z
     .string()
     .optional()
-    .refine(
-      (v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v),
-      'Use YYYY-MM-DD',
-    ),
+    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Use YYYY-MM-DD'),
   date_received: z
     .string()
     .min(1, 'Date received is required')
@@ -116,7 +102,12 @@ export function useMedicationForm(): UseFormReturn<MedicationFormValues> {
 }
 
 export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps) {
-  const { register, control, watch, formState: { errors } } = form;
+  const {
+    register,
+    control,
+    watch,
+    formState: { errors },
+  } = form;
 
   const specialtyClass = watch('specialty_class');
 
@@ -142,12 +133,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          id="dosage"
-          label="Dosage"
-          required
-          error={errors.dosage?.message}
-        >
+        <Field id="dosage" label="Dosage" required error={errors.dosage?.message}>
           <Input
             id="dosage"
             placeholder="e.g. 10"
@@ -156,12 +142,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
             {...register('dosage')}
           />
         </Field>
-        <Field
-          id="unit"
-          label="Unit"
-          required
-          error={errors.unit?.message}
-        >
+        <Field id="unit" label="Unit" required error={errors.unit?.message}>
           <Input
             id="unit"
             placeholder="e.g. mg, mcg, mL"
@@ -171,12 +152,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
         </Field>
       </div>
 
-      <Field
-        id="form"
-        label="Form"
-        required
-        error={errors.form?.message}
-      >
+      <Field id="form" label="Form" required error={errors.form?.message}>
         <Controller
           control={control}
           name="form"
@@ -219,11 +195,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
           error={errors.expiry_date?.message}
           hint="If donor packaging has none, leave blank — system will offer the 10-year-forward fallback."
         >
-          <Input
-            id="expiry_date"
-            type="date"
-            {...register('expiry_date')}
-          />
+          <Input id="expiry_date" type="date" {...register('expiry_date')} />
         </Field>
         <Field
           id="date_received"
@@ -231,11 +203,7 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
           required
           error={errors.date_received?.message}
         >
-          <Input
-            id="date_received"
-            type="date"
-            {...register('date_received')}
-          />
+          <Input id="date_received" type="date" {...register('date_received')} />
         </Field>
       </div>
 
@@ -259,17 +227,8 @@ export function MedicationForm({ form, onSpecialtyChange }: MedicationFormProps)
         <div />
       </div>
 
-      <Field
-        id="notes"
-        label="Notes"
-        error={errors.notes?.message}
-      >
-        <Textarea
-          id="notes"
-          rows={3}
-          placeholder="Optional intake notes"
-          {...register('notes')}
-        />
+      <Field id="notes" label="Notes" error={errors.notes?.message}>
+        <Textarea id="notes" rows={3} placeholder="Optional intake notes" {...register('notes')} />
       </Field>
     </div>
   );
@@ -297,12 +256,8 @@ function Field({
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
       {children}
-      {hint && !error && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
-      {error && (
-        <p className={cn('text-xs', 'text-destructive')}>{error}</p>
-      )}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className={cn('text-xs', 'text-destructive')}>{error}</p>}
     </div>
   );
 }

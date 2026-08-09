@@ -45,7 +45,9 @@ test.beforeAll(async () => {
     'Content-Type': 'application/json',
   };
   const loc = await ctx.post(`${GATEWAY}/inventory/locations`, {
-    headers, data: { name: BIN, temp: 'room temp' }, timeout: 60_000,
+    headers,
+    data: { name: BIN, temp: 'room temp' },
+    timeout: 60_000,
   });
   expect([200, 201]).toContain(loc.status());
   await ctx.dispose();
@@ -58,8 +60,13 @@ async function signIn(page: Page) {
   await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
   await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
   await page.screenshot({ path: `${SHOT}/01-signin.png` });
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 }).catch(() => {});
+  await page
+    .getByRole('button', { name: /sign in/i })
+    .first()
+    .click();
+  await page
+    .waitForURL((u: URL) => !/\/auth\/signin/.test(u.toString()), { timeout: 60_000 })
+    .catch(() => {});
   await page.waitForLoadState('networkidle').catch(() => {});
 }
 
@@ -87,10 +94,16 @@ test('PR walkthrough: sign in + capture every key page', async ({ page }) => {
       const resp = await page.goto(p.path, { waitUntil: 'networkidle' }).catch(() => null);
       await page.waitForTimeout(1500);
       // Behavior check: page must not be a hard error / Next error boundary.
-      const body = (await page.locator('body').innerText().catch(() => '')) || '';
+      const body =
+        (await page
+          .locator('body')
+          .innerText()
+          .catch(() => '')) || '';
       const errored =
         (resp && resp.status() >= 500) ||
-        /application error|something went wrong|unhandled runtime error|404.*page could not be found/i.test(body);
+        /application error|something went wrong|unhandled runtime error|404.*page could not be found/i.test(
+          body
+        );
       await page.screenshot({ path: `${SHOT}/${p.name}.png`, fullPage: true });
       if (errored) failures.push(`${p.path} rendered an error`);
       else if (p.expect && !p.expect.test(body)) {

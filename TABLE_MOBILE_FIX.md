@@ -1,6 +1,7 @@
 # Table Mobile Scrolling Fix
 
 ## Issue
+
 Tables were getting cut off on mobile devices due to insufficient horizontal scrolling support. The overflow containers weren't properly configured to allow horizontal scrolling when content exceeded viewport width.
 
 ## Solution Applied
@@ -8,12 +9,14 @@ Tables were getting cut off on mobile devices due to insufficient horizontal scr
 ### 1. **Enhanced Overflow Wrapper Structure**
 
 Changed from simple overflow wrapper:
+
 ```tsx
 <div className="overflow-x-auto -mx-1 sm:mx-0">
   <Table className="min-w-full">
 ```
 
 To proper scrollable container:
+
 ```tsx
 <div className="overflow-x-auto -mx-6 sm:-mx-6">
   <div className="inline-block min-w-full align-middle">
@@ -21,6 +24,7 @@ To proper scrollable container:
 ```
 
 **Key improvements:**
+
 - **`-mx-6`**: Negative margin extends scrollable area to card edges
 - **`inline-block`**: Ensures proper width calculation for scrolling
 - **`min-w-full`**: Forces table to respect minimum width
@@ -47,6 +51,7 @@ Added smooth, visible scrollbar for better UX in `globals.css`:
 ```
 
 **Benefits:**
+
 - ✅ Visible scroll indicator on mobile
 - ✅ Consistent with app's color scheme
 - ✅ Smooth hover states
@@ -55,12 +60,14 @@ Added smooth, visible scrollbar for better UX in `globals.css`:
 ### 3. **Column Min-Width Strategy**
 
 All table columns now have appropriate min-widths:
+
 - Medication names: `min-w-[150px]`
 - Dates/timestamps: `min-w-[120px]` to `min-w-[140px]`
 - Status badges: `min-w-[80px]` to `min-w-[100px]`
 - Actions: `w-[60px]` (fixed width)
 
 This ensures:
+
 - ✅ Content never truncates awkwardly
 - ✅ Table scrolls horizontally when needed
 - ✅ Columns maintain readable widths
@@ -68,11 +75,13 @@ This ensures:
 ### 4. **Responsive Column Hiding**
 
 Progressive disclosure strategy:
+
 - **Mobile (< 768px)**: Show only critical columns (Medication, Strength, Available, Actions)
 - **Tablet (≥ 768px)**: Add Expiry/Location columns
 - **Desktop (≥ 1024px)**: Show all columns including Source
 
 Example:
+
 ```tsx
 <TableHead className="hidden md:table-cell min-w-[100px]">Expiry</TableHead>
 <TableHead className="hidden lg:table-cell min-w-[100px]">Source</TableHead>
@@ -81,6 +90,7 @@ Example:
 ## Files Modified
 
 ### Main Pages
+
 1. **`src/app/inventory/page.tsx`**
    - Main inventory table (✅ Fixed)
    - Transaction history modal table (✅ Fixed)
@@ -95,12 +105,14 @@ Example:
    - Search results table (✅ Fixed)
 
 ### Styles
+
 5. **`src/app/globals.css`**
    - Added custom scrollbar styles (✅ Added)
 
 ## Testing Checklist
 
 ### Mobile Devices (< 768px)
+
 - ✅ Table scrolls horizontally when content exceeds screen width
 - ✅ Scrollbar is visible and indicates scroll ability
 - ✅ All critical information remains accessible
@@ -108,11 +120,13 @@ Example:
 - ✅ No content is cut off without ability to scroll
 
 ### Tablet (768px - 1023px)
+
 - ✅ Additional columns appear at appropriate breakpoints
 - ✅ Scrolling still works if needed
 - ✅ Layout is comfortable to read
 
 ### Desktop (≥ 1024px)
+
 - ✅ All columns visible
 - ✅ No unnecessary scrolling
 - ✅ Optimal use of screen space
@@ -143,11 +157,13 @@ Example:
 ## Before & After
 
 ### Before
+
 - Tables cut off at screen edge
 - No way to see hidden content
 - Poor mobile UX
 
 ### After
+
 - Smooth horizontal scrolling
 - Visible scroll indicators
 - All content accessible
@@ -156,6 +172,7 @@ Example:
 ## Summary
 
 All tables in the application now properly support horizontal scrolling on mobile devices with:
+
 - ✅ Proper overflow containers
 - ✅ Visible, styled scrollbars
 - ✅ Appropriate column min-widths
@@ -164,4 +181,3 @@ All tables in the application now properly support horizontal scrolling on mobil
 - ✅ Zero linter errors
 
 **Result**: Tables are now fully mobile-friendly with proper horizontal scrolling across all device sizes! 🎉
-

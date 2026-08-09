@@ -31,9 +31,7 @@ const STUB_INSIGHTS: InsightCardData[] = [
     id: 'expiring',
     title: 'Expiring Soon',
     count: null,
-    rows: [
-      { primary: 'Inventory data pending', secondary: 'Connect /api/reports' },
-    ],
+    rows: [{ primary: 'Inventory data pending', secondary: 'Connect /api/reports' }],
     accent: 'red',
     icon: AlertTriangle,
     href: '/reports#expiring',
@@ -42,9 +40,7 @@ const STUB_INSIGHTS: InsightCardData[] = [
     id: 'capacity',
     title: 'Lots Approaching Capacity',
     count: null,
-    rows: [
-      { primary: 'Inventory data pending', secondary: 'Connect /api/reports' },
-    ],
+    rows: [{ primary: 'Inventory data pending', secondary: 'Connect /api/reports' }],
     accent: 'amber',
     icon: Boxes,
     href: '/reports#capacity',
@@ -53,9 +49,7 @@ const STUB_INSIGHTS: InsightCardData[] = [
     id: 'high-use',
     title: 'High-Use Medications',
     count: null,
-    rows: [
-      { primary: 'Inventory data pending', secondary: 'Connect /api/reports' },
-    ],
+    rows: [{ primary: 'Inventory data pending', secondary: 'Connect /api/reports' }],
     accent: 'teal',
     icon: TrendingUp,
     href: '/reports#high-use',
@@ -64,9 +58,7 @@ const STUB_INSIGHTS: InsightCardData[] = [
     id: 'recent',
     title: 'Recently Checked Out',
     count: null,
-    rows: [
-      { primary: 'Inventory data pending', secondary: 'Last 25 or last 7 days' },
-    ],
+    rows: [{ primary: 'Inventory data pending', secondary: 'Last 25 or last 7 days' }],
     accent: 'gray',
     icon: History,
     // Per spec: Recently Checked Out is NOT a section in Reports — link to /reports root.
@@ -74,7 +66,10 @@ const STUB_INSIGHTS: InsightCardData[] = [
   },
 ];
 
-const ACCENT_CLASSES: Record<InsightCardData['accent'], { icon: string; bg: string; ring: string }> = {
+const ACCENT_CLASSES: Record<
+  InsightCardData['accent'],
+  { icon: string; bg: string; ring: string }
+> = {
   red: {
     icon: 'text-destructive',
     bg: 'bg-destructive/10',
@@ -108,7 +103,7 @@ function InsightCard({ data }: { data: InsightCardData }) {
         'rounded-xl border bg-card/70 backdrop-blur-xl shadow-soft hover:shadow-md',
         'transition-all duration-200 hover:-translate-y-0.5',
         'p-4 sm:p-5',
-        accent.ring,
+        accent.ring
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -116,9 +111,7 @@ function InsightCard({ data }: { data: InsightCardData }) {
           <Icon className={cn('h-5 w-5', accent.icon)} />
         </div>
         {data.count !== null && (
-          <span className={cn('text-2xl font-bold tracking-tight', accent.icon)}>
-            {data.count}
-          </span>
+          <span className={cn('text-2xl font-bold tracking-tight', accent.icon)}>{data.count}</span>
         )}
       </div>
 
@@ -151,7 +144,7 @@ export function InsightCards({ hidden }: InsightCardsProps) {
       aria-hidden={hidden}
       className={cn(
         'w-full max-w-5xl mx-auto transition-opacity duration-250',
-        hidden ? 'opacity-0 pointer-events-none' : 'opacity-100',
+        hidden ? 'opacity-0 pointer-events-none' : 'opacity-100'
       )}
       style={{ transitionDuration: '250ms' }}
     >

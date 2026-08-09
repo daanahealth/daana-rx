@@ -11,19 +11,13 @@ export async function GET(request: NextRequest) {
     const ndc = searchParams.get('code');
 
     if (!ndc) {
-      return NextResponse.json(
-        { error: 'Query parameter "code" is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query parameter "code" is required' }, { status: 400 });
     }
 
     const result = await drugApiService.getDrugByNDC(ndc);
 
     if (!result) {
-      return NextResponse.json(
-        { success: false, error: 'Drug not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Drug not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -33,13 +27,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('NDC lookup API error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to lookup drug by NDC',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
 }
-

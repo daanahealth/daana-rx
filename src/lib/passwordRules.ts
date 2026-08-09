@@ -16,12 +16,7 @@
  * required by the spec without rewording.
  */
 
-export type PasswordRuleId =
-  | 'length'
-  | 'uppercase'
-  | 'lowercase'
-  | 'number'
-  | 'special';
+export type PasswordRuleId = 'length' | 'uppercase' | 'lowercase' | 'number' | 'special';
 
 export interface PasswordRule {
   id: PasswordRuleId;
@@ -74,9 +69,7 @@ export interface PasswordValidationResult {
  *
  * Failure strings match the bullet wording in the spec verbatim.
  */
-export function validatePassword(
-  password: string | null | undefined,
-): PasswordValidationResult {
+export function validatePassword(password: string | null | undefined): PasswordValidationResult {
   const value = typeof password === 'string' ? password : '';
   const failures: string[] = [];
   for (const rule of PASSWORD_RULES) {
@@ -89,7 +82,7 @@ export function validatePassword(
  * Returns per-rule pass/fail for live checklist UI.
  */
 export function evaluatePassword(
-  password: string,
+  password: string
 ): Array<{ id: PasswordRuleId; label: string; passed: boolean }> {
   return PASSWORD_RULES.map((r) => ({
     id: r.id,

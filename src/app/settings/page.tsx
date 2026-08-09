@@ -7,7 +7,13 @@ import { RootState } from '../../store';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { LocationsManager } from '@/components/settings/LocationsManager';
 import { UsersManager } from '@/components/settings/UsersManager';
@@ -17,7 +23,11 @@ import { AccountPanel } from '@/components/settings/AccountPanel';
 
 type SettingsTab = 'locations' | 'users' | 'classification' | 'capacity' | 'account';
 
-const TABS: Array<{ value: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+const TABS: Array<{
+  value: SettingsTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
   { value: 'locations', label: 'Locations', icon: MapPin },
   { value: 'users', label: 'Users', icon: Users },
   { value: 'classification', label: 'Classification Guide', icon: BookOpen },
@@ -51,12 +61,12 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>
-                Location management, user management, classification guide, and capacity thresholds are restricted to
-                superadmins.
+                Location management, user management, classification guide, and capacity thresholds
+                are restricted to superadmins.
               </p>
               <p>
-                You can still change your password and view your assigned role below. Ask an upstairs staff member if
-                you need elevated access.
+                You can still change your password and view your assigned role below. Ask an
+                upstairs staff member if you need elevated access.
               </p>
             </CardContent>
           </Card>

@@ -106,7 +106,7 @@ export function CartProvider({ children, isSuperadmin = false }: CartProviderPro
 
   const removeLocalItem = React.useCallback((itemId: string) => {
     setMyCartState((prev) =>
-      prev ? { ...prev, items: prev.items.filter((i) => i.itemId !== itemId) } : prev,
+      prev ? { ...prev, items: prev.items.filter((i) => i.itemId !== itemId) } : prev
     );
   }, []);
 
@@ -117,7 +117,7 @@ export function CartProvider({ children, isSuperadmin = false }: CartProviderPro
   const setMyCart = React.useCallback((c: ServerCart | null) => setMyCartState(c), []);
   const setPendingCarts = React.useCallback(
     (c: readonly ServerCart[]) => setPendingCartsState(c),
-    [],
+    []
   );
 
   const value = React.useMemo<CartContextValue>(
@@ -135,7 +135,16 @@ export function CartProvider({ children, isSuperadmin = false }: CartProviderPro
       activeTab,
       setActiveTab,
     }),
-    [open, myCart, pendingCarts, activeTab, setMyCart, removeLocalItem, setMyCartItems, setPendingCarts],
+    [
+      open,
+      myCart,
+      pendingCarts,
+      activeTab,
+      setMyCart,
+      removeLocalItem,
+      setMyCartItems,
+      setPendingCarts,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

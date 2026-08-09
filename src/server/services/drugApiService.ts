@@ -143,19 +143,16 @@ class DrugApiService {
 
       console.log(`OpenFDA search query: ${searchQuery}`);
 
-      const response = await axios.get(
-        `${OPENFDA_BASE_URL}/drug/ndc.json`,
-        {
-          params: {
-            search: searchQuery,
-            limit: Math.min(limit, 100), // Max 100 per API docs
-          },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'DaanaRX/1.0',
-          },
-        }
-      );
+      const response = await axios.get(`${OPENFDA_BASE_URL}/drug/ndc.json`, {
+        params: {
+          search: searchQuery,
+          limit: Math.min(limit, 100), // Max 100 per API docs
+        },
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'DaanaRX/1.0',
+        },
+      });
 
       const results = this.parseOpenFDAResults(response.data.results || []);
       this.saveToCache(cacheKey, results);
@@ -199,15 +196,12 @@ class DrugApiService {
 
       // Step 1: Search RxNorm for drugs matching the query
       // Endpoint: /drugs.json?name=<query>
-      const searchResponse = await axios.get(
-        `${RXNORM_API_URL}/drugs.json`,
-        {
-          params: {
-            name: query,
-          },
-          timeout: 5000,
-        }
-      );
+      const searchResponse = await axios.get(`${RXNORM_API_URL}/drugs.json`, {
+        params: {
+          name: query,
+        },
+        timeout: 5000,
+      });
 
       const suggestions = searchResponse.data?.drugGroup?.conceptGroup || [];
 
@@ -229,9 +223,7 @@ class DrugApiService {
 
       // Step 2: Fetch RxTerms info for each RxCUI (limit to first 5 for performance)
       const rxcuisToFetch = rxcuis.slice(0, Math.min(5, limit));
-      const rxTermsPromises = rxcuisToFetch.map(rxcui =>
-        this.getRxTermsInfo(rxcui)
-      );
+      const rxTermsPromises = rxcuisToFetch.map((rxcui) => this.getRxTermsInfo(rxcui));
 
       const rxTermsResults = await Promise.allSettled(rxTermsPromises);
 
@@ -269,12 +261,9 @@ class DrugApiService {
    */
   private async getRxTermsInfo(rxcui: string): Promise<DrugSearchResult | null> {
     try {
-      const response = await axios.get(
-        `${RXTERMS_API_URL}/rxcui/${rxcui}/allinfo.json`,
-        {
-          timeout: 5000,
-        }
-      );
+      const response = await axios.get(`${RXTERMS_API_URL}/rxcui/${rxcui}/allinfo.json`, {
+        timeout: 5000,
+      });
 
       const data = response.data?.rxtermsProperties;
       if (!data) {
@@ -314,19 +303,16 @@ class DrugApiService {
 
       console.log(`OpenFDA NDC lookup: ${cleanedNDC}`);
 
-      const response = await axios.get(
-        `${OPENFDA_BASE_URL}/drug/ndc.json`,
-        {
-          params: {
-            search: `product_ndc:"${cleanedNDC}"`,
-            limit: 1,
-          },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'DaanaRX/1.0',
-          },
-        }
-      );
+      const response = await axios.get(`${OPENFDA_BASE_URL}/drug/ndc.json`, {
+        params: {
+          search: `product_ndc:"${cleanedNDC}"`,
+          limit: 1,
+        },
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'DaanaRX/1.0',
+        },
+      });
 
       if (response.data.results && response.data.results.length > 0) {
         const results = this.parseOpenFDAResults([response.data.results[0]]);
@@ -373,17 +359,21 @@ class DrugApiService {
 
       // Get drugs in the same class
       const classMembers = await this.getDrugsByClass(rxcui);
-      related.push(...classMembers.map(drug => ({
-        ...drug,
-        relationship: 'same_class' as const,
-      })));
+      related.push(
+        ...classMembers.map((drug) => ({
+          ...drug,
+          relationship: 'same_class' as const,
+        }))
+      );
 
       // Get ingredient-based alternatives
       const alternatives = await this.getAlternativesByIngredient(rxcui);
-      related.push(...alternatives.map(drug => ({
-        ...drug,
-        relationship: 'alternative' as const,
-      })));
+      related.push(
+        ...alternatives.map((drug) => ({
+          ...drug,
+          relationship: 'alternative' as const,
+        }))
+      );
 
       this.saveToCache(cacheKey, related);
       return related;
@@ -398,15 +388,12 @@ class DrugApiService {
    */
   private async getRxCUIByName(drugName: string): Promise<string | null> {
     try {
-      const response = await axios.get(
-        `${RXNAV_BASE_URL}/rxcui.json`,
-        {
-          params: {
-            name: drugName,
-          },
-          timeout: 5000,
-        }
-      );
+      const response = await axios.get(`${RXNAV_BASE_URL}/rxcui.json`, {
+        params: {
+          name: drugName,
+        },
+        timeout: 5000,
+      });
 
       const rxcui = response.data?.idGroup?.rxnormId?.[0];
       return rxcui || null;
@@ -421,16 +408,13 @@ class DrugApiService {
    */
   private async getDrugsByClass(rxcui: string): Promise<RelatedMedication[]> {
     try {
-      const response = await axios.get(
-        `${RXNAV_BASE_URL}/rxclass/class/byRxcui.json`,
-        {
-          params: {
-            rxcui,
-            relaSource: 'ATC', // Anatomical Therapeutic Chemical Classification
-          },
-          timeout: 5000,
-        }
-      );
+      const response = await axios.get(`${RXNAV_BASE_URL}/rxclass/class/byRxcui.json`, {
+        params: {
+          rxcui,
+          relaSource: 'ATC', // Anatomical Therapeutic Chemical Classification
+        },
+        timeout: 5000,
+      });
 
       // RxNav returns rxclassDrugInfoList.rxclassDrugInfo[], with each entry
       // exposing the class via rxclassMinConceptItem.{classId,className}.
@@ -440,16 +424,13 @@ class DrugApiService {
       if (!classId) return [];
 
       // Get other drugs in the same class
-      const membersResponse = await axios.get(
-        `${RXNAV_BASE_URL}/rxclass/classMembers.json`,
-        {
-          params: {
-            classId,
-            relaSource: 'ATC',
-          },
-          timeout: 5000,
-        }
-      );
+      const membersResponse = await axios.get(`${RXNAV_BASE_URL}/rxclass/classMembers.json`, {
+        params: {
+          classId,
+          relaSource: 'ATC',
+        },
+        timeout: 5000,
+      });
 
       const members = membersResponse.data?.drugMemberGroup?.drugMember || [];
       return members
@@ -473,20 +454,16 @@ class DrugApiService {
   private async getAlternativesByIngredient(rxcui: string): Promise<RelatedMedication[]> {
     try {
       // Get ingredients of the drug
-      const response = await axios.get(
-        `${RXNAV_BASE_URL}/rxcui/${rxcui}/related.json`,
-        {
-          params: {
-            tty: 'IN', // Ingredient
-          },
-          timeout: 5000,
-        }
-      );
+      const response = await axios.get(`${RXNAV_BASE_URL}/rxcui/${rxcui}/related.json`, {
+        params: {
+          tty: 'IN', // Ingredient
+        },
+        timeout: 5000,
+      });
 
       const ingredients = response.data?.relatedGroup?.conceptGroup || [];
-      const ingredientConcepts = ingredients
-        .find((g: any) => g.tty === 'IN')
-        ?.conceptProperties || [];
+      const ingredientConcepts =
+        ingredients.find((g: any) => g.tty === 'IN')?.conceptProperties || [];
 
       if (ingredientConcepts.length === 0) return [];
 
@@ -550,21 +527,23 @@ class DrugApiService {
    * Fields can be at root level OR in openfda object (or both)
    */
   private parseOpenFDAResults(results: any[]): DrugSearchResult[] {
-    return results.map(result => {
+    return results.map((result) => {
       const openfda = result.openfda || {};
 
       // Try openfda object first (more detailed), then root level
       const brandName = openfda.brand_name?.[0] || result.brand_name || '';
-      const genericName = openfda.generic_name?.[0] || result.generic_name || openfda.substance_name?.[0] || '';
+      const genericName =
+        openfda.generic_name?.[0] || result.generic_name || openfda.substance_name?.[0] || '';
       const ndc = result.product_ndc || openfda.product_ndc?.[0] || '';
       const form = this.normalizeForm(openfda.dosage_form?.[0] || result.dosage_form || 'Tablet');
 
       // Strength: prefer openfda.strength, fall back to root.strength, then
       // active_ingredients[].strength (e.g. "200 mg/1"). Most NDC records only
       // populate active_ingredients, so without this fallback strength is always 0.
-      const ingredientStrength = Array.isArray(result.active_ingredients) && result.active_ingredients.length > 0
-        ? result.active_ingredients[0].strength
-        : undefined;
+      const ingredientStrength =
+        Array.isArray(result.active_ingredients) && result.active_ingredients.length > 0
+          ? result.active_ingredients[0].strength
+          : undefined;
       const strengthStr = openfda.strength?.[0] || result.strength || ingredientStrength || '0mg';
       const { strength, unit } = this.parseStrength(strengthStr);
 
@@ -646,7 +625,10 @@ class DrugApiService {
 
     // Generate placeholder NDC
     const nameHash = this.simpleHash(validated.genericName);
-    const ndcId = `RXTERM-${nameHash}-${validated.strength}${validated.strengthUnit}`.substring(0, 20);
+    const ndcId = `RXTERM-${nameHash}-${validated.strength}${validated.strengthUnit}`.substring(
+      0,
+      20
+    );
 
     return {
       source: 'rxterms',
@@ -694,9 +676,7 @@ class DrugApiService {
 
     // VALIDATION 2: Check for zero or missing strength
     if (strength === 0 || isNaN(strength)) {
-      console.warn(
-        `RxTerms: No strength found for "${medicationName}". This may be incorrect.`
-      );
+      console.warn(`RxTerms: No strength found for "${medicationName}". This may be incorrect.`);
       confidence -= 20; // Significant confidence reduction
 
       // Try to extract from original display
@@ -810,20 +790,20 @@ class DrugApiService {
     const normalized = form.toLowerCase();
 
     const formMap: { [key: string]: string } = {
-      'tablet': 'Tablet',
-      'capsule': 'Capsule',
-      'solution': 'Liquid',
-      'suspension': 'Liquid',
-      'syrup': 'Liquid',
-      'injection': 'Injection',
-      'cream': 'Cream',
-      'ointment': 'Ointment',
-      'gel': 'Cream',
-      'lotion': 'Cream',
-      'patch': 'Patch',
-      'inhaler': 'Inhaler',
-      'aerosol': 'Inhaler',
-      'suppository': 'Suppository',
+      tablet: 'Tablet',
+      capsule: 'Capsule',
+      solution: 'Liquid',
+      suspension: 'Liquid',
+      syrup: 'Liquid',
+      injection: 'Injection',
+      cream: 'Cream',
+      ointment: 'Ointment',
+      gel: 'Cream',
+      lotion: 'Cream',
+      patch: 'Patch',
+      inhaler: 'Inhaler',
+      aerosol: 'Inhaler',
+      suppository: 'Suppository',
     };
 
     for (const [key, value] of Object.entries(formMap)) {
@@ -842,7 +822,7 @@ class DrugApiService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36).substring(0, 6).toUpperCase();

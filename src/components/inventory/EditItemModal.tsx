@@ -98,7 +98,13 @@ function toDateInput(value: string | null | undefined): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export function EditItemModal({ item, open, onOpenChange, onSaved, locations }: EditItemModalProps) {
+export function EditItemModal({
+  item,
+  open,
+  onOpenChange,
+  onSaved,
+  locations,
+}: EditItemModalProps) {
   const { toast } = useToast();
 
   const [form, setForm] = useState<FormState>(() => emptyForm());
@@ -156,8 +162,7 @@ export function EditItemModal({ item, open, onOpenChange, onSaved, locations }: 
       const d = new Date(form.expiryDate);
       if (Number.isNaN(d.getTime())) next.expiryDate = 'Expiry date is invalid.';
     } else {
-      next.expiryDate =
-        `Expiry date is required. Use the fallback (${expiryFallback}) if the donor packaging has none.`;
+      next.expiryDate = `Expiry date is required. Use the fallback (${expiryFallback}) if the donor packaging has none.`;
     }
     setIssues(next);
     return Object.keys(next).length === 0;
@@ -175,9 +180,7 @@ export function EditItemModal({ item, open, onOpenChange, onSaved, locations }: 
           dosage: form.dosage.trim(),
           unit: form.unit.trim(),
           form: form.form,
-          ...(form.quantity.trim().length > 0
-            ? { quantity: Number(form.quantity) }
-            : {}),
+          ...(form.quantity.trim().length > 0 ? { quantity: Number(form.quantity) } : {}),
           ...(form.notes.trim().length > 0 ? { notes: form.notes.trim() } : {}),
         },
         locationId: form.locationId || null,

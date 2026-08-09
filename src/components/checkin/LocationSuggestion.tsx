@@ -52,7 +52,9 @@ export interface LocationSuggestionProps {
  * Resolve the suggestion for the typed specialty_class. Returns undefined when
  * the user has not entered anything.
  */
-export function useLocationSuggestion(specialtyClass: string): DomainLocationSuggestion | undefined {
+export function useLocationSuggestion(
+  specialtyClass: string
+): DomainLocationSuggestion | undefined {
   const q = specialtyClass.trim();
   return useMemo(() => (q.length === 0 ? undefined : suggestLocationForClass(q)), [q]);
 }
@@ -84,11 +86,11 @@ export function LocationSuggestion({
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const body = await r.json();
         if (cancelled) return;
-        setBackendLocations(Array.isArray(body) ? body : body.locations ?? []);
+        setBackendLocations(Array.isArray(body) ? body : (body.locations ?? []));
       } catch (e) {
         if (cancelled) return;
         setLocationsError(
-          'Configured locations could not be loaded — falling back to spec examples. Visit Settings → Locations.',
+          'Configured locations could not be loaded — falling back to spec examples. Visit Settings → Locations.'
         );
       }
     })();
@@ -115,8 +117,7 @@ export function LocationSuggestion({
 
       {suggestion && (
         <p className="text-sm text-muted-foreground">
-          Suggestion based on{' '}
-          <span className="font-medium">&quot;{specialtyClass}&quot;</span>:{' '}
+          Suggestion based on <span className="font-medium">&quot;{specialtyClass}&quot;</span>:{' '}
           <span className="font-mono font-semibold">{suggestion.location_code}</span>
           {suggestion.match !== 'class_name' && (
             <span className="text-xs"> (matched by {suggestion.match.replace('_', ' ')})</span>
@@ -124,10 +125,7 @@ export function LocationSuggestion({
         </p>
       )}
 
-      <Select
-        value={value || suggestion?.location_code || ''}
-        onValueChange={onChange}
-      >
+      <Select value={value || suggestion?.location_code || ''} onValueChange={onChange}>
         <SelectTrigger id="location_code">
           <SelectValue placeholder="Pick a location bin" />
         </SelectTrigger>
@@ -141,16 +139,17 @@ export function LocationSuggestion({
         </SelectContent>
       </Select>
 
-      {locationsError && (
-        <p className="text-xs text-amber-700">{locationsError}</p>
-      )}
+      {locationsError && <p className="text-xs text-amber-700">{locationsError}</p>}
 
       {isHoldFallback && (
-        <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/30">
+        <Alert
+          variant="destructive"
+          className="border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/30"
+        >
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Uncertain class — superadmin review required before placement.
-            Confirm the supervisor sign-off checkbox below before continuing.
+            Uncertain class — superadmin review required before placement. Confirm the supervisor
+            sign-off checkbox below before continuing.
           </AlertDescription>
         </Alert>
       )}

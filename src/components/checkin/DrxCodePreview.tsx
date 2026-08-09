@@ -52,7 +52,11 @@ export function DrxCodePreview({
       await navigator.clipboard.writeText(code);
       toast({ title: 'Copied', description: 'DRX code copied to clipboard.' });
     } catch {
-      toast({ title: 'Copy failed', description: 'Copy the code manually.', variant: 'destructive' });
+      toast({
+        title: 'Copy failed',
+        description: 'Copy the code manually.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -86,9 +90,7 @@ export function DrxCodePreview({
         </div>
       )}
       {!loading && !error && !code && (
-        <p className="text-sm text-muted-foreground">
-          Select a location to generate a code.
-        </p>
+        <p className="text-sm text-muted-foreground">Select a location to generate a code.</p>
       )}
     </div>
   );

@@ -44,14 +44,16 @@ function QuickActionCard({ title, description, icon: Icon, color, href }: QuickA
       onKeyDown={(e) => e.key === 'Enter' && router.push(href)}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <div className={cn(
-          "rounded-xl p-3 transition-all duration-200 group-hover:scale-110",
-          color === "blue" && "bg-primary/10 text-primary",
-          color === "green" && "bg-success/10 text-success",
-          color === "violet" && "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-          color === "teal" && "bg-primary/15 text-primary",
-          color === "indigo" && "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-        )}>
+        <div
+          className={cn(
+            'rounded-xl p-3 transition-all duration-200 group-hover:scale-110',
+            color === 'blue' && 'bg-primary/10 text-primary',
+            color === 'green' && 'bg-success/10 text-success',
+            color === 'violet' && 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+            color === 'teal' && 'bg-primary/15 text-primary',
+            color === 'indigo' && 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+          )}
+        >
           <Icon className="h-6 w-6" />
         </div>
         <ArrowRight className="h-5 w-5 text-muted-foreground transition-all duration-200 group-hover:translate-x-1 group-hover:text-primary" />
@@ -69,7 +71,7 @@ function StatCard({
   value,
   icon: Icon,
   color,
-  variant = 'default'
+  variant = 'default',
 }: {
   title: string;
   value: number;
@@ -83,26 +85,36 @@ function StatCard({
         <CardTitle className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground flex-1 min-w-0">
           {title}
         </CardTitle>
-        <div className={cn(
-          "rounded-xl shadow-soft flex items-center justify-center h-10 w-10 flex-shrink-0",
-          color === "blue" && "bg-primary/10 text-primary",
-          color === "orange" && "bg-warning/10 text-warning",
-          color === "red" && "bg-destructive/10 text-destructive",
-          color === "green" && "bg-success/10 text-success",
-          color === "teal" && "bg-primary/15 text-primary",
-        )}>
+        <div
+          className={cn(
+            'rounded-xl shadow-soft flex items-center justify-center h-10 w-10 flex-shrink-0',
+            color === 'blue' && 'bg-primary/10 text-primary',
+            color === 'orange' && 'bg-warning/10 text-warning',
+            color === 'red' && 'bg-destructive/10 text-destructive',
+            color === 'green' && 'bg-success/10 text-success',
+            color === 'teal' && 'bg-primary/15 text-primary'
+          )}
+        >
           <Icon className="h-5 w-5" />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight break-words">{value.toLocaleString()}</div>
+        <div className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
+          {value.toLocaleString()}
+        </div>
         {variant === 'warning' && value > 0 && (
-          <Badge variant="outline" className="border-warning text-warning bg-warning/10 font-medium">
+          <Badge
+            variant="outline"
+            className="border-warning text-warning bg-warning/10 font-medium"
+          >
             Needs attention
           </Badge>
         )}
         {variant === 'danger' && value > 0 && (
-          <Badge variant="outline" className="border-destructive text-destructive bg-destructive/10 font-medium">
+          <Badge
+            variant="outline"
+            className="border-destructive text-destructive bg-destructive/10 font-medium"
+          >
             Action required
           </Badge>
         )}
@@ -113,12 +125,19 @@ function StatCard({
 
 export default function HomeClient() {
   const router = useRouter();
-  const [stats, setStats] = useState<{ totalUnits: number; unitsExpiringSoon: number; recentCheckIns: number; recentCheckOuts: number; lowStockAlerts: number } | null>(null);
+  const [stats, setStats] = useState<{
+    totalUnits: number;
+    unitsExpiringSoon: number;
+    recentCheckIns: number;
+    recentCheckOuts: number;
+    lowStockAlerts: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    inventory.getStats()
+    inventory
+      .getStats()
       .then(setStats)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -138,7 +157,7 @@ export default function HomeClient() {
 
         {showLoading ? (
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {(['units', 'expiring', 'low-stock', 'check-ins', 'check-outs']).map((name) => (
+            {['units', 'expiring', 'low-stock', 'check-ins', 'check-outs'].map((name) => (
               <Card key={name}>
                 <CardHeader className="space-y-0 pb-3">
                   <Skeleton className="h-4 w-24" />
@@ -159,24 +178,78 @@ export default function HomeClient() {
         ) : stats ? (
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard title="Units" value={stats.totalUnits} icon={Package} color="blue" />
-            <StatCard title="Expiring" value={stats.unitsExpiringSoon} icon={AlertTriangle} color="orange" variant="warning" />
-            <StatCard title="Low Stock" value={stats.lowStockAlerts} icon={AlertCircle} color="red" variant="danger" />
-            <StatCard title="Check-Ins" value={stats.recentCheckIns} icon={TrendingUp} color="green" />
-            <StatCard title="Check-Outs" value={stats.recentCheckOuts} icon={TrendingDown} color="teal" />
+            <StatCard
+              title="Expiring"
+              value={stats.unitsExpiringSoon}
+              icon={AlertTriangle}
+              color="orange"
+              variant="warning"
+            />
+            <StatCard
+              title="Low Stock"
+              value={stats.lowStockAlerts}
+              icon={AlertCircle}
+              color="red"
+              variant="danger"
+            />
+            <StatCard
+              title="Check-Ins"
+              value={stats.recentCheckIns}
+              icon={TrendingUp}
+              color="green"
+            />
+            <StatCard
+              title="Check-Outs"
+              value={stats.recentCheckOuts}
+              icon={TrendingDown}
+              color="teal"
+            />
           </div>
         ) : null}
 
         <div className="space-y-5">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Quick Actions</h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">Common tasks and workflows</p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              Common tasks and workflows
+            </p>
           </div>
           <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickActionCard title="Check In Medications" description="Add new medications to inventory" icon={PackageCheck} color="blue" href="/checkin" />
-            <QuickActionCard title="Check Out Medications" description="Dispense medications to patients" icon={PackageMinus} color="green" href="/checkout" />
-            <QuickActionCard title="Scan QR Code" description="Quick lookup and actions" icon={QrCode} color="violet" href="/scan" />
-            <QuickActionCard title="View Inventory" description="Browse all medications" icon={LayoutGrid} color="teal" href="/inventory" />
-            <QuickActionCard title="Reports & Analytics" description="View detailed reports" icon={FileText} color="indigo" href="/reports" />
+            <QuickActionCard
+              title="Check In Medications"
+              description="Add new medications to inventory"
+              icon={PackageCheck}
+              color="blue"
+              href="/checkin"
+            />
+            <QuickActionCard
+              title="Check Out Medications"
+              description="Dispense medications to patients"
+              icon={PackageMinus}
+              color="green"
+              href="/checkout"
+            />
+            <QuickActionCard
+              title="Scan QR Code"
+              description="Quick lookup and actions"
+              icon={QrCode}
+              color="violet"
+              href="/scan"
+            />
+            <QuickActionCard
+              title="View Inventory"
+              description="Browse all medications"
+              icon={LayoutGrid}
+              color="teal"
+              href="/inventory"
+            />
+            <QuickActionCard
+              title="Reports & Analytics"
+              description="View detailed reports"
+              icon={FileText}
+              color="indigo"
+              href="/reports"
+            />
           </div>
         </div>
 
@@ -188,8 +261,15 @@ export default function HomeClient() {
                 <Alert className="border-warning/50 bg-warning/5 animate-fade-in">
                   <AlertTriangle className="h-5 w-5 text-warning" />
                   <AlertDescription>
-                    <div className="font-semibold text-base mb-3">{stats.unitsExpiringSoon} unit(s) expiring soon</div>
-                    <Button variant="outline" size="sm" onClick={() => router.push('/inventory')} className="w-full sm:w-auto">
+                    <div className="font-semibold text-base mb-3">
+                      {stats.unitsExpiringSoon} unit(s) expiring soon
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/inventory')}
+                      className="w-full sm:w-auto"
+                    >
                       View in Inventory
                     </Button>
                   </AlertDescription>
@@ -199,8 +279,15 @@ export default function HomeClient() {
                 <Alert variant="destructive" className="animate-fade-in">
                   <AlertCircle className="h-5 w-5" />
                   <AlertDescription>
-                    <div className="font-semibold text-base mb-3">{stats.lowStockAlerts} drug(s) with low stock</div>
-                    <Button variant="outline" size="sm" onClick={() => router.push('/inventory')} className="w-full sm:w-auto">
+                    <div className="font-semibold text-base mb-3">
+                      {stats.lowStockAlerts} drug(s) with low stock
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/inventory')}
+                      className="w-full sm:w-auto"
+                    >
                       View in Inventory
                     </Button>
                   </AlertDescription>

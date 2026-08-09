@@ -15,7 +15,7 @@ const nextConfig = {
     resolveAlias: {
       '@yaacovcr/transform': '@yaacovcr/transform',
       'utf-8-validate': 'utf-8-validate',
-      'bufferutil': 'bufferutil',
+      bufferutil: 'bufferutil',
     },
   },
   // Webpack configuration for compatibility
@@ -26,7 +26,7 @@ const nextConfig = {
       config.externals.push({
         '@yaacovcr/transform': '@yaacovcr/transform',
         'utf-8-validate': 'utf-8-validate',
-        'bufferutil': 'bufferutil',
+        bufferutil: 'bufferutil',
       });
     }
     return config;
