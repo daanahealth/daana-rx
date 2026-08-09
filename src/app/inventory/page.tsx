@@ -278,21 +278,38 @@ export default function InventoryPage() {
         headers: authHeaders(),
         body: JSON.stringify({ item_id: checkoutTarget.id }),
       });
-      if (!addRes.ok && addRes.status !== 404) {
+      // Any non-OK here means the unit was not reserved — including 404, which
+      // used to be swallowed and reported as a successful checkout.
+      if (!addRes.ok) {
         const body = await addRes.json().catch(() => ({}));
         throw new Error(body.error || `Add to cart failed: ${addRes.status}`);
       }
-      const addBody = (await addRes.json().catch(() => ({}))) as { cart?: { id: string } };
-      const cartId = addBody.cart?.id ?? 'current';
+      // The endpoint returns `cart_id`; it also returns `cart.id`. Reading only
+      // `cart.id` used to yield undefined and fall back to the literal string
+      // "current", which the approve route rejected — leaving the unit stranded
+      // in `in_cart`: gone from active inventory but never checked out.
+      const addBody = (await addRes.json().catch(() => ({}))) as {
+        cart_id?: string;
+        cart?: { id?: string };
+      };
+      const cartId = addBody.cart_id ?? addBody.cart?.id;
+      if (!cartId) {
+        throw new Error(
+          'Checkout could not start: the server did not return a cart id. The unit is still reserved — refresh and try again.',
+        );
+      }
 
       // Step 2: immediately approve for superadmin.
       const approveRes = await fetch(`${API_BASE}/transactions/carts/${cartId}/approve`, {
         method: 'POST',
         headers: authHeaders(),
       });
-      if (!approveRes.ok && approveRes.status !== 404) {
+      if (!approveRes.ok) {
         const body = await approveRes.json().catch(() => ({}));
-        throw new Error(body.error || `Approve failed: ${approveRes.status}`);
+        throw new Error(
+          body.error ||
+            `Approve failed: ${approveRes.status}. The unit is still reserved — refresh before retrying.`,
+        );
       }
 
       toast({
