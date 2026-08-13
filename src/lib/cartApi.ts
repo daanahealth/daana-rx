@@ -183,6 +183,24 @@ function toServerCart(dto: CartDTO): ServerCart {
   };
 }
 
+/**
+ * Resolve the caller's open cart, creating one only if none exists.
+ *
+ * Prefer this over `createCart()` for page bootstrap. `POST /carts` mints a NEW
+ * cart on every mount, which diverges from the cart the server considers
+ * "current" (the newest open one) — so items added from the inventory page and
+ * items added here could land in different carts, and abandoned carts piled up
+ * until their 24h TTL expired.
+ */
+export async function getCurrentCart(): Promise<ServerCart> {
+  const res = await fetch(`${TX_URL}/carts/current`, { headers: authHeaders() });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error || `Load cart failed: ${res.status}`);
+  }
+  return toServerCart((await res.json()) as CartDTO);
+}
+
 export async function createCart(): Promise<ServerCart> {
   const res = await fetch(`${TX_URL}/carts`, {
     method: 'POST',
