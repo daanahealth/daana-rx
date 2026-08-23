@@ -1,34 +1,33 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+// DESIGN.md › Components › Buttons. Flat, 6px radius, hover is a colour change.
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.99]',
   {
     variants: {
       variant: {
-        default:
-          'bg-primary text-primary-foreground shadow-soft hover:bg-primary/90 hover:shadow-medium',
-        destructive:
-          'bg-destructive text-destructive-foreground shadow-soft hover:bg-destructive/90 hover:shadow-medium',
-        success:
-          'bg-success text-success-foreground shadow-soft hover:bg-success/90 hover:shadow-medium',
-        warning:
-          'bg-warning text-warning-foreground shadow-soft hover:bg-warning/90 hover:shadow-medium',
-        outline:
-          'border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-primary/50',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+        default: 'bg-primary text-primary-foreground hover:bg-primary-ink',
+        destructive: 'bg-danger text-white hover:bg-danger/90',
+        success: 'bg-ok text-white hover:bg-ok/90',
+        warning: 'bg-warn text-white hover:bg-warn/90',
+        outline: 'border border-border-strong bg-card text-foreground hover:bg-panel',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-muted',
+        ghost: 'text-subtle-foreground hover:bg-panel hover:text-foreground',
+        link: 'text-primary-ink underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-11 px-5 py-2.5',
-        sm: 'h-9 rounded-md px-3 text-xs',
-        lg: 'h-12 rounded-lg px-8 text-base',
-        xl: 'h-14 rounded-xl px-10 text-lg',
-        icon: 'h-11 w-11',
+        default: 'h-9 px-3.5',
+        sm: 'h-8 px-3 text-xs',
+        lg: 'h-10 px-4',
+        xl: 'h-11 px-5 text-base',
+        /** Phone primaries: 44px, full-width by the caller. */
+        touch: 'h-11 px-5 text-base',
+        icon: 'h-9 w-9',
       },
     },
     defaultVariants: {
@@ -41,13 +40,24 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  /** Shows a spinner in place of the leading icon and disables the button. */
+  loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        aria-busy={loading || undefined}
+        disabled={props.disabled || loading}
+        {...props}
+      >
+        {loading && !asChild ? <Loader2 className="animate-spin" aria-hidden /> : null}
+        {children}
+      </Comp>
     );
   }
 );
