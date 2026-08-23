@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { reports, type ExpiringItem } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 
 type Window = 30 | 60 | 90;
 
@@ -22,14 +23,6 @@ function urgencyClass(days: number): string {
   if (days <= 7) return 'border-destructive/60 text-destructive bg-destructive/10';
   if (days <= 30) return 'border-amber-500/60 text-amber-600 bg-amber-500/10';
   return 'border-muted-foreground/40 text-muted-foreground bg-muted/40';
-}
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString();
-  } catch {
-    return iso;
-  }
 }
 
 export function ExpiringSoonPanel() {

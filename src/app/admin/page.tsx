@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Settings } from 'lucide-react';
+import { formatDate } from '@/lib/format';
 import { AppShell } from '../../components/layout/AppShell';
 import { LocationData } from '../../types/api';
 import { auth, inventory } from '@/lib/api';
@@ -210,7 +211,7 @@ export default function AdminPage() {
                             {location.temp.replace('_', ' ')}
                           </TableCell>
                           <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
-                            {new Date(location.createdAt).toLocaleDateString()}
+                            {formatDate(location.createdAt)}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col sm:flex-row gap-2">

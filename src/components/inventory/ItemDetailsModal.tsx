@@ -26,6 +26,7 @@ import { Separator } from '@/components/ui/separator';
 import { StatusChip } from '@/components/ui/status-chip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 import { TransactionHistoryList } from './TransactionHistoryDrawer';
 
 // The inventory list hydrates a denormalized location code onto each row.
@@ -45,12 +46,6 @@ function readAttr(attrs: Item['attributes'] | undefined, key: string): string {
   const v = (attrs as Record<string, unknown>)[key];
   if (v === undefined || v === null) return '';
   return String(v);
-}
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
 }
 
 function isExpired(item: DetailsItem): boolean {

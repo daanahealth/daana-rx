@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
+import { formatDateTime } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,14 +24,6 @@ function reasonClass(reason: string): string {
   if (r.includes('lost') || r.includes('missing'))
     return 'border-orange-500/60 text-orange-600 bg-orange-500/10';
   return 'border-muted-foreground/40 text-muted-foreground bg-muted/40';
-}
-
-function formatTs(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
 }
 
 export function RecentlyRemovedPanel() {
@@ -97,7 +90,7 @@ export function RecentlyRemovedPanel() {
                       <dt className="text-muted-foreground">DRX</dt>
                       <dd className="font-mono break-all">{r.drxCode}</dd>
                       <dt className="text-muted-foreground">When</dt>
-                      <dd>{formatTs(r.removedAt)}</dd>
+                      <dd>{formatDateTime(r.removedAt)}</dd>
                       <dt className="text-muted-foreground">By</dt>
                       <dd>{r.removedBy ?? '—'}</dd>
                     </dl>
@@ -125,7 +118,7 @@ export function RecentlyRemovedPanel() {
                         <TableCell>{r.dosage}</TableCell>
                         <TableCell>{r.location ?? '—'}</TableCell>
                         <TableCell className="font-mono text-xs">{r.drxCode}</TableCell>
-                        <TableCell>{formatTs(r.removedAt)}</TableCell>
+                        <TableCell>{formatDateTime(r.removedAt)}</TableCell>
                         <TableCell>{r.removedBy ?? '—'}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={cn(reasonClass(r.reason))}>

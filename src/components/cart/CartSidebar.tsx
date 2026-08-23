@@ -38,27 +38,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useCart, type CartItemView, type ServerCart } from './CartContext';
 import { approveCart, rejectCart, removeItemFromCart, submitCart } from '@/lib/cartApi';
 import { cn } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@/lib/format';
 
 interface CartSidebarProps {
   readonly isSuperadmin: boolean;
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString();
 }
 
 interface ItemRowProps {
@@ -125,7 +108,7 @@ function ItemRow({ item, cartId, canRemove, onRemoved }: ItemRowProps) {
           <Clock className="h-3 w-3 shrink-0" />
           <span className="truncate">
             {item.addedBy ? `${item.addedBy} • ` : ''}
-            {formatTime(item.addedAt)}
+            {formatDateTime(item.addedAt)}
           </span>
         </div>
         {canRemove && (
@@ -319,7 +302,7 @@ function PendingCartCard({ cart, onDecided }: PendingCartCardProps) {
           <p className="text-sm font-semibold truncate">{cart.ownerName ?? cart.ownerId}</p>
           <p className="text-xs text-muted-foreground">
             {cart.items.length} item{cart.items.length === 1 ? '' : 's'} • submitted{' '}
-            {cart.submittedAt ? formatTime(cart.submittedAt) : '—'}
+            {cart.submittedAt ? formatDateTime(cart.submittedAt) : '—'}
           </p>
         </div>
         <StatusChip status="pending_approval" />

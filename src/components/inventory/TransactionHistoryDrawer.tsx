@@ -26,6 +26,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/format';
 
 interface TxRow extends Transaction {
   actorName?: string | null;
@@ -62,13 +63,6 @@ function readAttr(attrs: Item['attributes'] | undefined, key: string): string {
   const v = (attrs as Record<string, unknown>)[key];
   if (v === undefined || v === null) return '';
   return String(v);
-}
-
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString();
 }
 
 function stringifyValue(v: unknown): string {

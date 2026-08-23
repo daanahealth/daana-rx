@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, ClipboardList, X } from 'lucide-react';
+import { formatDateTime } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +27,6 @@ const ACTION_TYPES: { value: string; label: string }[] = [
   { value: 'cart_rejected', label: 'Cart Rejected' },
   { value: 'expired_override', label: 'Expired Override' },
 ];
-
-function formatTs(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
 
 interface FilterState {
   dateFrom: string;
@@ -231,7 +224,9 @@ export function TransactionLogTable() {
                       <Badge variant="outline" className="capitalize">
                         {r.actionType.replace(/_/g, ' ')}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">{formatTs(r.timestamp)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(r.timestamp)}
+                      </span>
                     </div>
                     <p className="mt-2 font-semibold">
                       {r.medicationName ?? '—'}
@@ -285,7 +280,7 @@ export function TransactionLogTable() {
                   <TableBody>
                     {rows.map((r) => (
                       <TableRow key={r.transactionId}>
-                        <TableCell className="text-xs">{formatTs(r.timestamp)}</TableCell>
+                        <TableCell className="text-xs">{formatDateTime(r.timestamp)}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
                             {r.actionType.replace(/_/g, ' ')}

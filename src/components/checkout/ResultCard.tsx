@@ -26,19 +26,13 @@ import { Button } from '@/components/ui/button';
 import { StatusChip } from '@/components/ui/status-chip';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 
 function attrString(attrs: Record<string, unknown>, key: string): string | null {
   const v = attrs[key];
   if (typeof v === 'string') return v;
   if (typeof v === 'number') return String(v);
   return null;
-}
-
-function formatExpiry(iso: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString();
 }
 
 export interface ResultCardProps {
@@ -102,7 +96,7 @@ export function ResultCard({
           <div>
             <dt className="text-xs uppercase tracking-wide text-muted-foreground">Expiry</dt>
             <dd className={cn('font-medium', isExpired && 'text-destructive')}>
-              {formatExpiry(item.expiry_date)}
+              {formatDate(item.expiry_date)}
             </dd>
           </div>
           <div>

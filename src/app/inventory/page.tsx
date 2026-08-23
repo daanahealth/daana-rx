@@ -82,6 +82,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { canModifyStock } from '@/lib/roles';
 import { cn } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@/lib/format';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -139,20 +140,6 @@ const STATUS_OPTIONS: Array<{ value: ItemStatus | 'all'; label: string }> = [
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString();
-}
-
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleString();
-}
 
 function readAttr(attrs: Item['attributes'], key: string): string {
   const v = (attrs as Record<string, unknown>)[key];

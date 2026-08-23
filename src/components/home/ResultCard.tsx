@@ -5,6 +5,7 @@ import { Calendar, MapPin, Pill, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusChip } from '@/components/ui/status-chip';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 import type { Item } from '@daana-health/inventory-core';
 
 interface ResultCardProps {
@@ -28,13 +29,6 @@ function daysUntil(iso: string | null | undefined): number | null {
   d.setHours(0, 0, 0, 0);
   const diffMs = d.getTime() - today.getTime();
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
-}
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function ResultCard({ item }: ResultCardProps) {

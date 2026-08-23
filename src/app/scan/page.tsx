@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { QrCodeIcon, X } from 'lucide-react';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '../../components/layout/AppShell';
 import { QRScanner } from '../../components/QRScanner';
@@ -177,7 +178,7 @@ export default function ScanPage() {
                                 }
                                 className="px-2 py-1 text-xs"
                               >
-                                {new Date(searchUnit.expiryDate).toLocaleDateString()}
+                                {formatDate(searchUnit.expiryDate)}
                               </Badge>
                               <span className="text-xs text-primary font-medium">
                                 Tap to select →
@@ -221,9 +222,7 @@ export default function ScanPage() {
                                 {searchUnit.availableQuantity}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {new Date(searchUnit.expiryDate).toLocaleDateString()}
-                            </TableCell>
+                            <TableCell>{formatDate(searchUnit.expiryDate)}</TableCell>
                             <TableCell>
                               <Button size="sm" onClick={() => handleSelectUnit(searchUnit)}>
                                 Select
@@ -292,7 +291,7 @@ export default function ScanPage() {
                       variant={new Date(unit.expiryDate) < new Date() ? 'destructive' : 'secondary'}
                       className="px-3 py-1"
                     >
-                      {new Date(unit.expiryDate).toLocaleDateString()}
+                      {formatDate(unit.expiryDate)}
                     </Badge>
                   </div>
                 </div>
@@ -337,7 +336,7 @@ export default function ScanPage() {
                         {unitTransactions.map((tx: any) => (
                           <TableRow key={tx.transactionId} className="hover:bg-accent/50">
                             <TableCell className="text-sm">
-                              {new Date(tx.timestamp).toLocaleString()}
+                              {formatDateTime(tx.timestamp)}
                             </TableCell>
                             <TableCell>
                               <Badge
