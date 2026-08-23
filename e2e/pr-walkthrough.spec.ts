@@ -13,7 +13,8 @@ import fs from 'node:fs';
 //     the existing all-flows spec (e2e_*@daana-test.local). No secrets needed.
 
 const GATEWAY = process.env.E2E_GATEWAY_URL ?? 'https://daanahealth-gateway.onrender.com';
-const SHOT = 'e2e/screenshots/pr';
+// Override to keep desktop and mobile runs side by side (E2E_SHOT_DIR=e2e/screenshots/pr-mobile).
+const SHOT = process.env.E2E_SHOT_DIR ?? 'e2e/screenshots/pr';
 const STAMP = process.env.E2E_STAMP || `${Date.now()}`;
 const BIN = 'WALK';
 

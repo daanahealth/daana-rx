@@ -22,5 +22,11 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    // Phone viewport for the PR walkthrough (providers are mobile-first).
+    // Select with: npx playwright test --project=mobile
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 13'] },
+    },
   ],
 });
