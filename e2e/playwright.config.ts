@@ -26,7 +26,7 @@ export default defineConfig({
     // Select with: npx playwright test --project=mobile
     {
       name: 'mobile',
-      use: { ...devices['iPhone 13'] },
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
     },
   ],
 });
