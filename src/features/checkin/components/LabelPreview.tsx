@@ -1,18 +1,18 @@
 'use client';
 
-// LabelPreview — renders the printable medication label for Check In step 6.
-// Uses the rich UnitLabel component (QR code + all medication fields) and prints
-// it at a real label size (4in x 2in) instead of a full page. The QR encodes
-// the DaanaRX unit code so the label can be scanned back to the unit.
-
+/**
+ * LabelPreview — the printable 4in × 2in label (QR + fields) for the sticker.
+ * Print isolates `.print-label` and sizes the page to the label; the e2e
+ * specs assert on `.print-label svg` and the label text, keep those hooks.
+ */
 import type { Item } from '@daana-health/inventory-core';
-import { UnitLabel } from '@/components/unit-label/UnitLabel';
 import { Printer } from 'lucide-react';
+import { UnitLabel } from '@/components/unit-label/UnitLabel';
 import { Button } from '@/components/ui/button';
 
 export interface LabelPreviewProps {
   readonly item: Item;
-  /** Optional click handler when the user wants to print. Defaults to window.print(). */
+  readonly locationCode: string;
   readonly onPrint?: () => void;
 }
 
@@ -21,7 +21,7 @@ function attrStr(attrs: Record<string, unknown>, key: string): string | null {
   return typeof v === 'string' ? v : v == null ? null : String(v);
 }
 
-export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
+export function LabelPreview({ item, locationCode, onPrint }: LabelPreviewProps) {
   const attrs = (item.attributes ?? {}) as Record<string, unknown>;
   const qty = attrStr(attrs, 'quantity') ?? '1';
 
@@ -31,9 +31,7 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
   };
 
   return (
-    <div className="space-y-3 daana-label-preview">
-      {/* Print: isolate the label and size the page to a 4x2in label sheet so it
-          doesn't fill a full page. Only the .print-label region is emitted. */}
+    <div className="daana-label-preview space-y-1.5">
       <style jsx global>{`
         @media print {
           @page {
@@ -60,15 +58,15 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
         }
       `}</style>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap no-print">
-        <div className="text-sm font-semibold">Label preview</div>
-        <Button variant="outline" size="sm" onClick={handlePrint}>
-          <Printer className="h-4 w-4 mr-1" /> Print preview
+      <div className="no-print flex items-center justify-between gap-3">
+        <p className="text-xs font-medium text-subtle-foreground">Label preview</p>
+        <Button type="button" variant="outline" size="sm" onClick={handlePrint}>
+          <Printer aria-hidden /> Print label
         </Button>
       </div>
 
-      <div className="overflow-x-auto print:overflow-visible">
-        <div className="print-label">
+      <div className="overflow-x-auto rounded-sm border border-border bg-panel p-3 print:overflow-visible print:border-0 print:p-0">
+        <div className="print-label mx-auto w-[384px]">
           <UnitLabel
             unitId={item.unitCode || ''}
             medicationName={attrStr(attrs, 'medication_name') ?? '—'}
@@ -78,16 +76,10 @@ export function LabelPreview({ item, onPrint }: LabelPreviewProps) {
             availableQuantity={qty}
             totalQuantity={qty}
             expiryDate={item.expiryDate ?? null}
-            locationName={
-              (item as unknown as { locationCode?: string | null }).locationCode ?? null
-            }
+            locationName={locationCode || null}
           />
         </div>
       </div>
-
-      <p className="text-xs text-muted-foreground no-print">
-        Write this label onto a pre-printed blank, then place the medication in the bin.
-      </p>
     </div>
   );
 }
