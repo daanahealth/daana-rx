@@ -102,7 +102,10 @@ function LocationStep({ flow }: { flow: CheckinFlow }) {
 
         {binUnknown ? (
           <div className="space-y-1.5">
-            <Label htmlFor="chk-specialty-class" className="text-xs font-medium text-subtle-foreground">
+            <Label
+              htmlFor="chk-specialty-class"
+              className="text-xs font-medium text-subtle-foreground"
+            >
               Specialty class
             </Label>
             <Select value={flow.specialtyClass} onValueChange={flow.setSpecialtyClass}>
@@ -138,8 +141,8 @@ function LocationStep({ flow }: { flow: CheckinFlow }) {
                 Supervisor acknowledgement
               </span>
               <span className="mt-0.5 block text-muted-foreground">
-                A superadmin has personally reviewed this intake. Required for high-risk classes
-                and Hold.
+                A superadmin has personally reviewed this intake. Required for high-risk classes and
+                Hold.
               </span>
             </span>
           </label>
@@ -165,7 +168,11 @@ function LabelStep({ flow }: { flow: CheckinFlow }) {
         <CardTitle>Label &amp; place</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5 pt-0">
-        <DrxCodePreview locationCode={flow.locationCode} code={state.code} onRetry={flow.loadCode} />
+        <DrxCodePreview
+          locationCode={flow.locationCode}
+          code={state.code}
+          onRetry={flow.loadCode}
+        />
 
         {flow.previewItem ? (
           <LabelPreview item={flow.previewItem} locationCode={flow.locationCode} />
@@ -204,8 +211,8 @@ function LabelStep({ flow }: { flow: CheckinFlow }) {
           <Alert>
             <ShieldCheck className="h-4 w-4" />
             <AlertDescription>
-              Supervisor acknowledgement is required before confirming. Go back to the location
-              step and tick the box.
+              Supervisor acknowledgement is required before confirming. Go back to the location step
+              and tick the box.
             </AlertDescription>
           </Alert>
         ) : null}

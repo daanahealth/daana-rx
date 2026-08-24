@@ -6,7 +6,13 @@
  * the label step with the server's message (regression for PR #9, where a
  * phantom "check-in complete" showed after a 4xx/5xx).
  */
-import { createItem, fetchNextCode, type CreateItemPayload, type NextCode, type NextCodeParams } from './api';
+import {
+  createItem,
+  fetchNextCode,
+  type CreateItemPayload,
+  type NextCode,
+  type NextCodeParams,
+} from './api';
 
 export type Phase = 'form' | 'location' | 'label' | 'success';
 

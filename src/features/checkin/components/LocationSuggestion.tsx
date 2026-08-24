@@ -71,9 +71,7 @@ export function LocationSuggestion({ specialtyClass, value, onChange }: Location
       {suggestion ? (
         <p className="text-xs text-muted-foreground">
           Suggested from &ldquo;{q}&rdquo;:{' '}
-          <span className="font-mono font-medium text-foreground">
-            {suggestion.location_code}
-          </span>
+          <span className="font-mono font-medium text-foreground">{suggestion.location_code}</span>
           {suggestion.match !== 'class_name' ? (
             <> (matched by {MATCH_LABEL[suggestion.match] ?? suggestion.match})</>
           ) : null}

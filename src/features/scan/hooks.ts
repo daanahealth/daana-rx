@@ -31,7 +31,11 @@ export function useUnitLookup() {
         toast({ title: 'Unit found', description: found.medicationName });
         setHistory((await listUnitTransactions(unitId)).map(toScanTransaction));
       } catch {
-        toast({ title: 'Unit not found', description: 'Check the code and try again.', variant: 'destructive' });
+        toast({
+          title: 'Unit not found',
+          description: 'Check the code and try again.',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }

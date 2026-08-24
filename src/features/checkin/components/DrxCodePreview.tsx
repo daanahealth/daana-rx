@@ -28,7 +28,11 @@ export function DrxCodePreview({ locationCode, code, onRetry }: DrxCodePreviewPr
       await navigator.clipboard.writeText(unitCode);
       toast({ title: 'Copied', description: 'DRX code copied to clipboard.' });
     } catch {
-      toast({ title: 'Copy failed', description: 'Copy the code manually.', variant: 'destructive' });
+      toast({
+        title: 'Copy failed',
+        description: 'Copy the code manually.',
+        variant: 'destructive',
+      });
     }
   };
 

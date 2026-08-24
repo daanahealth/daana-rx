@@ -20,7 +20,12 @@ import { transactionTypeLabel, type ScanTransaction, type ScanUnit } from './map
 const RESULT_COLUMNS: Column<ScanUnit>[] = [
   { key: 'name', header: 'Medication', primary: true, cell: (r) => r.medicationName },
   { key: 'generic', header: 'Generic', secondary: true, cell: (r) => r.genericName ?? '—' },
-  { key: 'available', header: 'Available', kind: 'number', cell: (r) => formatCount(r.availableQuantity) },
+  {
+    key: 'available',
+    header: 'Available',
+    kind: 'number',
+    cell: (r) => formatCount(r.availableQuantity),
+  },
   {
     key: 'expiry',
     header: 'Expiry',
@@ -120,8 +125,8 @@ export function ScanScreen() {
             <CardHeader className="flex-row items-start justify-between gap-3">
               <CardTitle>{lookup.unit.medicationName}</CardTitle>
               <span className="shrink-0 text-sm tabular-nums text-subtle-foreground">
-                {formatCount(lookup.unit.availableQuantity)} / {formatCount(lookup.unit.totalQuantity)}{' '}
-                available
+                {formatCount(lookup.unit.availableQuantity)} /{' '}
+                {formatCount(lookup.unit.totalQuantity)} available
               </span>
             </CardHeader>
             <CardContent className="space-y-5 pt-0">
@@ -133,7 +138,9 @@ export function ScanScreen() {
                   { label: 'Source', value: lookup.unit.source },
                   { label: 'Expiry', value: <DateText value={lookup.unit.expiryDate} expiry /> },
                   { label: 'Unit id', value: lookup.unit.unitId, code: true },
-                  ...(lookup.unit.notes ? [{ label: 'Notes', value: lookup.unit.notes, wide: true }] : []),
+                  ...(lookup.unit.notes
+                    ? [{ label: 'Notes', value: lookup.unit.notes, wide: true }]
+                    : []),
                 ]}
               />
               <Button
@@ -158,7 +165,10 @@ export function ScanScreen() {
                 rowKey={(t) => t.id}
                 columns={HISTORY_COLUMNS}
                 dense
-                empty={{ title: 'No transactions yet', description: 'Check-ins and check-outs for this unit will show here.' }}
+                empty={{
+                  title: 'No transactions yet',
+                  description: 'Check-ins and check-outs for this unit will show here.',
+                }}
               />
             </CardContent>
           </Card>

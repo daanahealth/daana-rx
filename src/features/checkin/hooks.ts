@@ -91,10 +91,7 @@ export function useCheckinFlow() {
     }
   }, [state.locationCode, suggested]);
 
-  const classification = useMemo(
-    () => suggestLocationForClass(specialtyClass),
-    [specialtyClass]
-  );
+  const classification = useMemo(() => suggestLocationForClass(specialtyClass), [specialtyClass]);
   const needsSupervisorReview = classification.requires_supervisor_review;
   const supervisorBlocked = needsSupervisorReview && !supervisorAcknowledged;
 

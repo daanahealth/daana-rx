@@ -7,13 +7,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { MEDICATION_FORMS } from '@daana-health/domain-mass';
 import { Form } from '@/components/ui/form';
-import {
-  DateField,
-  FieldRow,
-  SelectField,
-  TextareaField,
-  TextField,
-} from '@/components/composed';
+import { DateField, FieldRow, SelectField, TextareaField, TextField } from '@/components/composed';
 import type { MedicationFormValues } from '../schema';
 
 const FORM_OPTIONS = MEDICATION_FORMS.map((f) => ({ value: f, label: f }));

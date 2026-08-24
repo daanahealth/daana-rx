@@ -50,15 +50,21 @@ describe('schema + attributes', () => {
     expect(medicationFormSchema.safeParse({ ...values(), quantity: '12' }).success).toBe(true);
     expect(medicationFormSchema.safeParse({ ...values(), quantity: '' }).success).toBe(true);
     expect(medicationFormSchema.safeParse({ ...values(), quantity: '1.5' }).success).toBe(false);
-    expect(toMedicationAttributes({ ...values(), quantity: '7' as unknown as number }).quantity).toBe(7);
-    expect(toMedicationAttributes({ ...values(), quantity: '' as unknown as number }).quantity).toBeUndefined();
+    expect(
+      toMedicationAttributes({ ...values(), quantity: '7' as unknown as number }).quantity
+    ).toBe(7);
+    expect(
+      toMedicationAttributes({ ...values(), quantity: '' as unknown as number }).quantity
+    ).toBeUndefined();
   });
 });
 
 describe('preview item and payload', () => {
   it('never invents a unit code: empty until the server issues one', () => {
     expect(buildPreviewItem(values(), null).unitCode).toBe('');
-    expect(buildPreviewItem(values(), 'DRX-MASS-CARDIO-00012').unitCode).toBe('DRX-MASS-CARDIO-00012');
+    expect(buildPreviewItem(values(), 'DRX-MASS-CARDIO-00012').unitCode).toBe(
+      'DRX-MASS-CARDIO-00012'
+    );
   });
   it('flags a missing expiry through the domain validators', () => {
     const issues = domainIssues(buildPreviewItem({ ...values(), expiry_date: '' }, 'X'));
@@ -71,14 +77,19 @@ describe('preview item and payload', () => {
       locationCode: 'CARDIO1',
       expiryDate: '2027-03-07',
       dateReceived: '2026-08-23',
-      attributes: expect.objectContaining({ medication_name: 'Lisinopril', specialty_class: 'CARDIO' }),
+      attributes: expect.objectContaining({
+        medication_name: 'Lisinopril',
+        specialty_class: 'CARDIO',
+      }),
     });
   });
 });
 
 describe('toLocationOptions', () => {
   it('prefers configured bins and falls back to the guide', () => {
-    const configured = toLocationOptions([{ id: '1', code: 'CARDIO1', specialty: 'CARDIO', capacity: 50 }]);
+    const configured = toLocationOptions([
+      { id: '1', code: 'CARDIO1', specialty: 'CARDIO', capacity: 50 },
+    ]);
     expect(configured).toEqual([{ code: 'CARDIO1', hint: 'CARDIO' }]);
     expect(toLocationOptions([]).length).toBeGreaterThan(5);
   });

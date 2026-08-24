@@ -82,7 +82,9 @@ describe('flowReducer', () => {
     expect(canConfirm(atLabel, false)).toBe(true);
     expect(canConfirm(atLabel, true)).toBe(false);
     expect(canConfirm(flowReducer(atLabel, { type: 'saveStarted' }), false)).toBe(false);
-    expect(canConfirm(flowReducer(atLabel, { type: 'codeFailed', message: 'x' }), false)).toBe(false);
+    expect(canConfirm(flowReducer(atLabel, { type: 'codeFailed', message: 'x' }), false)).toBe(
+      false
+    );
     expect(canConfirm(initialFlowState, false)).toBe(false);
   });
 });
