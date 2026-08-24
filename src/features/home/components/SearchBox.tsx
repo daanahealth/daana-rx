@@ -28,7 +28,7 @@ export function SearchBox({ query, onChange }: SearchBoxProps) {
       />
       <Input
         ref={inputRef}
-        type="search"
+        type="text"
         inputMode="search"
         autoComplete="off"
         spellCheck={false}
