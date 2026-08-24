@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Lock, MapPin, Users, BookOpen, Gauge, User as UserIcon } from 'lucide-react';
+import { Lock, MapPin, Users, BookOpen, Gauge, User as UserIcon, Stethoscope } from 'lucide-react';
 import { RootState } from '../../store';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +20,16 @@ import { UsersManager } from '@/components/settings/UsersManager';
 import { ClassificationGuide } from '@/components/settings/ClassificationGuide';
 import { CapacityExplainer } from '@/components/settings/CapacityExplainer';
 import { AccountPanel } from '@/components/settings/AccountPanel';
+import { ProvidersManager } from '@/features/provider/components/ProvidersManager';
+import { ProviderRequestsPanel } from '@/features/provider/components/ProviderRequestsPanel';
 
-type SettingsTab = 'locations' | 'users' | 'classification' | 'capacity' | 'account';
+type SettingsTab =
+  | 'locations'
+  | 'users'
+  | 'classification'
+  | 'capacity'
+  | 'provider-requests'
+  | 'account';
 
 const TABS: Array<{
   value: SettingsTab;
@@ -32,6 +40,7 @@ const TABS: Array<{
   { value: 'users', label: 'Users', icon: Users },
   { value: 'classification', label: 'Classification Guide', icon: BookOpen },
   { value: 'capacity', label: 'Capacity', icon: Gauge },
+  { value: 'provider-requests', label: 'Provider requests', icon: Stethoscope },
   { value: 'account', label: 'Account', icon: UserIcon },
 ];
 
@@ -119,6 +128,10 @@ export default function SettingsPage() {
           </TabsContent>
           <TabsContent value="users" className="space-y-4">
             <UsersManager />
+            <ProvidersManager />
+          </TabsContent>
+          <TabsContent value="provider-requests" className="space-y-4">
+            <ProviderRequestsPanel />
           </TabsContent>
           <TabsContent value="classification" className="space-y-4">
             <ClassificationGuide />

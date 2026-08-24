@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { HomeClient } from '@/components/home/HomeClient';
+import { RoleSwitch } from '@/features/provider/RoleSwitch';
+import { ProviderHomeScreen } from '@/features/provider/ProviderHomeScreen';
 
 export const metadata: Metadata = {
   title: 'DaanaRX',
@@ -7,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <HomeClient />;
+  return (
+    <RoleSwitch provider={<ProviderHomeScreen />}>
+      <HomeClient />
+    </RoleSwitch>
+  );
 }

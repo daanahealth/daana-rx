@@ -32,6 +32,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { inviteProvider } from '@/features/provider/api';
+import {
+  PROVIDER_CREDENTIALS,
+  specialtyLabel,
+  type ProviderCredential,
+} from '@/features/provider/mappers';
+import { usernameFromEmail } from '@/features/provider/components/ProvidersManager';
+import { loadClassificationOverrides } from '@/components/settings/ClassificationGuide';
 
 // Spec § "Settings > User Management":
 //   - Add sub-user by email
@@ -40,7 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 //   - Upgrade existing user to superadmin
 //   - Deactivate user
 
-type SettingsRole = 'Superadmin' | 'Restricted User';
+type SettingsRole = 'Superadmin' | 'Restricted User' | 'Provider';
 
 interface UserRow {
   userId: string;
@@ -94,7 +102,14 @@ export function UsersManager() {
   const [addOpen, setAddOpen] = useState(false);
   const [addEmail, setAddEmail] = useState('');
   const [addRole, setAddRole] = useState<SettingsRole>('Restricted User');
+  const [addFullName, setAddFullName] = useState('');
+  const [addCredential, setAddCredential] = useState<ProviderCredential>('NP');
+  const [addSpecialty, setAddSpecialty] = useState('');
   const [saving, setSaving] = useState(false);
+  const specialties = loadClassificationOverrides()
+    .map((e) => e.class_name)
+    .filter((v, i, a) => !!v && a.indexOf(v) === i)
+    .sort();
 
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [editRole, setEditRole] = useState<SettingsRole>('Restricted User');
@@ -154,6 +169,44 @@ export function UsersManager() {
         description: 'Enter a valid email address.',
         variant: 'destructive',
       });
+      return;
+    }
+    if (addRole === 'Provider') {
+      if (!addFullName.trim() || !addSpecialty) {
+        toast({
+          title: 'Provider details needed',
+          description: 'Enter the full name and pick a specialty.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setSaving(true);
+      try {
+        await inviteProvider({
+          email: addEmail.trim(),
+          username: usernameFromEmail(addEmail.trim()),
+          fullName: addFullName.trim(),
+          credential: addCredential,
+          specialty: addSpecialty,
+        });
+        toast({
+          title: 'Provider added',
+          description: `${addFullName.trim()} can sign in with ${addEmail.trim()}.`,
+        });
+        setAddOpen(false);
+        setAddEmail('');
+        setAddFullName('');
+        setAddSpecialty('');
+        setAddRole('Restricted User');
+      } catch (err: any) {
+        toast({
+          title: 'Add failed',
+          description: err?.message ?? 'Unknown',
+          variant: 'destructive',
+        });
+      } finally {
+        setSaving(false);
+      }
       return;
     }
     setSaving(true);
@@ -417,9 +470,63 @@ export function UsersManager() {
                 <SelectContent>
                   <SelectItem value="Superadmin">Superadmin</SelectItem>
                   <SelectItem value="Restricted User">Restricted User</SelectItem>
+                  <SelectItem value="Provider">Provider</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {addRole === 'Provider' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="add-full-name">Full name *</Label>
+                  <Input
+                    id="add-full-name"
+                    placeholder="Karol Patel"
+                    autoComplete="off"
+                    value={addFullName}
+                    onChange={(e) => setAddFullName(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="add-credential">Credential *</Label>
+                    <Select
+                      value={addCredential}
+                      onValueChange={(v) => setAddCredential(v as ProviderCredential)}
+                    >
+                      <SelectTrigger id="add-credential">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROVIDER_CREDENTIALS.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-specialty">Specialty *</Label>
+                    <Select value={addSpecialty} onValueChange={setAddSpecialty}>
+                      <SelectTrigger id="add-specialty">
+                        <SelectValue placeholder="Pick a specialty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {specialties.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {specialtyLabel(s)} ({s})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Providers browse availability and request dispenses from their phone. They never
+                  touch stock.
+                </p>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>
