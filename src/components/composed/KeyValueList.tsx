@@ -10,7 +10,8 @@ import { cn } from '@/lib/utils';
  *     { label: 'Expiry', value: <DateText value={item.expiryDate} expiry /> },
  *   ]} />
  *
- * `columns` = 1 (stacked), 2 (default, collapses to 1 under sm) or 'inline'
+ * `columns` = 1 (stacked), 2 (default, collapses to 1 under sm), 3 (collapses
+ * to 2 under sm) or 'inline'
  * (label · value on one row, for compact cards).
  */
 export interface KeyValueItem {
@@ -24,7 +25,7 @@ export interface KeyValueItem {
 
 export interface KeyValueListProps {
   items: KeyValueItem[];
-  columns?: 1 | 2 | 'inline';
+  columns?: 1 | 2 | 3 | 'inline';
   className?: string;
 }
 
@@ -53,12 +54,22 @@ export function KeyValueList({ items, columns = 2, className }: KeyValueListProp
     <dl
       className={cn(
         'grid gap-x-6 gap-y-3 text-sm',
-        columns === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1',
+        columns === 2
+          ? 'grid-cols-1 sm:grid-cols-2'
+          : columns === 3
+            ? 'grid-cols-2 sm:grid-cols-3'
+            : 'grid-cols-1',
         className
       )}
     >
       {items.map((it, i) => (
-        <div key={i} className={cn('min-w-0', it.wide && 'sm:col-span-2')}>
+        <div
+          key={i}
+          className={cn(
+            'min-w-0',
+            it.wide && (columns === 3 ? 'col-span-2 sm:col-span-3' : 'sm:col-span-2')
+          )}
+        >
           <dt className="text-xs font-medium text-muted-foreground">{it.label}</dt>
           <dd
             className={cn(

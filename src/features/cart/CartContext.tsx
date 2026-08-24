@@ -2,54 +2,19 @@
 
 // CartContext
 // -----------------------------------------------------------------------------
-// Lightweight provider that layers cart-sidebar concerns (open/close, the
-// remote cart id, pending-approval queue, and platform-API plumbing) on top of
-// the existing Redux cart slice. We intentionally do NOT refactor the Redux
-// store — the spec calls for additive context, and the orchestrator forbids a
-// store rewrite. Redux still owns the persisted local "items" list (matching
-// the existing localStorage contract); this context owns the sidebar UI state
-// and the server-cart mirror (status, approvals list, server item ids).
+// Lightweight provider that layers cart-drawer concerns (open/close, the
+// server cart mirror, pending-approval queue) on top of the existing Redux
+// cart slice. Redux still owns the persisted legacy "items" list (the
+// localStorage contract the /cart page reads); this context owns the drawer
+// UI state and the platform server-cart mirror.
 //
-// The shell-polish branch already wires the top-right "View Cart" button. It
-// signals "please open the cart" by dispatching a `daana:open-cart`
-// CustomEvent on window. We listen for it here so the shell stays untouched.
+// The shell can ask the drawer to open by dispatching a `daana:open-cart`
+// CustomEvent on window; we listen for it here so the shell stays untouched.
 
 import * as React from 'react';
-import type { ItemStatus, CartStatus } from '@daana-health/inventory-core';
+import type { CartItemView, ServerCart } from './mappers';
 
-// -----------------------------------------------------------------------------
-// Shared item shape (platform `Item`, with the few extras we surface in the
-// cart row: medication display fields live inside `attributes`).
-// -----------------------------------------------------------------------------
-
-export interface CartItemView {
-  /** Server-side platform item id (uuid). */
-  readonly itemId: string;
-  /** DRX unit code, e.g. DRX-MASS-CARDIO1-00042. */
-  readonly unitCode: string;
-  readonly status: ItemStatus;
-  readonly expiryDate: string | null;
-  readonly locationCode: string | null;
-  readonly medicationName: string;
-  readonly dose: string | null;
-  readonly unit: string | null;
-  readonly form: string | null;
-  readonly quantity: number | null;
-  /** ISO timestamp the item was added to the cart. */
-  readonly addedAt: string;
-  /** Display name of the user who added the item. */
-  readonly addedBy: string | null;
-}
-
-export interface ServerCart {
-  readonly id: string;
-  readonly ownerId: string;
-  readonly ownerName?: string | null;
-  readonly status: CartStatus;
-  readonly submittedAt: string | null;
-  readonly expiresAt: string | null;
-  readonly items: readonly CartItemView[];
-}
+export type CartTab = 'mine' | 'approvals';
 
 interface CartContextValue {
   // UI state ----------------------------------------------------------------
@@ -70,9 +35,9 @@ interface CartContextValue {
   setPendingCarts(c: readonly ServerCart[]): void;
   readonly pendingCount: number;
 
-  // Active tab in the sidebar ----------------------------------------------
-  readonly activeTab: 'mine' | 'approvals';
-  setActiveTab(t: 'mine' | 'approvals'): void;
+  // Active tab in the drawer -----------------------------------------------
+  readonly activeTab: CartTab;
+  setActiveTab(t: CartTab): void;
 }
 
 const CartContext = React.createContext<CartContextValue | null>(null);
@@ -87,7 +52,7 @@ export function CartProvider({ children, isSuperadmin = false }: CartProviderPro
   const [open, setOpen] = React.useState(false);
   const [myCart, setMyCartState] = React.useState<ServerCart | null>(null);
   const [pendingCarts, setPendingCartsState] = React.useState<readonly ServerCart[]>([]);
-  const [activeTab, setActiveTab] = React.useState<'mine' | 'approvals'>('mine');
+  const [activeTab, setActiveTab] = React.useState<CartTab>('mine');
 
   // Auto-switch tab if a superadmin loses approvals access mid-session.
   React.useEffect(() => {
@@ -96,7 +61,7 @@ export function CartProvider({ children, isSuperadmin = false }: CartProviderPro
     }
   }, [isSuperadmin, activeTab]);
 
-  // Listen for window event from the shell's top-right cart button.
+  // Listen for the window event from the shell's cart button.
   React.useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handler = () => setOpen(true);
