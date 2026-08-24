@@ -29,46 +29,66 @@ export function authHeaders(): Record<string, string> {
   return getHeaders();
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { headers: getHeaders() });
+/**
+ * Error thrown by the api* helpers. `status` is the HTTP status (0 when the
+ * request never reached the gateway — offline, DNS, cold-start timeout) so
+ * callers can branch on 403 / 409 without string-matching the message.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+export function isApiError(err: unknown): err is ApiError {
+  return err instanceof ApiError;
+}
+
+async function run<T>(path: string, init: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...init, headers: getHeaders() });
+  } catch (err) {
+    throw new ApiError(
+      err instanceof Error && err.message ? err.message : 'Network request failed',
+      0
+    );
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed: ${res.status}`);
+    throw new ApiError(body?.error || `Request failed: ${res.status}`, res.status);
   }
   return res.json();
+}
+
+export async function apiGet<T>(path: string): Promise<T> {
+  return run<T>(path, { method: 'GET' });
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  return run<T>(path, {
     method: 'POST',
-    headers: getHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed: ${res.status}`);
-  }
-  return res.json();
 }
 
 export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  return run<T>(path, {
     method: 'PUT',
-    headers: getHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed: ${res.status}`);
-  }
-  return res.json();
+}
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return run<T>(path, {
+    method: 'PATCH',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { method: 'DELETE', headers: getHeaders() });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed: ${res.status}`);
-  }
-  return res.json();
+  return run<T>(path, { method: 'DELETE' });
 }

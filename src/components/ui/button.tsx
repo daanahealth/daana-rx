@@ -55,8 +55,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={props.disabled || loading}
         {...props}
       >
-        {loading && !asChild ? <Loader2 className="animate-spin" aria-hidden /> : null}
-        {children}
+        {asChild ? (
+          // Slot needs exactly one child; the spinner is only for real buttons.
+          children
+        ) : (
+          <>
+            {loading ? <Loader2 className="animate-spin" aria-hidden /> : null}
+            {children}
+          </>
+        )}
       </Comp>
     );
   }
