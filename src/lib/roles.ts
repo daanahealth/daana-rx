@@ -16,3 +16,13 @@ export function isReadOnlyRole(role: string | null | undefined): boolean {
 export function canModifyStock(role: string | null | undefined): boolean {
   return !isReadOnlyRole(role);
 }
+
+/** Superadmin: the only role that manages locations, users, the classification guide. */
+export function isSuperadmin(role: string | null | undefined): boolean {
+  return role === 'superadmin';
+}
+
+/** Can this role open the superadmin sections of Settings? (Mirrors the nav gate.) */
+export function canManageSettings(role: string | null | undefined): boolean {
+  return isSuperadmin(role);
+}

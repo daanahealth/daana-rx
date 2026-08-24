@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { HomeClient } from '@/components/home/HomeClient';
+import { HomeScreen } from '@/features/home/HomeScreen';
 
 export const metadata: Metadata = {
   title: 'DaanaRX',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <HomeClient />;
+  return <HomeScreen />;
 }
