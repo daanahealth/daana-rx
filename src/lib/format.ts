@@ -115,3 +115,30 @@ export function formatCount(n: number | null | undefined): string {
 export function pluralize(n: number, singular: string, plural = `${singular}s`): string {
   return `${formatCount(n)} ${n === 1 ? singular : plural}`;
 }
+
+/**
+ * Parse a typed US date ("03/07/2027", "3/7/2027", "03072027") to YYYY-MM-DD.
+ * Returns null when the text is not a real calendar date. Used by DateField so
+ * volunteers type the same MM/DD/YYYY they read everywhere else.
+ */
+export function parseUSDate(text: string): string | null {
+  const t = text.trim();
+  if (!t) return null;
+  const m = /^(\d{1,2})[\/\-.]?(\d{1,2})[\/\-.]?(\d{4})$/.exec(t.replace(/\s+/g, ''));
+  if (!m) return null;
+  const month = Number(m[1]);
+  const day = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return toISODate(d);
+}
+
+/** Insert slashes while typing digits: "0307" → "03/07", "03072027" → "03/07/2027". */
+export function maskUSDate(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}

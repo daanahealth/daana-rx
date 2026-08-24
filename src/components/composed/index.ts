@@ -6,7 +6,13 @@
  * See docs/FRONTEND_ARCHITECTURE.md and DESIGN.md.
  */
 export { PageHeader, type PageHeaderProps } from './PageHeader';
-export { DataTable, type DataTableProps, type Column, type SortState } from './DataTable';
+export {
+  DataTable,
+  compareCells,
+  type DataTableProps,
+  type Column,
+  type SortState,
+} from './DataTable';
 export { FilterBar, type FilterBarProps } from './FilterBar';
 export { MedicationCard, type MedicationCardProps } from './MedicationCard';
 export { QuantityStepper, type QuantityStepperProps } from './QuantityStepper';
@@ -20,9 +26,13 @@ export {
   TextareaField,
   SelectField,
   FieldRow,
+  DateField,
   type TextFieldProps,
   type TextareaFieldProps,
   type SelectFieldProps,
+  type DateFieldProps,
   type SelectOption,
 } from './fields';
 export { StatusChip, type StatusChipProps } from '@/components/ui/status-chip';
+export { PasswordField, type PasswordFieldProps } from './PasswordField';
+export { PasswordChecklist, type PasswordChecklistProps } from './PasswordChecklist';
