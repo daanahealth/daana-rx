@@ -51,7 +51,8 @@ export function FilterBar({
             aria-hidden
           />
           <Input
-            type="text" inputMode="search"
+            type="text"
+            inputMode="search"
             inputMode="search"
             autoComplete="off"
             spellCheck={false}
