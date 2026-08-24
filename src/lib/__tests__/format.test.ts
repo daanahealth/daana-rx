@@ -9,6 +9,8 @@ import {
   formatAge,
   formatCount,
   pluralize,
+  parseUSDate,
+  maskUSDate,
 } from '../format';
 
 describe('formatDate (MM/DD/YYYY everywhere — spec B3/T10)', () => {
@@ -84,5 +86,25 @@ describe('ages and counts', () => {
     expect(formatCount(null)).toBe('—');
     expect(pluralize(1, 'unit')).toBe('1 unit');
     expect(pluralize(12, 'unit')).toBe('12 units');
+  });
+});
+
+describe('parseUSDate / maskUSDate', () => {
+  it('parses MM/DD/YYYY (and lenient variants) to ISO', () => {
+    expect(parseUSDate('03/07/2027')).toBe('2027-03-07');
+    expect(parseUSDate('3/7/2027')).toBe('2027-03-07');
+    expect(parseUSDate('03072027')).toBe('2027-03-07');
+  });
+  it('rejects impossible dates and DD/MM confusion', () => {
+    expect(parseUSDate('13/01/2027')).toBeNull(); // no 13th month
+    expect(parseUSDate('02/30/2027')).toBeNull();
+    expect(parseUSDate('2027-03-07')).toBeNull(); // ISO is not what volunteers type
+    expect(parseUSDate('')).toBeNull();
+  });
+  it('masks slashes in as digits are typed', () => {
+    expect(maskUSDate('0')).toBe('0');
+    expect(maskUSDate('0307')).toBe('03/07');
+    expect(maskUSDate('03072027')).toBe('03/07/2027');
+    expect(maskUSDate('03/07/2027extra')).toBe('03/07/2027');
   });
 });

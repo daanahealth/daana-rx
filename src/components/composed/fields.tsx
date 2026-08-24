@@ -19,7 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { formatDate, maskUSDate, parseUSDate, toISODate } from '@/lib/format';
 
 /**
  * Form field wrappers — one component per field kind so every form in the
@@ -175,6 +180,150 @@ export function SelectField<TValues extends FieldValues>({
         </FormItem>
       )}
     />
+  );
+}
+
+export type DateFieldProps<TValues extends FieldValues> = BaseFieldProps<TValues> & {
+  placeholder?: string;
+  disabled?: boolean;
+  /** Extra props for the underlying <input> (id, autoFocus…). */
+  inputProps?: Omit<
+    React.ComponentProps<typeof Input>,
+    'name' | 'value' | 'onChange' | 'onBlur' | 'placeholder' | 'disabled'
+  >;
+};
+
+/**
+ * DateField — a date typed and read as MM/DD/YYYY (DESIGN.md: one date format
+ * everywhere), stored in the form as YYYY-MM-DD for the API. Typing masks the
+ * slashes in; the trailing calendar button opens a picker for the same field.
+ * An unparseable entry is left in the field as typed so the Zod message
+ * ("Enter the date as MM/DD/YYYY") can point at it.
+ */
+export function DateField<TValues extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  className,
+  optional,
+  placeholder = 'MM/DD/YYYY',
+  disabled,
+  inputProps,
+}: DateFieldProps<TValues>) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={cn('space-y-1.5', className)}>
+          <FormLabel className="text-xs font-medium text-subtle-foreground">
+            <LabelText optional={optional}>{label}</LabelText>
+          </FormLabel>
+          <DateInput
+            value={field.value ?? ''}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            inputProps={inputProps}
+          />
+          {description ? (
+            <FormDescription className="text-xs">{description}</FormDescription>
+          ) : null}
+          <FormMessage className="text-xs" />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+function displayFor(value: string): string {
+  if (!value) return '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? formatDate(value) : value;
+}
+
+function DateInput({
+  value,
+  onChange,
+  onBlur,
+  placeholder,
+  disabled,
+  inputProps,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onBlur: () => void;
+  placeholder: string;
+  disabled?: boolean;
+  inputProps?: DateFieldProps<FieldValues>['inputProps'];
+}) {
+  const [draft, setDraft] = React.useState(() => displayFor(value));
+  // Re-sync the text when the form value changes underneath us (reset, picker,
+  // a fallback button) — derived state from props, no effect needed.
+  const [synced, setSynced] = React.useState(value);
+  if (synced !== value) {
+    setSynced(value);
+    setDraft(displayFor(value));
+  }
+  const [open, setOpen] = React.useState(false);
+
+  const commit = (text: string) => {
+    if (!text.trim()) return onChange('');
+    const iso = parseUSDate(text);
+    onChange(iso ?? text);
+  };
+
+  const selected = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : undefined;
+
+  return (
+    <div className="flex items-stretch gap-2">
+      <FormControl>
+        <Input
+          {...inputProps}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={placeholder}
+          disabled={disabled}
+          value={draft}
+          onChange={(e) => {
+            const next = maskUSDate(e.target.value);
+            setDraft(next);
+            if (next.length === 10) commit(next);
+          }}
+          onBlur={() => {
+            commit(draft);
+            onBlur();
+          }}
+          className="tabular-nums"
+        />
+      </FormControl>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={disabled}
+            aria-label="Pick a date"
+            className="h-10 w-11 shrink-0 sm:w-10"
+          >
+            <CalendarIcon aria-hidden />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={selected}
+            defaultMonth={selected}
+            onSelect={(d) => {
+              onChange(d ? toISODate(d) : '');
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 
