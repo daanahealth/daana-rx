@@ -34,3 +34,5 @@ export {
   type SelectOption,
 } from './fields';
 export { StatusChip, type StatusChipProps } from '@/components/ui/status-chip';
+export { PasswordField, type PasswordFieldProps } from './PasswordField';
+export { PasswordChecklist, type PasswordChecklistProps } from './PasswordChecklist';
