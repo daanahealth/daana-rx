@@ -33,6 +33,7 @@ const COLUMNS: Column<LegacyTransactionRow>[] = [
     key: 'when',
     header: 'Date & time',
     kind: 'date',
+    secondary: true,
     cell: (r) => <DateText value={r.timestamp} withTime />,
     sortValue: (r) => r.timestamp,
   },
@@ -43,7 +44,7 @@ const COLUMNS: Column<LegacyTransactionRow>[] = [
     cell: (r) => <StatusChip kind="transaction" status={r.type} size="sm" />,
   },
   { key: 'medication', header: 'Medication', primary: true, cell: (r) => r.medicationName },
-  { key: 'strength', header: 'Strength', secondary: true, cell: (r) => r.strength ?? EMPTY },
+  { key: 'strength', header: 'Strength', cell: (r) => r.strength ?? EMPTY },
   { key: 'qty', header: 'Quantity', kind: 'number', cell: (r) => formatCount(r.quantity) },
   { key: 'user', header: 'User', cell: (r) => r.user ?? 'System' },
   {
@@ -108,7 +109,7 @@ export function LogsScreen() {
             value={filters.type || ALL}
             onValueChange={(v) => set('type', v === ALL ? '' : v)}
           >
-            <SelectTrigger aria-label="Transaction type">
+            <SelectTrigger aria-label="Transaction type" className="w-full sm:w-44">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -123,12 +124,14 @@ export function LogsScreen() {
           <Input
             type="date"
             aria-label="Start date"
+            className="w-full sm:w-40"
             value={filters.startDate}
             onChange={(e) => set('startDate', e.target.value)}
           />
           <Input
             type="date"
             aria-label="End date"
+            className="w-full sm:w-40"
             value={filters.endDate}
             onChange={(e) => set('endDate', e.target.value)}
           />

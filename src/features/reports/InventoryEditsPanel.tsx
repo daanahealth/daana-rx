@@ -12,6 +12,7 @@ function columns(directory: UserDirectory): Column<InventoryEditRow>[] {
       key: 'when',
       header: 'When',
       kind: 'date',
+      secondary: true,
       cell: (r) => <DateText value={r.timestamp} withTime />,
       sortValue: (r) => r.timestamp,
     },
@@ -25,7 +26,6 @@ function columns(directory: UserDirectory): Column<InventoryEditRow>[] {
     {
       key: 'field',
       header: 'Field',
-      secondary: true,
       cell: (r) => r.field,
       sortValue: (r) => r.field,
     },

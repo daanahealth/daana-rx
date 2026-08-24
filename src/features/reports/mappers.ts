@@ -8,7 +8,7 @@
  * accepts both, so the screens work whichever the backend sends.
  */
 import { ACTOR_KIND_LABEL, type ActorKind } from '@/lib/status';
-import { daysUntil } from '@/lib/format';
+import { daysUntil, formatDate } from '@/lib/format';
 import type { RawRecord } from './api';
 
 // ---------------------------------------------------------------------------
@@ -160,6 +160,13 @@ function dose(r: RawRecord | null): string | null {
   return unit && !d.endsWith(unit) ? `${d}${unit}` : d;
 }
 
+/** Edit diff values are raw JSON; a date-shaped value renders MM/DD/YYYY (spec B3). */
+export function displayValue(v: unknown): string | null {
+  const s = str(v);
+  if (s && /^\d{4}-\d{2}-\d{2}(T|$)/.test(s)) return formatDate(s);
+  return s;
+}
+
 export function isActorKind(v: unknown): v is ActorKind {
   return v === 'user' || v === 'system_ttl' || v === 'system_expiry_sweep';
 }
@@ -256,8 +263,8 @@ export function mapInventoryEdits(payload: unknown): InventoryEditRow[] {
           ...base,
           key: `${transactionId}:${field}:${i}`,
           field,
-          oldValue: str(pick(c, 'old', 'oldValue')),
-          newValue: str(pick(c, 'new', 'newValue')),
+          oldValue: displayValue(pick(c, 'old', 'oldValue')),
+          newValue: displayValue(pick(c, 'new', 'newValue')),
           actor: str(r.actor),
         });
       });
@@ -267,8 +274,8 @@ export function mapInventoryEdits(payload: unknown): InventoryEditRow[] {
         ...base,
         key: `${transactionId}:${field}`,
         field,
-        oldValue: str(pick(r, 'old_value', 'oldValue')),
-        newValue: str(pick(r, 'new_value', 'newValue')),
+        oldValue: displayValue(pick(r, 'old_value', 'oldValue')),
+        newValue: displayValue(pick(r, 'new_value', 'newValue')),
         actor: str(r.actor),
       });
     }

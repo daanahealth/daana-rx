@@ -15,7 +15,7 @@ function columns(directory: UserDirectory): Column<RecentlyRemovedRow>[] {
       cell: (r) => r.medicationName,
       sortValue: (r) => r.medicationName,
     },
-    { key: 'dose', header: 'Dose', secondary: true, cell: (r) => r.dosage ?? EMPTY },
+    { key: 'dose', header: 'Dose', cell: (r) => r.dosage ?? EMPTY },
     {
       key: 'location',
       header: 'Location',
@@ -27,6 +27,7 @@ function columns(directory: UserDirectory): Column<RecentlyRemovedRow>[] {
       key: 'removed',
       header: 'Removed',
       kind: 'date',
+      secondary: true,
       cell: (r) => <DateText value={r.removedAt} withTime />,
       sortValue: (r) => r.removedAt,
     },

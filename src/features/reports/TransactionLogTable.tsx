@@ -36,6 +36,7 @@ function columns(directory: UserDirectory): Column<TransactionRow>[] {
       key: 'when',
       header: 'Date & time',
       kind: 'date',
+      secondary: true,
       cell: (r) => <DateText value={r.timestamp} withTime />,
       sortValue: (r) => r.timestamp,
     },
@@ -56,7 +57,7 @@ function columns(directory: UserDirectory): Column<TransactionRow>[] {
     {
       key: 'dose',
       header: 'Dose',
-      secondary: true,
+      className: 'whitespace-nowrap',
       cell: (r) => [r.dosage, r.form].filter(Boolean).join(' · ') || EMPTY,
     },
     {
@@ -69,15 +70,24 @@ function columns(directory: UserDirectory): Column<TransactionRow>[] {
     {
       key: 'actor',
       header: 'Actor',
+      className: 'whitespace-nowrap',
       cell: (r) => actorLabel(r, directory),
       sortValue: (r) => actorLabel(r, directory),
     },
-    { key: 'reason', header: 'Reason', cell: (r) => r.reason ?? EMPTY },
+    {
+      key: 'reason',
+      header: 'Reason',
+      cell: (r) => (
+        <span className="block max-w-[16ch] truncate" title={r.reason ?? undefined}>
+          {r.reason ?? EMPTY}
+        </span>
+      ),
+    },
     {
       key: 'notes',
       header: 'Notes',
       cell: (r) => (
-        <span className="block max-w-[28ch] truncate" title={r.notes ?? undefined}>
+        <span className="block max-w-[20ch] truncate" title={r.notes ?? undefined}>
           {r.notes ?? EMPTY}
         </span>
       ),
@@ -131,7 +141,7 @@ export function TransactionLogTable({ directory }: { directory: UserDirectory })
             value={filters.actionType || ALL}
             onValueChange={(v) => set('actionType', v === ALL ? '' : v)}
           >
-            <SelectTrigger aria-label="Action type">
+            <SelectTrigger aria-label="Action type" className="w-full sm:w-44">
               <SelectValue placeholder="All actions" />
             </SelectTrigger>
             <SelectContent>
@@ -146,6 +156,7 @@ export function TransactionLogTable({ directory }: { directory: UserDirectory })
           <Input
             type="date"
             aria-label="From date"
+            className="w-full sm:w-40"
             value={filters.dateFrom}
             max={filters.dateTo || undefined}
             onChange={(e) => set('dateFrom', e.target.value)}
@@ -153,6 +164,7 @@ export function TransactionLogTable({ directory }: { directory: UserDirectory })
           <Input
             type="date"
             aria-label="To date"
+            className="w-full sm:w-40"
             value={filters.dateTo}
             min={filters.dateFrom || undefined}
             onChange={(e) => set('dateTo', e.target.value)}
@@ -160,6 +172,7 @@ export function TransactionLogTable({ directory }: { directory: UserDirectory })
           <Input
             aria-label="Actor"
             placeholder="Actor (username)"
+            className="w-full sm:w-44"
             autoComplete="off"
             value={filters.actor}
             onChange={(e) => set('actor', e.target.value)}
