@@ -20,7 +20,7 @@ import {
 } from '@/components/composed';
 import { useToast } from '@/hooks/use-toast';
 import { errorMessage } from '@/features/shared/useAsync';
-import { loadClassificationOverrides } from '@/components/settings/ClassificationGuide';
+import { loadClassificationOverrides } from '@/features/settings/mappers';
 import { inviteProvider, patchProvider } from '../api';
 import { useProviders } from '../hooks';
 import {
