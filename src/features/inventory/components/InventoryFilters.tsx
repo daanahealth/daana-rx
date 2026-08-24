@@ -46,7 +46,7 @@ export function InventoryFilters({
       trailing={trailing}
     >
       <Select value={filters.status} onValueChange={(v) => set('status', v as ItemStatus | 'all')}>
-        <SelectTrigger aria-label="Status">
+        <SelectTrigger aria-label="Status" className="w-[180px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -60,7 +60,7 @@ export function InventoryFilters({
       </Select>
 
       <Select value={filters.locationId} onValueChange={(v) => set('locationId', v)}>
-        <SelectTrigger aria-label="Location">
+        <SelectTrigger aria-label="Location" className="w-[180px]">
           <SelectValue placeholder="All locations" />
         </SelectTrigger>
         <SelectContent>
@@ -79,7 +79,7 @@ export function InventoryFilters({
         title="Expires before"
         value={filters.expiryBefore}
         onChange={(e) => set('expiryBefore', e.target.value)}
-        className="w-auto"
+        className="w-[170px]"
       />
     </FilterBar>
   );
