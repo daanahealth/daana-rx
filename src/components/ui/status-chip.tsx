@@ -5,11 +5,14 @@ import {
   ITEM_STATUS,
   REQUEST_STATUS,
   CART_STATUS,
+  TRANSACTION_ACTION,
+  transactionActionMeta,
   TONE_CLASSES,
   type ItemStatus,
   type RequestStatus,
   type CartStatus,
   type StatusMeta,
+  type TransactionAction,
   statusLabels,
 } from '@/lib/status';
 
@@ -19,6 +22,7 @@ import {
  *   <StatusChip status="active" />                    // item status (default)
  *   <StatusChip kind="request" status="fulfilled" />  // dispense request
  *   <StatusChip kind="cart" status="approved" />
+ *   <StatusChip kind="transaction" status="check_out" />  // audit-log action
  *
  * Tone + label come from src/lib/status.ts; never pass colours in. Sets
  * `data-status` so e2e tests and tables can target it.
@@ -35,7 +39,9 @@ type ChipProps<K extends string, S extends string> = {
 export type StatusChipProps =
   | ChipProps<'item', ItemStatus>
   | ChipProps<'request', RequestStatus>
-  | ChipProps<'cart', CartStatus>;
+  | ChipProps<'cart', CartStatus>
+  // Any string: the log must render actions a newer backend adds.
+  | ChipProps<'transaction', TransactionAction | (string & {})>;
 
 function metaFor(props: StatusChipProps): StatusMeta {
   switch (props.kind) {
@@ -43,6 +49,10 @@ function metaFor(props: StatusChipProps): StatusMeta {
       return REQUEST_STATUS[props.status];
     case 'cart':
       return CART_STATUS[props.status];
+    case 'transaction':
+      return props.status in TRANSACTION_ACTION
+        ? TRANSACTION_ACTION[props.status as TransactionAction]
+        : transactionActionMeta(props.status);
     default:
       return ITEM_STATUS[props.status as ItemStatus];
   }

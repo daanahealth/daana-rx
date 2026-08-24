@@ -55,7 +55,86 @@ export const CART_STATUS: Record<CartStatus, StatusMeta> = {
   expired: { label: 'Expired', tone: 'quiet', hint: 'Timed out; units released.' },
 };
 
+/**
+ * Transaction actions — the audit-log vocabulary. inventory-core's
+ * TransactionAction plus the request lifecycle actions added by backend
+ * migration 005 (request_* / unit_returned). Additive: unknown actions still
+ * render (see transactionActionMeta) so a newer backend never blanks a row.
+ */
+export type TransactionAction =
+  | 'check_in'
+  | 'check_out'
+  | 'edit'
+  | 'remove'
+  | 'cart_approved'
+  | 'cart_rejected'
+  | 'expired_override'
+  | 'request_created'
+  | 'request_fulfilled'
+  | 'request_denied'
+  | 'request_cancelled'
+  | 'request_expired'
+  | 'unit_returned'
+  // Legacy units-table transaction types (/transactions/all).
+  | 'adjust';
+
+export const TRANSACTION_ACTION: Record<TransactionAction, StatusMeta> = {
+  check_in: { label: 'Check In', tone: 'ok', hint: 'Unit added to the shelf.' },
+  check_out: { label: 'Check Out', tone: 'info', hint: 'Unit dispensed.' },
+  edit: { label: 'Edit', tone: 'quiet', hint: 'Unit details changed.' },
+  remove: { label: 'Remove', tone: 'danger', hint: 'Unit taken out of inventory.' },
+  cart_approved: { label: 'Cart Approved', tone: 'ok', hint: 'Cart checkout approved.' },
+  cart_rejected: { label: 'Cart Rejected', tone: 'danger', hint: 'Cart checkout declined.' },
+  expired_override: {
+    label: 'Expired Override',
+    tone: 'warn',
+    hint: 'Expired unit dispensed with an override.',
+  },
+  request_created: { label: 'Request Created', tone: 'warn', hint: 'Provider raised a request.' },
+  request_fulfilled: { label: 'Request Fulfilled', tone: 'ok', hint: 'Request dispensed.' },
+  request_denied: { label: 'Request Denied', tone: 'danger', hint: 'Request declined.' },
+  request_cancelled: {
+    label: 'Request Cancelled',
+    tone: 'quiet',
+    hint: 'Request withdrawn by the provider.',
+  },
+  request_expired: {
+    label: 'Request Expired',
+    tone: 'quiet',
+    hint: 'Request timed out at end of day.',
+  },
+  unit_returned: {
+    label: 'Unit Returned',
+    tone: 'info',
+    hint: 'Reserved unit put back on the shelf.',
+  },
+  adjust: { label: 'Adjustment', tone: 'quiet', hint: 'Quantity adjusted.' },
+};
+
+/** Human label for any action string; unknown actions are title-cased. */
+export function transactionActionMeta(action: string | null | undefined): StatusMeta {
+  if (action && action in TRANSACTION_ACTION)
+    return TRANSACTION_ACTION[action as TransactionAction];
+  const label = (action ?? '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+  return { label: label || 'Unknown', tone: 'quiet', hint: 'Unrecognised transaction action.' };
+}
+
+/**
+ * Who wrote a transaction (spec B4). Humans are 'user'; automated jobs are
+ * labelled so the log never shows a blank actor.
+ */
+export type ActorKind = 'user' | 'system_ttl' | 'system_expiry_sweep';
+
+export const ACTOR_KIND_LABEL: Record<Exclude<ActorKind, 'user'>, string> = {
+  system_ttl: 'System (TTL)',
+  system_expiry_sweep: 'System (expiry sweep)',
+};
+
 export const ITEM_STATUSES = Object.keys(ITEM_STATUS) as ItemStatus[];
+export const TRANSACTION_ACTIONS = Object.keys(TRANSACTION_ACTION) as TransactionAction[];
 export const REQUEST_STATUSES = Object.keys(REQUEST_STATUS) as RequestStatus[];
 
 export function isItemStatus(value: unknown): value is ItemStatus {
