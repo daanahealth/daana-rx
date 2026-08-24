@@ -6,126 +6,98 @@
       {
         "rule": "design-system-color",
         "value": "#ddd",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.464Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-color",
         "value": "#dc2626",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.499Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-color",
         "value": "#666",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.530Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-color",
         "value": "#888",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.560Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-color",
         "value": "#eee",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.588Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-color",
         "value": "white",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.616Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font",
         "value": "arial",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.645Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "6px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.674Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "7px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.704Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "8px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.733Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "9px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.761Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "10px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.791Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-font-size",
         "value": "12px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-23T23:00:10.820Z",
         "reason": "print label: lane brief requires the printed 4x2in DRX label to stay pixel-identical; it is paper output, not themed UI"
       },
       {
         "rule": "design-system-radius",
         "value": "2px",
-        "files": [
-          "src/components/unit-label/UnitLabel.tsx"
-        ],
+        "files": ["src/components/unit-label/UnitLabel.tsx"],
         "createdAt": "2026-08-24T03:13:47.599Z",
         "reason": "print label: must stay pixel-identical on paper"
       }
