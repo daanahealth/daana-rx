@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSelector } from 'react-redux';
-import { BookOpen, Gauge, MapPin, User as UserIcon, Users } from 'lucide-react';
+import { BookOpen, Gauge, MapPin, Stethoscope, User as UserIcon, Users } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/composed';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,8 +21,16 @@ import { UsersManager } from './components/UsersManager';
 import { ClassificationGuide } from './components/ClassificationGuide';
 import { CapacityExplainer } from './components/CapacityExplainer';
 import { AccountPanel } from './components/AccountPanel';
+import { ProvidersManager } from '@/features/provider/components/ProvidersManager';
+import { ProviderRequestsPanel } from '@/features/provider/components/ProviderRequestsPanel';
 
-type SettingsTab = 'locations' | 'users' | 'classification' | 'capacity' | 'account';
+type SettingsTab =
+  | 'locations'
+  | 'users'
+  | 'classification'
+  | 'capacity'
+  | 'provider-requests'
+  | 'account';
 
 const TABS: Array<{
   value: SettingsTab;
@@ -33,6 +41,7 @@ const TABS: Array<{
   { value: 'users', label: 'Users', icon: Users },
   { value: 'classification', label: 'Classification', icon: BookOpen },
   { value: 'capacity', label: 'Capacity', icon: Gauge },
+  { value: 'provider-requests', label: 'Provider requests', icon: Stethoscope },
   { value: 'account', label: 'Account', icon: UserIcon },
 ];
 
@@ -58,7 +67,7 @@ export function SettingsScreen() {
     <AppShell>
       <PageHeader
         title="Settings"
-        description="Locations, users, classification rules, capacity, and your account."
+        description="Locations, users, providers, classification rules, capacity, and your account."
       />
       <Tabs
         value={tab}
@@ -98,14 +107,18 @@ export function SettingsScreen() {
         <TabsContent value="locations" className="mt-0">
           <LocationsManager />
         </TabsContent>
-        <TabsContent value="users" className="mt-0">
+        <TabsContent value="users" className="mt-0 flex flex-col gap-8">
           <UsersManager />
+          <ProvidersManager />
         </TabsContent>
         <TabsContent value="classification" className="mt-0">
           <ClassificationGuide />
         </TabsContent>
         <TabsContent value="capacity" className="mt-0">
           <CapacityExplainer />
+        </TabsContent>
+        <TabsContent value="provider-requests" className="mt-0">
+          <ProviderRequestsPanel />
         </TabsContent>
         <TabsContent value="account" className="mt-0">
           <AccountPanel onJumpToUsers={() => setTab('users')} />

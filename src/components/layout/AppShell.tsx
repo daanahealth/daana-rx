@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { NavBadge } from '@/components/composed/NavBadge';
 import { navItemsForRole, isNavActive, type NavItem, type NavBadgeKey } from '@/lib/navigation';
 import { isReadOnlyRole } from '@/lib/roles';
+import { usePendingRequestCount } from '@/features/requests/hooks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -221,6 +222,9 @@ export function AppShell({ children, badges }: AppShellProps) {
   const navItems = navItemsForRole(role);
   const isSuperadmin = role === 'superadmin';
   const showCart = !isReadOnlyRole(role);
+  // Request-queue badge: polled every 30 s for superadmins, silent on error.
+  const pendingRequests = usePendingRequestCount(isSuperadmin && isAuthenticated && hasHydrated);
+  const liveBadges = { pendingRequests, ...badges };
 
   if (!hasHydrated) {
     return (
@@ -281,7 +285,7 @@ export function AppShell({ children, badges }: AppShellProps) {
           <SidebarBody
             navItems={navItems}
             pathname={pathname}
-            badges={badges}
+            badges={liveBadges}
             onNavigate={handleNavigation}
           />
           {sidebarFooter}
@@ -308,7 +312,7 @@ export function AppShell({ children, badges }: AppShellProps) {
                   <SidebarBody
                     navItems={navItems}
                     pathname={pathname}
-                    badges={badges}
+                    badges={liveBadges}
                     onNavigate={handleNavigation}
                   />
                   {sidebarFooter}
