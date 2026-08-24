@@ -2,32 +2,29 @@
 
 // AddToCartButton
 // -----------------------------------------------------------------------------
-// Handles the optimistic "add to cart" UX and the spec's concurrent-conflict
-// path (§ "Concurrent Checkout Conflict"):
+// Optimistic "add to cart" with the spec's concurrent-conflict path
+// (§ "Concurrent Checkout Conflict"):
 //
 //   POST /carts/{id}/items -> 409 with conflict=concurrent_checkout
 //     -> toast verbatim: "This medication has just been checked out. Please
 //        refresh and select another unit."
 //     -> remove the item from local cart state.
 //
-// The button is also the entry point for the superadmin's expired-override
-// flow: when the API returns ExpiredOverrideRequiredError we surface a friendly
-// hint and ask the parent to open the override modal. (The ResultCard renders
-// a dedicated red "Override and Check Out" button for expired items so this
-// path is the safety net only.)
+// Also the safety net for the superadmin's expired-override flow: when the
+// API returns ExpiredOverrideRequiredError we surface a hint and ask the
+// parent to open the override dialog. (ResultCard renders a dedicated
+// "Override and Check Out" button for expired items, so this path is rare.)
+//
+// Superadmins check out; everyone else builds a request a superadmin approves,
+// so the label follows the role.
 
 import * as React from 'react';
-import { Loader2, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import {
-  ConcurrentConflictError,
-  ExpiredOverrideRequiredError,
-  addItemToCart,
-  platformItemToCartItem,
-  type PlatformItemDTO,
-} from '@/lib/cartApi';
-import { useCart } from './CartContext';
+import { ConcurrentConflictError, ExpiredOverrideRequiredError, addItemToCart } from '../api';
+import { platformItemToCartItem, type PlatformItemDTO } from '../mappers';
+import { useCart } from '../CartContext';
 
 export interface AddToCartButtonProps {
   readonly item: PlatformItemDTO;
@@ -73,38 +70,24 @@ export function AddToCartButton({
     }
     setLoading(true);
 
-    // Optimistic add: insert into local cart state immediately. We will roll
-    // back if the server rejects (e.g. concurrent conflict).
+    // Optimistic add: insert into local cart state immediately. Rolled back
+    // if the server rejects (e.g. concurrent conflict).
     const optimistic = platformItemToCartItem(item, new Date().toISOString(), addedByName ?? null);
     if (cart.myCart) {
-      cart.setMyCart({
-        ...cart.myCart,
-        items: [...cart.myCart.items, optimistic],
-      });
+      cart.setMyCart({ ...cart.myCart, items: [...cart.myCart.items, optimistic] });
     }
 
     try {
-      await addItemToCart(cartId, item.id, {
-        override: !!overrideNote,
-        note: overrideNote,
-      });
-      toast({
-        title: 'Added to cart',
-        description: `${item.unit_code} reserved.`,
-      });
+      await addItemToCart(cartId, item.id, { override: !!overrideNote, note: overrideNote });
+      toast({ title: 'Added to cart', description: `${item.unit_code} reserved.` });
       cart.setOpen(true);
       onAdded?.();
     } catch (err) {
-      // Rollback optimistic add.
       cart.removeLocalItem(item.id);
 
       if (err instanceof ConcurrentConflictError) {
         // Spec verbatim message lives on err.message.
-        toast({
-          title: 'Item unavailable',
-          description: err.message,
-          variant: 'destructive',
-        });
+        toast({ title: 'Item unavailable', description: err.message, variant: 'destructive' });
       } else if (err instanceof ExpiredOverrideRequiredError) {
         toast({
           title: 'Expired medication',
@@ -115,7 +98,7 @@ export function AddToCartButton({
       } else {
         toast({
           title: 'Could not add to cart',
-          description: (err as Error)?.message ?? 'Unknown error',
+          description: err instanceof Error ? err.message : 'Unknown error',
           variant: 'destructive',
         });
       }
@@ -135,13 +118,15 @@ export function AddToCartButton({
   ]);
 
   return (
-    <Button size="lg" onClick={handleClick} disabled={disabled} className={className}>
-      {loading ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        <ShoppingCart className="mr-2 h-4 w-4" />
-      )}
-      Check Out
+    <Button
+      onClick={handleClick}
+      disabled={disabled}
+      loading={loading}
+      className={className}
+      size="touch"
+    >
+      <ShoppingCart aria-hidden />
+      {isSuperadmin ? 'Check Out' : 'Add to Cart'}
     </Button>
   );
 }

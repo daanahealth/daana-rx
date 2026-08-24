@@ -156,7 +156,7 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   // the sidebar nav's "Check Out" link.
   const card = page
     .locator('div')
-    .filter({ has: page.getByRole('button', { name: /View in Inventory/i }) })
+    .filter({ has: page.getByRole('link', { name: /View in Inventory/i }) })
     .last();
   await expect(card, 'result card').toBeVisible({ timeout: 15_000 });
   const checkOutBtn = card.getByRole('button', { name: 'Check Out' });
@@ -201,7 +201,7 @@ test('3. checkout: search -> add to cart -> confirm checkout', async ({ page }) 
   await page.screenshot({ path: `${SHOT}/flow-03d-after-search.png`, fullPage: true });
   const activeCards = page
     .locator('div')
-    .filter({ has: page.getByRole('button', { name: /View in Inventory/i }) });
+    .filter({ has: page.getByRole('link', { name: /View in Inventory/i }) });
   const n = await activeCards.count();
   // eslint-disable-next-line no-console
   console.log('[active result cards for the checked-out item] ' + n);
