@@ -113,13 +113,12 @@ export function useCheckinFlow() {
   const goToLocation = async () => {
     // specialty_class is intentionally NOT gated here: the bin chosen on the
     // location step is authoritative and the class is backfilled from it.
-    const ok = await trigger(['medication_name', 'dosage', 'unit', 'form', 'date_received']);
+    const required = ['medication_name', 'dosage', 'unit', 'form', 'date_received'] as const;
+    const ok = await trigger(required);
     if (!ok) {
-      toast({
-        title: 'Fix the highlighted fields',
-        description: 'Some required fields are missing or invalid.',
-        variant: 'destructive',
-      });
+      // The field itself names the problem; put the cursor there.
+      const first = required.find((name) => form.getFieldState(name).invalid);
+      if (first) form.setFocus(first);
       return;
     }
     dispatch({ type: 'goTo', phase: 'location' });
