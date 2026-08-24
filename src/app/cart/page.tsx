@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Loader2, ShoppingCart, Trash2, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { formatDate } from '@/lib/format';
 import Link from 'next/link';
 import { AppShell } from '../../components/layout/AppShell';
 import { RootState } from '../../store';
@@ -137,7 +138,7 @@ function CartContent() {
                                   : 'secondary'
                               }
                             >
-                              {new Date(item.unit.expiryDate).toLocaleDateString()}
+                              {formatDate(item.unit.expiryDate)}
                             </Badge>
                           </TableCell>
                           <TableCell>

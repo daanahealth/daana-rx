@@ -1,4 +1,10 @@
 import { QRCodeSVG } from 'qrcode.react';
+import { formatMonthYear, EMPTY } from '@/lib/format';
+
+const formatMonthYearOrNA = (d?: string | Date | null) => {
+  const out = formatMonthYear(d);
+  return out === EMPTY ? 'N/A' : out;
+};
 
 type UnitLabelProps = {
   unitId: string;
@@ -15,13 +21,6 @@ type UnitLabelProps = {
   donationSource?: string | null;
   locationName?: string | null;
 };
-
-function formatExpiryMMYYYY(expiryDate?: string | Date | null) {
-  if (!expiryDate) return 'N/A';
-  const date = typeof expiryDate === 'string' ? new Date(expiryDate) : expiryDate;
-  if (Number.isNaN(date.getTime())) return 'N/A';
-  return date.toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' });
-}
 
 export function UnitLabel({
   unitId,
@@ -138,7 +137,7 @@ export function UnitLabel({
 
         <div style={{ marginBottom: '2px', fontSize: '8px' }}>
           <span style={{ fontWeight: 600 }}>EXP: </span>
-          {formatExpiryMMYYYY(expiryDate)}
+          {formatMonthYearOrNA(expiryDate)}
         </div>
 
         <div style={{ marginBottom: '2px', fontSize: '8px' }}>

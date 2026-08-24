@@ -18,5 +18,8 @@ echo "Gateway target:  $E2E_GATEWAY_URL"
 [ -n "${E2E_TEST_EMAIL:-}" ] && echo "Account: ${E2E_TEST_EMAIL} (provided)" || echo "Account: self-provisioned throwaway clinic"
 
 npx playwright install --with-deps chromium >/dev/null 2>&1 || npx playwright install chromium
-rm -rf e2e/screenshots/pr && mkdir -p e2e/screenshots/pr
-npx playwright test --config e2e/playwright.config.ts e2e/pr-walkthrough.spec.ts --reporter=list
+# E2E_PROJECT=mobile runs the phone viewport into e2e/screenshots/pr-mobile.
+PROJECT="${E2E_PROJECT:-chromium}"
+if [ "$PROJECT" = "mobile" ]; then export E2E_SHOT_DIR="e2e/screenshots/pr-mobile"; else export E2E_SHOT_DIR="e2e/screenshots/pr"; fi
+rm -rf "$E2E_SHOT_DIR" && mkdir -p "$E2E_SHOT_DIR"
+npx playwright test --config e2e/playwright.config.ts e2e/pr-walkthrough.spec.ts --project="$PROJECT" --reporter=list

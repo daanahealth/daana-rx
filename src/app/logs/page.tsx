@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Filter, RefreshCw } from 'lucide-react';
+import { formatDateTime } from '@/lib/format';
 import { AppShell } from '../../components/layout/AppShell';
 import { transactions as txApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -258,7 +259,7 @@ export default function LogsPage() {
                         </div>
 
                         <div className="text-xs text-muted-foreground">
-                          {new Date(tx.timestamp).toLocaleString()}
+                          {formatDateTime(tx.timestamp)}
                         </div>
 
                         {tx.notes && (
@@ -287,9 +288,7 @@ export default function LogsPage() {
                     <TableBody>
                       {transactions.map((tx) => (
                         <TableRow key={tx.transactionId}>
-                          <TableCell className="text-sm">
-                            {new Date(tx.timestamp).toLocaleString()}
-                          </TableCell>
+                          <TableCell className="text-sm">{formatDateTime(tx.timestamp)}</TableCell>
                           <TableCell>
                             <Badge
                               variant={getTypeBadgeVariant(tx.type) as any}

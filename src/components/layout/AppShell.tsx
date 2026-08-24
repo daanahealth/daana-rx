@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
@@ -10,9 +10,11 @@ import { ClinicSwitcher } from '../ClinicSwitcher';
 import { AppInitializer } from '../AppInitializer';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { NavBadge } from '@/components/composed/NavBadge';
+import { navItemsForRole, isNavActive, type NavItem, type NavBadgeKey } from '@/lib/navigation';
 import { isReadOnlyRole } from '@/lib/roles';
 import {
   DropdownMenu,
@@ -22,69 +24,68 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Home,
-  PackageCheck,
-  PackageMinus,
-  Package,
-  FileText,
-  Settings,
-  LogOut,
-  Menu,
-  Loader2,
-  ShoppingCart,
-  User as UserIcon,
-} from 'lucide-react';
+import { Settings, LogOut, Menu, Loader2, ShoppingCart, User as UserIcon } from 'lucide-react';
 
+/**
+ * AppShell — sidebar (≥ md) / left sheet (< md), 56px top bar, content column.
+ * Navigation is role-aware via src/lib/navigation.ts. Badge counts are passed
+ * in by whoever owns the data (the request queue lane wires `pendingRequests`).
+ */
 interface AppShellProps {
   children: React.ReactNode;
+  /** Live counts rendered as NavBadges, keyed by NavItem.badge. */
+  badges?: Partial<Record<NavBadgeKey, number>>;
 }
 
-interface NavItem {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href: string;
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-sm font-semibold text-primary-foreground',
+        className
+      )}
+    >
+      D
+    </span>
+  );
+}
+
+function BrandHeader() {
+  return (
+    <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
+      <BrandMark />
+      <span className="text-base font-semibold tracking-tight text-foreground">DaanaRX</span>
+    </div>
+  );
 }
 
 function NavLink({
   item,
   isActive,
+  badge,
   onNavigate,
 }: {
   item: NavItem;
   isActive: boolean;
+  badge?: number;
   onNavigate: (href: string) => void;
 }) {
-  const handleClick = useCallback(() => {
-    onNavigate(item.href);
-  }, [item.href, onNavigate]);
-
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={() => onNavigate(item.href)}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'group relative flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium',
-        'transition-all duration-200 ease-out',
+        'flex h-9 w-full items-center gap-2.5 rounded-sm px-2.5 text-sm font-medium',
         isActive
-          ? 'bg-primary text-primary-foreground shadow-soft'
-          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+          : 'text-sidebar-foreground hover:bg-card hover:text-foreground'
       )}
     >
-      {isActive && (
-        <span
-          aria-hidden
-          className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-foreground/70"
-        />
-      )}
-      <item.icon
-        className={cn(
-          'h-5 w-5 transition-transform duration-200',
-          isActive ? 'scale-105' : 'group-hover:scale-110'
-        )}
-      />
+      <item.icon className="h-[18px] w-[18px] shrink-0" />
       <span className="flex-1 text-left">{item.label}</span>
+      {item.badge ? <NavBadge count={badge} label={`${item.label.toLowerCase()} pending`} /> : null}
     </button>
   );
 }
@@ -92,114 +93,105 @@ function NavLink({
 function SidebarBody({
   navItems,
   pathname,
+  badges,
   onNavigate,
 }: {
   navItems: NavItem[];
   pathname: string;
+  badges?: Partial<Record<NavBadgeKey, number>>;
   onNavigate: (href: string) => void;
 }) {
   return (
-    <ScrollArea className="flex-1 px-4 py-4">
-      <div className="space-y-1">
+    <ScrollArea className="flex-1 px-3 py-3">
+      <nav aria-label="Main" className="flex flex-col gap-0.5">
         {navItems.map((item) => (
           <NavLink
             key={item.href}
             item={item}
-            isActive={
-              item.href === '/'
-                ? pathname === '/'
-                : pathname === item.href || pathname.startsWith(item.href + '/')
-            }
+            isActive={isNavActive(item.href, pathname)}
+            badge={item.badge ? badges?.[item.badge] : undefined}
             onNavigate={onNavigate}
           />
         ))}
-      </div>
+      </nav>
     </ScrollArea>
-  );
-}
-
-function BrandHeader() {
-  return (
-    <div className="flex h-16 items-center border-b border-border/60 px-5">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-          <span className="text-base font-bold">D</span>
-        </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-base font-semibold tracking-tight">DaanaRX</span>
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Medication tracking
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
 
 function UserAvatar({ username }: { username: string | undefined }) {
   const initials = (username || 'U').trim().slice(0, 2).toUpperCase();
   return (
-    <Avatar className="h-8 w-8">
-      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+    <Avatar className="h-7 w-7">
+      <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
         {initials}
       </AvatarFallback>
     </Avatar>
   );
 }
 
-function SidebarFooter({
+function roleLabel(role: string | undefined): string {
+  switch (role) {
+    case 'superadmin':
+      return 'Superadmin';
+    case 'admin':
+      return 'Admin';
+    case 'employee':
+      return 'Employee';
+    case 'provider':
+      return 'Provider';
+    default:
+      return 'Member';
+  }
+}
+
+function AccountMenu({
   username,
   role,
+  align,
+  side,
+  showSettings,
   onAccount,
+  onSettings,
   onLogout,
+  trigger,
 }: {
   username: string | undefined;
   role: string | undefined;
+  align: 'start' | 'end';
+  side?: 'top' | 'bottom';
+  showSettings: boolean;
   onAccount: () => void;
+  onSettings: () => void;
   onLogout: () => void;
+  trigger: React.ReactNode;
 }) {
   return (
-    <div className="mt-auto border-t border-border/60 p-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              'flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left',
-              'transition-colors duration-200 hover:bg-accent/60'
-            )}
-          >
-            <UserAvatar username={username} />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-sm font-medium">{username || 'User'}</span>
-              <span className="truncate text-xs capitalize text-muted-foreground">
-                {role || 'member'}
-              </span>
-            </div>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-56">
-          <DropdownMenuLabel className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">{username || 'User'}</span>
-            <span className="text-xs font-normal capitalize text-muted-foreground">
-              {role || 'member'}
-            </span>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onAccount}>
-            <UserIcon className="h-4 w-4" /> My account
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent align={align} side={side} className="w-56 shadow-overlay">
+        <DropdownMenuLabel className="flex flex-col gap-0.5">
+          <span className="truncate text-sm font-semibold">{username || 'User'}</span>
+          <span className="text-xs font-normal text-muted-foreground">{roleLabel(role)}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onAccount}>
+          <UserIcon className="h-4 w-4" /> My account
+        </DropdownMenuItem>
+        {showSettings ? (
+          <DropdownMenuItem onSelect={onSettings}>
+            <Settings className="h-4 w-4" /> Settings
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onLogout} className="text-destructive focus:text-destructive">
-            <LogOut className="h-4 w-4" /> Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+        ) : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onLogout} className="text-danger focus:text-danger">
+          <LogOut className="h-4 w-4" /> Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, badges }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -221,48 +213,19 @@ export function AppShell({ children }: AppShellProps) {
     [router]
   );
 
-  const handleAccount = useCallback(() => {
-    router.push('/account');
-  }, [router]);
+  const handleAccount = useCallback(() => router.push('/account'), [router]);
+  const handleSettings = useCallback(() => router.push('/settings'), [router]);
+  const handleViewCart = useCallback(() => router.push('/cart'), [router]);
 
-  const handleViewCart = useCallback(() => {
-    router.push('/cart');
-  }, [router]);
-
-  // Spec order: Home, Check In, Check Out, Inventory, Reports, Settings.
-  // Settings is only shown to admins/superadmins.
-  const navItems: NavItem[] = useMemo(() => {
-    // Providers get a browse-and-request view only: they can see what's in
-    // stock and raise a request for it, but never check in, edit, or remove.
-    // Their "Check Out" is really a request — a non-superadmin add puts the
-    // unit in pending_approval for a superadmin to decide on.
-    if (isReadOnlyRole(user?.userRole)) {
-      return [
-        { icon: Home, label: 'Home', href: '/' },
-        { icon: Package, label: 'Inventory', href: '/inventory' },
-        { icon: PackageMinus, label: 'Request', href: '/checkout' },
-      ];
-    }
-
-    const base: NavItem[] = [
-      { icon: Home, label: 'Home', href: '/' },
-      { icon: PackageCheck, label: 'Check In', href: '/checkin' },
-      { icon: PackageMinus, label: 'Check Out', href: '/checkout' },
-      { icon: Package, label: 'Inventory', href: '/inventory' },
-      { icon: FileText, label: 'Reports', href: '/reports' },
-    ];
-
-    if (user?.userRole === 'admin' || user?.userRole === 'superadmin') {
-      base.push({ icon: Settings, label: 'Settings', href: '/settings' });
-    }
-
-    return base;
-  }, [user?.userRole]);
+  const role = user?.userRole;
+  const navItems = navItemsForRole(role);
+  const isSuperadmin = role === 'superadmin';
+  const showCart = !isReadOnlyRole(role);
 
   if (!hasHydrated) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Loading" />
       </div>
     );
   }
@@ -271,41 +234,62 @@ export function AppShell({ children }: AppShellProps) {
     return null;
   }
 
-  const isSuperadmin = user?.userRole === 'superadmin';
+  const sidebarFooter = (
+    <div className="border-t border-sidebar-border p-2">
+      <AccountMenu
+        username={user?.username}
+        role={role}
+        align="start"
+        side="top"
+        showSettings={isSuperadmin}
+        onAccount={() => {
+          setMobileOpen(false);
+          handleAccount();
+        }}
+        onSettings={() => {
+          setMobileOpen(false);
+          handleSettings();
+        }}
+        onLogout={() => {
+          setMobileOpen(false);
+          handleLogout();
+        }}
+        trigger={
+          <button
+            type="button"
+            className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-left hover:bg-card"
+          >
+            <UserAvatar username={user?.username} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-medium text-foreground">
+                {user?.username || 'User'}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">{roleLabel(role)}</span>
+            </span>
+          </button>
+        }
+      />
+    </div>
+  );
 
   return (
     <AppInitializer>
-      <div className="flex h-screen overflow-hidden bg-muted/30 antialiased">
+      <div className="flex h-screen overflow-hidden bg-background">
         {/* Desktop sidebar */}
-        <aside
-          className={cn(
-            'hidden w-64 shrink-0 flex-col border-r border-border/60',
-            'bg-card/70 backdrop-blur-xl',
-            'md:flex'
-          )}
-        >
+        <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
           <BrandHeader />
-          <SidebarBody navItems={navItems} pathname={pathname} onNavigate={handleNavigation} />
-          <SidebarFooter
-            username={user?.username}
-            role={user?.userRole}
-            onAccount={handleAccount}
-            onLogout={handleLogout}
+          <SidebarBody
+            navItems={navItems}
+            pathname={pathname}
+            badges={badges}
+            onNavigate={handleNavigation}
           />
+          {sidebarFooter}
         </aside>
 
         {/* Main column */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Liquid-glass header */}
-          <header
-            className={cn(
-              'sticky top-0 z-40 flex h-16 items-center gap-3 px-4 lg:px-6',
-              'border-b border-border/50',
-              'bg-background/60 backdrop-blur-xl backdrop-saturate-150',
-              'shadow-soft'
-            )}
-          >
-            {/* Mobile menu trigger */}
+          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-4 lg:px-6">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -317,67 +301,55 @@ export function AppShell({ children }: AppShellProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0 bg-card/95 backdrop-blur-xl">
+              <SheetContent side="left" className="w-72 bg-sidebar p-0">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
                 <div className="flex h-full flex-col">
                   <BrandHeader />
                   <SidebarBody
                     navItems={navItems}
                     pathname={pathname}
+                    badges={badges}
                     onNavigate={handleNavigation}
                   />
-                  <SidebarFooter
-                    username={user?.username}
-                    role={user?.userRole}
-                    onAccount={() => {
-                      setMobileOpen(false);
-                      handleAccount();
-                    }}
-                    onLogout={() => {
-                      setMobileOpen(false);
-                      handleLogout();
-                    }}
-                  />
+                  {sidebarFooter}
                 </div>
               </SheetContent>
             </Sheet>
 
             {/* Mobile wordmark */}
             <div className="flex items-center gap-2 md:hidden">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-soft">
-                <span className="text-sm font-bold">D</span>
-              </div>
-              <span className="text-base font-semibold">DaanaRX</span>
+              <BrandMark />
+              <span className="text-base font-semibold tracking-tight">DaanaRX</span>
             </div>
 
             <div className="hidden md:block">
               <ClinicSwitcher />
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              {/* View Cart */}
-              <Button
-                variant="outline"
-                onClick={handleViewCart}
-                className="relative gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                <span className="hidden sm:inline">View Cart</span>
-                {cartItemCount > 0 && (
-                  <span
-                    className={cn(
-                      'absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center',
-                      'rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-soft'
-                    )}
-                    aria-label={`${cartItemCount} items in cart`}
-                  >
-                    {cartItemCount > 99 ? '99+' : cartItemCount}
-                  </span>
-                )}
-              </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              {showCart ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewCart}
+                  className="relative gap-2"
+                  aria-label={cartItemCount > 0 ? `View cart, ${cartItemCount} items` : 'View cart'}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Cart</span>
+                  <NavBadge count={cartItemCount} label="items in cart" tone="primary" />
+                </Button>
+              ) : null}
 
-              {/* Account dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <AccountMenu
+                username={user?.username}
+                role={role}
+                align="end"
+                showSettings={isSuperadmin}
+                onAccount={handleAccount}
+                onSettings={handleSettings}
+                onLogout={handleLogout}
+                trigger={
                   <Button
                     variant="ghost"
                     size="icon"
@@ -386,43 +358,18 @@ export function AppShell({ children }: AppShellProps) {
                   >
                     <UserAvatar username={user?.username} />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="flex flex-col gap-0.5">
-                    <span className="text-sm font-semibold">{user?.username || 'User'}</span>
-                    <span className="text-xs font-normal capitalize text-muted-foreground">
-                      {user?.userRole || 'member'}
-                    </span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={handleAccount}>
-                    <UserIcon className="h-4 w-4" /> My account
-                  </DropdownMenuItem>
-                  {isSuperadmin && (
-                    <DropdownMenuItem onSelect={() => router.push('/settings')}>
-                      <Settings className="h-4 w-4" /> Settings
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={handleLogout}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="h-4 w-4" /> Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                }
+              />
             </div>
           </header>
 
-          {/* Mobile clinic switcher row (compact, below header) */}
-          <div className="md:hidden border-b border-border/40 bg-background/40 px-4 py-2 backdrop-blur">
+          {/* Mobile clinic switcher row */}
+          <div className="border-b border-border bg-card px-3 py-1.5 md:hidden">
             <ClinicSwitcher />
           </div>
 
-          {/* Page content */}
-          <main className="flex-1 overflow-auto bg-background">
-            <div className="container-responsive pb-24 pt-6 sm:pt-8 lg:pt-10">{children}</div>
+          <main className="flex-1 overflow-auto">
+            <div className="container-responsive pb-24 pt-5 sm:pt-6 lg:pt-8">{children}</div>
           </main>
         </div>
       </div>

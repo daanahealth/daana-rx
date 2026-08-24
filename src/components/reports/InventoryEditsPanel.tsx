@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, PenSquare } from 'lucide-react';
+import { formatDateTime } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,14 +13,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { reports, type InventoryEditRow } from '@/lib/api';
-
-function formatTs(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
 
 function displayValue(v: string | null): string {
   if (v === null || v === undefined || v === '') return '—';
@@ -81,7 +74,7 @@ export function InventoryEditsPanel() {
                     className="rounded-lg border bg-card p-3 shadow-sm text-sm"
                   >
                     <p className="font-semibold">{r.medicationName}</p>
-                    <p className="text-xs text-muted-foreground">{formatTs(r.timestamp)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(r.timestamp)}</p>
                     <p className="mt-2">
                       <span className="text-xs font-medium text-muted-foreground">{r.field}: </span>
                       <span className="line-through text-muted-foreground">
@@ -109,7 +102,7 @@ export function InventoryEditsPanel() {
                   <TableBody>
                     {rows.map((r) => (
                       <TableRow key={r.transactionId}>
-                        <TableCell className="text-xs">{formatTs(r.timestamp)}</TableCell>
+                        <TableCell className="text-xs">{formatDateTime(r.timestamp)}</TableCell>
                         <TableCell className="font-medium">{r.medicationName}</TableCell>
                         <TableCell className="text-sm">{r.field}</TableCell>
                         <TableCell className="text-sm">

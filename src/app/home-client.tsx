@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatCount } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import {
   Package,
@@ -100,7 +101,7 @@ function StatCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
-          {value.toLocaleString()}
+          {formatCount(value)}
         </div>
         {variant === 'warning' && value > 0 && (
           <Badge

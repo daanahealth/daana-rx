@@ -15,6 +15,7 @@
 
 import * as React from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { formatDate } from '@/lib/format';
 import {
   Dialog,
   DialogContent,
@@ -135,7 +136,7 @@ export function ExpiredOverrideModal({
               {item.unit_code}
             </div>
             <div className="text-xs text-muted-foreground">
-              Expiry: {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '—'}
+              Expiry: {formatDate(item.expiry_date)}
             </div>
           </div>
         )}

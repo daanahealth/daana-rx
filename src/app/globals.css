@@ -1,127 +1,141 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * DaanaRX design tokens — the single source for colour, radius and depth.
+ * The values and their rules are documented in DESIGN.md ("The Shelf Card").
+ * Tailwind reads every token through tailwind.config.js; components never
+ * hard-code a colour.
+ *
+ * Fonts (IBM Plex Sans / Mono) are loaded via next/font in app/layout.tsx and
+ * exposed as --font-sans / --font-mono.
+ */
 @layer base {
   :root {
-    /* Healthcare blue/teal color scheme - inspired by base44.com aesthetic */
-    --background: 0 0% 100%;
-    --foreground: 210 15% 20%;
-
-    /* Card styling - clean and elevated */
-    --card: 0 0% 100%;
-    --card-foreground: 210 15% 20%;
-
-    /* Popover styling */
+    /* Neutral ramp */
+    --background: 210 24% 97%; /* canvas — page behind cards */
+    --foreground: 210 22% 14%; /* ink */
+    --card: 0 0% 100%; /* surface */
+    --card-foreground: 210 22% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 15% 20%;
+    --popover-foreground: 210 22% 14%;
+    --panel: 208 26% 95%; /* sidebar + sticky toolbars */
+    --muted: 210 20% 94%;
+    --muted-foreground: 210 10% 46%; /* ink-3: labels, captions (4.6:1) */
+    --subtle-foreground: 210 14% 34%; /* ink-2: secondary body copy */
+    --border: 210 20% 88%; /* line */
+    --border-strong: 210 16% 78%; /* input borders, table header rule */
+    --input: 210 16% 78%;
 
-    /* Primary - Healthcare teal/cyan */
+    /* Daana teal — the one accent */
     --primary: 185 84% 44%;
     --primary-foreground: 0 0% 100%;
-
-    /* Secondary - Soft medical blue */
-    --secondary: 210 85% 97%;
-    --secondary-foreground: 210 15% 20%;
-
-    /* Muted - Subtle backgrounds */
-    --muted: 210 40% 98%;
-    --muted-foreground: 210 12% 50%;
-
-    /* Accent - Lighter teal for hover states */
-    --accent: 185 75% 95%;
-    --accent-foreground: 185 84% 35%;
-
-    /* Destructive - Medical red for errors */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    /* Success - Medical green */
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-
-    /* Warning - Amber for alerts */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    /* Borders and inputs - subtle and clean */
-    --border: 210 30% 91%;
-    --input: 210 30% 91%;
+    --primary-ink: 185 84% 30%; /* teal you can read */
+    --accent: 185 60% 94%; /* teal wash */
+    --accent-foreground: 185 84% 30%;
+    --secondary: 208 26% 95%;
+    --secondary-foreground: 210 22% 14%;
     --ring: 185 84% 44%;
 
-    /* Border radius - slightly more rounded for friendly feel */
-    --radius: 0.625rem;
+    /* Status tones — reserved for src/lib/status.ts and expiry urgency */
+    --ok: 152 60% 36%;
+    --ok-wash: 152 55% 93%;
+    --info: 215 78% 46%;
+    --info-wash: 215 80% 94%;
+    --warn: 34 92% 38%;
+    --warn-wash: 38 95% 92%;
+    --danger: 4 70% 46%;
+    --danger-wash: 4 80% 95%;
+    --quiet: 210 10% 46%;
+    --quiet-wash: 210 16% 93%;
 
-    /* Chart colors - healthcare themed */
+    /* Legacy aliases still used by shadcn primitives */
+    --destructive: 4 70% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 34 92% 38%;
+    --warning-foreground: 0 0% 100%;
+
+    --radius: 0.375rem; /* 6px — buttons, inputs, nav */
+
     --chart-1: 185 84% 44%;
-    --chart-2: 210 85% 60%;
-    --chart-3: 142 71% 45%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 265 89% 78%;
+    --chart-2: 215 78% 46%;
+    --chart-3: 152 60% 36%;
+    --chart-4: 34 92% 38%;
+    --chart-5: 210 10% 46%;
 
-    /* Sidebar - clean white with teal accents */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 15% 25%;
+    --sidebar-background: 208 26% 95%;
+    --sidebar-foreground: 210 14% 34%;
     --sidebar-primary: 185 84% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 185 75% 96%;
-    --sidebar-accent-foreground: 185 84% 35%;
-    --sidebar-border: 210 30% 93%;
+    --sidebar-accent: 185 60% 94%;
+    --sidebar-accent-foreground: 185 84% 30%;
+    --sidebar-border: 210 20% 88%;
     --sidebar-ring: 185 84% 44%;
+
+    --shadow-overlay: 0 8px 24px -8px hsl(210 22% 14% / 0.18), 0 2px 6px hsl(210 22% 14% / 0.08);
   }
 
   .dark {
-    /* Dark mode - professional medical aesthetic */
-    --background: 210 20% 12%;
-    --foreground: 210 15% 95%;
+    --background: 210 18% 9%;
+    --foreground: 210 15% 92%;
+    --card: 210 16% 12%;
+    --card-foreground: 210 15% 92%;
+    --popover: 210 16% 13%;
+    --popover-foreground: 210 15% 92%;
+    --panel: 210 18% 11%;
+    --muted: 210 14% 16%;
+    --muted-foreground: 210 10% 66%;
+    --subtle-foreground: 210 12% 78%;
+    --border: 210 14% 20%;
+    --border-strong: 210 12% 30%;
+    --input: 210 12% 30%;
 
-    --card: 210 20% 14%;
-    --card-foreground: 210 15% 95%;
+    --primary: 185 70% 48%;
+    --primary-foreground: 210 18% 9%;
+    --primary-ink: 185 70% 64%;
+    --accent: 185 45% 16%;
+    --accent-foreground: 185 70% 70%;
+    --secondary: 210 14% 16%;
+    --secondary-foreground: 210 15% 92%;
+    --ring: 185 70% 52%;
 
-    --popover: 210 20% 14%;
-    --popover-foreground: 210 15% 95%;
+    --ok: 152 55% 58%;
+    --ok-wash: 152 40% 14%;
+    --info: 215 80% 70%;
+    --info-wash: 215 45% 16%;
+    --warn: 38 90% 62%;
+    --warn-wash: 36 45% 15%;
+    --danger: 4 80% 68%;
+    --danger-wash: 4 40% 16%;
+    --quiet: 210 10% 66%;
+    --quiet-wash: 210 12% 18%;
 
-    --primary: 185 84% 50%;
-    --primary-foreground: 210 20% 12%;
+    --destructive: 4 70% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 50%;
+    --warning-foreground: 210 18% 9%;
 
-    --secondary: 210 20% 18%;
-    --secondary-foreground: 210 15% 95%;
+    --chart-1: 185 70% 52%;
+    --chart-2: 215 80% 70%;
+    --chart-3: 152 55% 58%;
+    --chart-4: 38 90% 62%;
+    --chart-5: 210 10% 66%;
 
-    --muted: 210 20% 18%;
-    --muted-foreground: 210 12% 65%;
+    --sidebar-background: 210 18% 11%;
+    --sidebar-foreground: 210 12% 78%;
+    --sidebar-primary: 185 70% 48%;
+    --sidebar-primary-foreground: 210 18% 9%;
+    --sidebar-accent: 185 45% 16%;
+    --sidebar-accent-foreground: 185 70% 70%;
+    --sidebar-border: 210 14% 20%;
+    --sidebar-ring: 185 70% 52%;
 
-    --accent: 185 60% 20%;
-    --accent-foreground: 185 84% 70%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 15% 95%;
-
-    --success: 142 71% 45%;
-    --success-foreground: 210 15% 95%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 210 15% 95%;
-
-    --border: 210 20% 22%;
-    --input: 210 20% 22%;
-    --ring: 185 84% 50%;
-
-    --chart-1: 185 84% 50%;
-    --chart-2: 210 85% 65%;
-    --chart-3: 142 71% 50%;
-    --chart-4: 38 92% 55%;
-    --chart-5: 265 89% 80%;
-
-    --sidebar-background: 210 20% 14%;
-    --sidebar-foreground: 210 15% 90%;
-    --sidebar-primary: 185 84% 50%;
-    --sidebar-primary-foreground: 210 20% 12%;
-    --sidebar-accent: 210 20% 18%;
-    --sidebar-accent-foreground: 185 84% 70%;
-    --sidebar-border: 210 20% 20%;
-    --sidebar-ring: 185 84% 50%;
+    --shadow-overlay: 0 8px 24px -8px hsl(0 0% 0% / 0.6), 0 2px 6px hsl(0 0% 0% / 0.4);
   }
 }
 
@@ -131,83 +145,108 @@
   }
 
   html {
-    @apply scroll-smooth;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family:
-      'Inter',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      'Roboto',
-      'Oxygen',
-      'Ubuntu',
-      'Cantarell',
-      sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    @apply bg-background text-foreground text-sm;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    /* Tabular figures everywhere: quantities, dates and codes line up in columns. */
+    font-feature-settings:
+      'tnum' 1,
+      'cv11' 1;
+    font-variant-numeric: tabular-nums lining-nums;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Improved focus visibility for accessibility */
+  code,
+  kbd,
+  samp,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Browser surfaces carry the palette too. */
+  ::selection {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+  input,
+  textarea {
+    caret-color: hsl(var(--primary));
+  }
+  a {
+    text-underline-offset: 0.15em;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border-strong)) transparent;
+  }
+  *::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border-strong));
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
-  /* Smooth transitions inspired by base44.com */
+  /* State transitions only: 150ms, ease-out. No page choreography. */
   button,
   a,
   input,
   select,
-  textarea {
-    @apply transition-all duration-200 ease-in-out;
+  textarea,
+  [role='button'] {
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      opacity 150ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  /* Container utilities for responsive layouts */
+  /* Page content column. */
   .container-responsive {
-    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
-    max-width: 1400px;
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+    max-width: 1280px;
   }
 
-  /* Elevated card style */
+  /* Flat card — kept for legacy call sites; new code uses <Card>. */
   .card-elevated {
-    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+    @apply rounded-lg border border-border bg-card;
   }
 
-  /* Focus states for interactive elements */
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
 
-  /* Smooth scrolling for tables on mobile */
-  .overflow-x-auto {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-  }
-
-  .overflow-x-auto::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .overflow-x-auto::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .overflow-x-auto::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 4px;
-  }
-
-  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--muted-foreground) / 0.5);
-  }
-
-  /* Mobile-specific animations - Instagram/Facebook level */
+  /* Minimal reveal kept for legacy call sites (results list, toasts). */
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -216,60 +255,37 @@
       opacity: 1;
     }
   }
-
   @keyframes slide-in {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(4px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fade-in 150ms ease-out;
   }
-
-  .animate-slide-in {
-    animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
+  .animate-slide-in,
   .animate-slide-up {
-    animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slide-in 180ms cubic-bezier(0.2, 0, 0, 1);
   }
 
-  /* Touch-friendly tap animations */
-  @media (hover: none) {
-    .active\:scale-\[0\.98\]:active {
-      transform: scale(0.98);
-    }
-  }
-
-  /* Improve touch targets on mobile */
-  @media (max-width: 768px) {
+  /* 44px targets on touch devices — the app is used one-handed at a shelf. */
+  @media (pointer: coarse) {
     button,
     a[role='button'],
-    [role='button'] {
+    [role='button'],
+    input:not([type='checkbox']):not([type='radio']),
+    select {
       min-height: 44px;
-      min-width: 44px;
     }
   }
 }
 
-/* Print styles for medication labels */
+/* Print styles for medication labels (4in x 2in) */
 @media print {
   @page {
     size: 4in 2in;
