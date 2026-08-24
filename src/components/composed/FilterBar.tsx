@@ -53,7 +53,6 @@ export function FilterBar({
           <Input
             type="text"
             inputMode="search"
-            inputMode="search"
             autoComplete="off"
             spellCheck={false}
             autoFocus={search.autoFocus}
