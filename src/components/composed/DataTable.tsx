@@ -85,7 +85,12 @@ export interface DataTableProps<T> {
   className?: string;
 }
 
-function compare(a: unknown, b: unknown): number {
+/**
+ * The ordering DataTable uses for `sortValue`s (nulls last, numbers numeric,
+ * strings natural-order). Exported so callers that paginate on the client can
+ * sort the full working set with the same rule before slicing a page.
+ */
+export function compareCells(a: unknown, b: unknown): number {
   if (a == null && b == null) return 0;
   if (a == null) return 1;
   if (b == null) return -1;
@@ -139,7 +144,7 @@ export function DataTable<T>({
     const col = columns.find((c) => c.key === sort.key);
     if (!col?.sortValue) return rows;
     const get = col.sortValue;
-    const out = [...rows].sort((a, b) => compare(get(a), get(b)));
+    const out = [...rows].sort((a, b) => compareCells(get(a), get(b)));
     return sort.dir === 'desc' ? out.reverse() : out;
   }, [rows, sort, columns]);
 

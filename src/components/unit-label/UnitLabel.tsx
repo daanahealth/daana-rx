@@ -1,10 +1,81 @@
+import type { CSSProperties, ReactNode } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatMonthYear, EMPTY } from '@/lib/format';
+
+// UnitLabel — the printed 4in × 2in DRX label (QR on the left, facts on the
+// right). This is print output, so it deliberately uses fixed inline styles
+// rather than the app's tokens: the label must look the same on paper
+// regardless of theme.
+//
+// Styles are hoisted to one module-level map (not nested object literals in
+// JSX) — react-doctor's oxlint plugin overflowed its stack walking the
+// previous deeply nested inline-style tree. The rendered DOM is identical.
 
 const formatMonthYearOrNA = (d?: string | Date | null) => {
   const out = formatMonthYear(d);
   return out === EMPTY ? 'N/A' : out;
 };
+
+const S = {
+  root: {
+    display: 'flex',
+    border: '1px solid #ddd',
+    padding: '12px',
+    backgroundColor: 'white',
+    fontFamily: 'Arial, sans-serif',
+    width: '384px',
+    height: '192px',
+    boxSizing: 'border-box',
+  },
+  qrColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingRight: '12px',
+    borderRight: '1px solid #ddd',
+    minWidth: '130px',
+  },
+  qrCaption: {
+    fontSize: '6px',
+    marginTop: '4px',
+    textAlign: 'center',
+    wordBreak: 'break-all',
+    maxWidth: '100px',
+    lineHeight: 1.2,
+  },
+  infoColumn: {
+    flex: 1,
+    paddingLeft: '12px',
+    fontSize: '9px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  banner: {
+    fontSize: '8px',
+    fontWeight: 'bold',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    padding: '2px 4px',
+    marginBottom: '3px',
+    textAlign: 'center',
+    borderRadius: '2px',
+  },
+  name: { fontSize: '12px', fontWeight: 'bold', lineHeight: 1.1, marginBottom: '1px' },
+  generic: { fontSize: '9px', color: '#666', marginBottom: '3px' },
+  strength: { fontSize: '10px', fontWeight: 600, marginBottom: '3px' },
+  field: { marginBottom: '2px', fontSize: '8px' },
+  fieldLabel: { fontWeight: 600 },
+  store: { fontSize: '7px', color: '#666' },
+  footer: {
+    fontSize: '6px',
+    color: '#888',
+    marginTop: 'auto',
+    borderTop: '1px solid #eee',
+    paddingTop: '2px',
+  },
+} satisfies Record<string, CSSProperties>;
 
 type UnitLabelProps = {
   unitId: string;
@@ -22,6 +93,15 @@ type UnitLabelProps = {
   locationName?: string | null;
 };
 
+function LabelField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div style={S.field}>
+      <span style={S.fieldLabel}>{label} </span>
+      {children}
+    </div>
+  );
+}
+
 export function UnitLabel({
   unitId,
   medicationName,
@@ -37,129 +117,41 @@ export function UnitLabel({
   donationSource,
   locationName,
 }: UnitLabelProps) {
+  const strengthText = strength && strengthUnit ? `${strength} ${strengthUnit}` : '';
+  const strengthLine = `${strengthText}${strength && form ? ' - ' : ''}${form || ''}`;
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        border: '1px solid #ddd',
-        padding: '12px',
-        backgroundColor: 'white',
-        fontFamily: 'Arial, sans-serif',
-        width: '384px',
-        height: '192px',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div style={S.root}>
       {/* QR Code - Left Side */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingRight: '12px',
-          borderRight: '1px solid #ddd',
-          minWidth: '130px',
-        }}
-      >
+      <div style={S.qrColumn}>
         <QRCodeSVG value={unitId} size={100} level="H" />
-        <div
-          style={{
-            fontSize: '6px',
-            marginTop: '4px',
-            textAlign: 'center',
-            wordBreak: 'break-all',
-            maxWidth: '100px',
-            lineHeight: 1.2,
-          }}
-        >
-          {unitId}
-        </div>
+        <div style={S.qrCaption}>{unitId}</div>
       </div>
 
       {/* Label Information - Right Side */}
-      <div
-        style={{
-          flex: 1,
-          paddingLeft: '12px',
-          fontSize: '9px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '8px',
-            fontWeight: 'bold',
-            backgroundColor: '#dc2626',
-            color: 'white',
-            padding: '2px 4px',
-            marginBottom: '3px',
-            textAlign: 'center',
-            borderRadius: '2px',
-          }}
-        >
-          DONATED MEDICATION
-        </div>
+      <div style={S.infoColumn}>
+        <div style={S.banner}>DONATED MEDICATION</div>
 
-        <div style={{ fontSize: '12px', fontWeight: 'bold', lineHeight: 1.1, marginBottom: '1px' }}>
-          {medicationName}
-        </div>
-        {genericName && (
-          <div style={{ fontSize: '9px', color: '#666', marginBottom: '3px' }}>({genericName})</div>
-        )}
+        <div style={S.name}>{medicationName}</div>
+        {genericName ? <div style={S.generic}>({genericName})</div> : null}
 
-        {(strength || form) && (
-          <div style={{ fontSize: '10px', fontWeight: 600, marginBottom: '3px' }}>
-            {strength && strengthUnit ? `${strength} ${strengthUnit}` : ''}
-            {strength && form ? ' - ' : ''}
-            {form || ''}
-          </div>
-        )}
+        {strength || form ? <div style={S.strength}>{strengthLine}</div> : null}
 
-        {ndcId && (
-          <div style={{ marginBottom: '2px', fontSize: '8px' }}>
-            <span style={{ fontWeight: 600 }}>NDC: </span>
-            {ndcId}
-          </div>
-        )}
+        {ndcId ? <LabelField label="NDC:">{ndcId}</LabelField> : null}
 
-        <div style={{ marginBottom: '2px', fontSize: '8px' }}>
-          <span style={{ fontWeight: 600 }}>Mfr Lot#: </span>
-          {manufacturerLotNumber || 'NOT RECORDED'}
-        </div>
+        <LabelField label="Mfr Lot#:">{manufacturerLotNumber || 'NOT RECORDED'}</LabelField>
 
-        <div style={{ marginBottom: '2px', fontSize: '8px' }}>
-          <span style={{ fontWeight: 600 }}>Qty: </span>
+        <LabelField label="Qty:">
           {availableQuantity} / {totalQuantity}
-        </div>
+        </LabelField>
 
-        <div style={{ marginBottom: '2px', fontSize: '8px' }}>
-          <span style={{ fontWeight: 600 }}>EXP: </span>
-          {formatMonthYearOrNA(expiryDate)}
-        </div>
+        <LabelField label="EXP:">{formatMonthYearOrNA(expiryDate)}</LabelField>
 
-        <div style={{ marginBottom: '2px', fontSize: '8px' }}>
-          <span style={{ fontWeight: 600 }}>Source: </span>
-          {donationSource || 'N/A'}
-        </div>
+        <LabelField label="Source:">{donationSource || 'N/A'}</LabelField>
 
-        {locationName && (
-          <div style={{ fontSize: '7px', color: '#666' }}>Store: {locationName}</div>
-        )}
+        {locationName ? <div style={S.store}>Store: {locationName}</div> : null}
 
-        <div
-          style={{
-            fontSize: '6px',
-            color: '#888',
-            marginTop: 'auto',
-            borderTop: '1px solid #eee',
-            paddingTop: '2px',
-          }}
-        >
-          DaanaRX • For Clinic Use Only • FDA-Tracked Medication
-        </div>
+        <div style={S.footer}>DaanaRX • For Clinic Use Only • FDA-Tracked Medication</div>
       </div>
     </div>
   );
